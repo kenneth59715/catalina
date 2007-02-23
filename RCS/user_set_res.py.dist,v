@@ -1,0 +1,1970 @@
+head	1.40;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.40
+date	2005.04.22.23.17.28;	author kenneth;	state Exp;
+branches;
+next	1.39;
+
+1.39
+date	2005.03.28.20.35.12;	author kenneth;	state Exp;
+branches;
+next	1.38;
+
+1.38
+date	2005.03.24.16.59.35;	author kenneth;	state Exp;
+branches;
+next	1.37;
+
+1.37
+date	2005.03.23.00.00.06;	author kenneth;	state Exp;
+branches;
+next	1.36;
+
+1.36
+date	2004.10.11.21.10.52;	author kenneth;	state Exp;
+branches;
+next	1.35;
+
+1.35
+date	2004.08.31.21.40.04;	author kenneth;	state Exp;
+branches;
+next	1.34;
+
+1.34
+date	2004.08.23.22.15.43;	author kenneth;	state Exp;
+branches;
+next	1.33;
+
+1.33
+date	2004.08.17.16.01.17;	author kenneth;	state Exp;
+branches;
+next	1.32;
+
+1.32
+date	2004.08.11.17.51.45;	author kenneth;	state Exp;
+branches;
+next	1.31;
+
+1.31
+date	2004.07.16.18.40.16;	author kenneth;	state Exp;
+branches;
+next	1.30;
+
+1.30
+date	2004.06.21.23.18.23;	author kenneth;	state Exp;
+branches;
+next	1.29;
+
+1.29
+date	2004.06.21.21.36.20;	author kenneth;	state Exp;
+branches;
+next	1.28;
+
+1.28
+date	2004.05.08.05.42.45;	author kenneth;	state Exp;
+branches;
+next	1.27;
+
+1.27
+date	2004.03.16.23.10.05;	author kenneth;	state Exp;
+branches;
+next	1.26;
+
+1.26
+date	2004.03.05.01.17.59;	author kenneth;	state Exp;
+branches;
+next	1.25;
+
+1.25
+date	2004.02.05.17.56.09;	author kenneth;	state Exp;
+branches;
+next	1.24;
+
+1.24
+date	2003.06.26.18.11.24;	author kenneth;	state Exp;
+branches;
+next	1.23;
+
+1.23
+date	2003.04.08.23.25.19;	author kenneth;	state Exp;
+branches;
+next	1.22;
+
+1.22
+date	2003.04.08.23.18.11;	author kenneth;	state Exp;
+branches;
+next	1.21;
+
+1.21
+date	2003.04.08.23.12.29;	author kenneth;	state Exp;
+branches;
+next	1.20;
+
+1.20
+date	2003.04.08.22.59.51;	author kenneth;	state Exp;
+branches;
+next	1.19;
+
+1.19
+date	2003.01.25.00.03.51;	author kenneth;	state Exp;
+branches;
+next	1.18;
+
+1.18
+date	2003.01.24.23.54.02;	author kenneth;	state Exp;
+branches;
+next	1.17;
+
+1.17
+date	2002.04.11.17.51.40;	author kenneth;	state Exp;
+branches;
+next	1.16;
+
+1.16
+date	2002.04.09.21.25.18;	author kenneth;	state Exp;
+branches;
+next	1.15;
+
+1.15
+date	2002.04.09.20.49.10;	author kenneth;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2002.04.09.20.39.17;	author kenneth;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2002.04.09.03.26.05;	author kenneth;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2002.02.22.20.04.05;	author kenneth;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2002.02.22.20.00.41;	author kenneth;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2002.02.22.19.57.25;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2002.02.01.22.21.06;	author kenneth;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2002.02.01.21.44.34;	author kenneth;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2002.01.23.18.10.14;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2002.01.17.21.56.12;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2002.01.17.17.31.52;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2002.01.17.16.32.16;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.01.17.05.49.42;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.01.16.20.51.27;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.22.36.16;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@sgid set of reservation by user
+@
+
+
+1.40
+log
+@allow --email=NONOTIFY for no email notification
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# script for a user to create a reservation for himself or herself
+
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import Catalina
+import time
+import string
+import re
+import os
+import pwd
+import signal
+import getopt
+import copy
+
+# From the Python book:
+# Only one pipe, child out to parent in
+def forksleep (prog, args, timeout) :
+    pipe1 = os.pipe()
+    pid = os.fork()
+    if pid :
+        os.close(pipe1[1])
+        os.dup2(pipe1[0], 0)
+        iterations = 0
+        while iterations < timeout :
+            return_tuple = os.waitpid( pid, os.WNOHANG )
+            if return_tuple[0] == pid :
+                return_out = sys.stdin.read()
+                exit_number = return_tuple[1]
+                exit_status = exit_number >> 8
+                return_data = (return_out, exit_status)
+                break
+            else :
+                time.sleep(1)
+        return (return_data)
+    else :
+        os.close(pipe1[0])
+        os.dup2(pipe1[1], 1)
+        print "child running (%s) with args (%s)" % (prog, args)
+        childargs = (prog,) + args
+        os.execv(prog, childargs)
+
+def get_blocking(duration_float,window,alimit_int,requested_resource_seconds,res_list) :
+    #if Catalina.DEBUG == 'user_set' :
+    #    print "in get_first_window_end, slope (%s)" % slope
+    # Between middle - window and middle + window, is there a point at which
+    # the number of user_set resource-hours equals the alimit + requested?
+    #start = middle - window
+    #end = middle + window
+    #if Catalina.DEBUG == 'user_set' :
+    #    print "len(sorted_res_list) (%s)" % len(sorted_res_list)
+    #relevant_res_list = sorted_res_list
+    #if Catalina.DEBUG == 'user_set' :
+    #    print "len(relevant_res_list) (%s)" % len(relevant_res_list)
+    # Need to find discontinuity points...
+    # Sort by proximity of reservation start and end to window
+    # start and end
+    #disc_interval_list = []
+    disc_list = []
+    for rel_res in res_list :
+        disc_list.append(rel_res['start_time_float'])
+        disc_list.append(rel_res['end_time_float'])
+    #disc_list.append(0)
+    #disc_list.append(Catalina.END_OF_SCHEDULING)
+    if len(disc_list) == 0 :
+        return []
+    disc_list.sort()
+    disc_list.append(disc_list[-1] + window)
+    start_of_check = disc_list[0]
+    valid_interval = 0
+    slope = 'positive'
+    temp_blocking_reservations_list = []
+    new_blocking_res_number = 0
+    #for disc in disc_list :
+    while start_of_check <= disc_list[-1] :
+        if Catalina.DEBUG == 'user_set' :
+            #print "checking discontinuity at (%s) (%s)" % (disc,time.asctime(time.localtime(disc)))
+            print "start_of_check (%s) (%s)" % (start_of_check,time.asctime(time.localtime(start_of_check)))
+        # There should be four classes of reservations within
+        # the interval of interest:
+        # - reservations that have decreasing node-hours as the window
+        #   slides forwards
+        # - reservations that have increasing node-hours as the window
+        #   slides forwards
+        # - reservations that have constant node-hours as the window
+        #   slides forwards, entirely contained within interval
+        # - reservations that have constant node-hours as the window
+        #   slides forwards, entirely outside interval
+        # since either the window_start or the window_end can encounter
+        # a discontinuity as the window slides forward in time, need to
+        # use the minimum valid interval, the min of the next discontinuity
+        # from the window_start or the window_end
+        # Might be able to avoid checking all discontinuities for each
+        # reservation...
+        start_interval_list = filter(lambda x, start_of_check=start_of_check : x > start_of_check - window, disc_list)
+        if len(start_interval_list) > 0 :
+            interval_from_start = start_interval_list[0] - (start_of_check - window)
+        else :
+            # I think I don't need to restrict it this way...
+            interval_from_start = window
+        end_interval_list = filter(lambda x, start_of_check=start_of_check, window=window : x > start_of_check, disc_list)
+        if len(end_interval_list) > 0 :
+            interval_from_end = end_interval_list[0] - start_of_check
+        else :
+            # I think I don't need to restrict it this way...
+            interval_from_end = window
+        valid_interval = min(interval_from_start, interval_from_end)
+        if Catalina.DEBUG == 'user_set' :
+            print "valid_interval (%s)" % valid_interval
+        dec_res_list = []
+        inc_res_list = []
+        constantin_res_list = []
+        constantout_res_list = []
+        for rel_res in res_list :
+            # need to handle the situation where the requested nodes-hours
+            # is exactly the maximum.  In this situation, then end should
+            # be exactly on the last user_set reservation...It will not
+            # equal the max amount until it's right on the discontinuity.
+            if start_of_check - window + valid_interval <= rel_res['end_time_float'] <= start_of_check :
+                if start_of_check - window + valid_interval <= rel_res['start_time_float'] <= start_of_check :
+                    constantin_res_list.append(rel_res)
+                    if Catalina.DEBUG == 'user_set' :
+                        print "appending to constantin"
+                else :
+                    dec_res_list.append(rel_res)
+                    if Catalina.DEBUG == 'user_set' :
+                        print "appending to dec_res"
+            elif start_of_check - window + valid_interval <= rel_res['start_time_float'] <= start_of_check :
+                inc_res_list.append(rel_res)
+                if Catalina.DEBUG == 'user_set' :
+                    print "appending to inc_res"
+            elif rel_res['start_time_float'] <= start_of_check - window + valid_interval and \
+              start_of_check <= rel_res['end_time_float'] :
+                constantout_res_list.append(rel_res)
+                if Catalina.DEBUG == 'user_set' :
+                    print "appending to constantout_res"
+            else :
+                if Catalina.DEBUG == 'user_set' :
+                    print "res not in interval"
+                    print "rel_res['start_time_float'] (%s)" % time.asctime(time.localtime(rel_res['start_time_float']))
+                    print "rel_res['end_time_float'] (%s)" % time.asctime(time.localtime(rel_res['end_time_float']))
+                    print "start_of_check - window + valid_interval (%s) (%s)" % (
+                      start_of_check - window + valid_interval, time.asctime(time.localtime(start_of_check - window + valid_interval)))
+                    print "start_of_check (%s) (%s)" % (
+                      start_of_check, time.asctime(time.localtime(start_of_check)))
+                continue
+        window_end = alimit_int - requested_resource_seconds 
+        if slope == 'positive' :
+            window_end = window_end + 1
+        if Catalina.DEBUG == 'user_set' :
+            print "1. window_end (%s)" % window_end
+        inc_resource = 0
+        dec_resource = 0
+        if Catalina.DEBUG == 'user_set' :
+            print "len(dec_res_list) (%s)" % len(dec_res_list)
+            print "len(inc_res_list) (%s)" % len(inc_res_list)
+            print "len(constantin_res_list) (%s)" % len(constantin_res_list)
+            print "len(constantout_res_list) (%s)" % len(constantout_res_list)
+        for dec_res in dec_res_list :
+            window_end = window_end - dec_res['resource_amount_int'] * (dec_res['end_time_float'] + window)
+            dec_resource = dec_resource + dec_res['resource_amount_int']
+        for constantin_res in constantin_res_list :
+            window_end = window_end - constantin_res['resource_amount_int'] * (constantin_res['end_time_float'] - constantin_res['start_time_float'])
+        for constantout_res in constantout_res_list :
+            window_end = window_end - constantout_res['resource_amount_int'] * window
+        for inc_res in inc_res_list :
+            if Catalina.DEBUG == 'user_set' :
+                print "2. window_end (%s)" % window_end
+            window_end = window_end + inc_res['resource_amount_int'] * inc_res['start_time_float']
+            if Catalina.DEBUG == 'user_set' :
+                print "inc_res['start_time_float'] (%s) (%s)" % (inc_res['start_time_float'],time.asctime(time.localtime(inc_res['start_time_float'])))
+            inc_resource = inc_resource + inc_res['resource_amount_int']
+        if Catalina.DEBUG == 'user_set' :
+            print "inc_resource (%s) dec_resource (%s)" % (inc_resource, dec_resource)
+        if inc_resource - dec_resource == 0 :
+            start_of_check = start_of_check + valid_interval
+            continue
+        window_end = window_end / (inc_resource - dec_resource)
+        if Catalina.DEBUG == 'user_set' :
+            print "window_end (%s) (%s)" % (window_end, time.asctime(time.localtime(window_end)))
+            print "start_of_check + valid_interval (%s) (%s)" % (
+              start_of_check + valid_interval, time.asctime(time.localtime(start_of_check + window)))
+            print "start_of_check + window (%s) (%s)" % (
+              start_of_check + window, time.asctime(time.localtime(start_of_check + window)))
+        if start_of_check - window + valid_interval <= window_end <= start_of_check + valid_interval :
+            if Catalina.DEBUG == 'user_set' :
+                print "start_of_check - window + valid_interval (%s) (%s)" % (
+                  start_of_check - window + valid_interval, time.asctime(time.localtime(start_of_check - window + valid_interval)))
+                print "start_of_check + valid_interval (%s) (%s)" % (
+                  start_of_check + valid_interval, time.asctime(time.localtime(start_of_check + valid_interval)))
+            if inc_resource - dec_resource > 0 and slope == 'positive' :
+                if Catalina.DEBUG == 'user_set' :
+                    print "positive slope window end"
+                # set blocking reservation start time
+                blocking_res_start = window_end - window + duration_float
+                slope = 'negative'
+            else :
+                if Catalina.DEBUG == 'user_set' :
+                    print "not a positive slope window end"
+                    print "slope (%s)" % slope
+            if inc_resource - dec_resource < 0 and slope == 'negative' :
+                if Catalina.DEBUG == 'user_set' :
+                    print "negative slope window end"
+                blocking_res_end = window_end - duration_float
+                new_blocking_res_number = new_blocking_res_number + 1
+                new_blocking_res_name = 'tempblock' + "%s" % new_blocking_res_number
+                new_blocking_res = Catalina.initialize_reservation(new_blocking_res_name)
+                new_blocking_res['start_time_float'] = blocking_res_start
+                new_blocking_res['end_time_float'] = blocking_res_end
+                resources_dict = resources_db_handle[0]
+                new_blocking_res['node_list'] = resources_dict.keys()
+                if Catalina.DEBUG == 'user_set' :
+                    print "new_blocking_res (%s)" % (new_blocking_res,)
+                temp_blocking_reservations_list.append(new_blocking_res)
+                slope = 'positive'
+            else :
+                if Catalina.DEBUG == 'user_set' :
+                    print "not a negative slope window end"
+                    print "slope (%s)" % slope
+        else :
+            if Catalina.DEBUG == 'user_set' :
+                print "window_end not within continuous interval"
+                print "start_of_check - window + valid_interval (%s) (%s)" % (
+                  start_of_check - window + valid_interval, time.asctime(time.localtime(start_of_check - window + valid_interval)))
+                print "start_of_check + valid_interval (%s) (%s)" % (
+                  start_of_check + valid_interval, time.asctime(time.localtime(start_of_check + valid_interval)))
+        start_of_check = start_of_check + valid_interval
+    return temp_blocking_reservations_list
+
+if os.environ.has_key('TZ') :
+    print "TZ (%s)" % os.environ['TZ']
+else :
+    print "No TZ found"
+
+valid_accounts_dict = Catalina.USER_SET_LIMITS_dict
+RESLIST_CMD = Catalina.RESLIST_CMD
+
+
+options = [
+  '?',
+  'help',
+  'account=',
+  'nodes=',
+  'maxnodes=',
+  'duration=',
+  'earliest_start=',
+  'latest_end=',
+  'email=',
+  'sharedmap=',
+  'featurelist=',
+  'qoslist=',
+  ]
+
+usage_string = \
+"""Usage: user_set_res.py --account=<account>
+                       --nodes=<number of nodes> | --maxnodes=<max number of nodes>
+                       --duration=<seconds of duration>
+                       --earliest_start=<HH:MM_mm/dd/YYYY>
+                       --latest_end=<HH:MM_mm/dd/YYYY>
+                       --email=<email address>
+                       [ --sharedmap=<1#type:node_shared#cpu:1+memory:1> ]
+                       [ --featurelist=<comma-delimited list of node features> ]
+                       [ --qoslist=<comma-delimited list of QOS allowed> ]"""
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+if not (argdict.has_key('--account') and 
+        argdict.has_key('--duration') and 
+        argdict.has_key('--earliest_start') and 
+        argdict.has_key('--latest_end') and 
+        argdict.has_key('--email')
+       ) :
+    print "Missing parameter(s)!"
+    print usage_string
+    sys.exit(0)
+
+if argdict.has_key('--nodes') and argdict.has_key('--maxnodes') :
+    print "Use only one of --nodes and --maxnodes!"
+    print usage_string
+    sys.exit(0)
+
+if not (argdict.has_key('--nodes') or argdict.has_key('--maxnodes')) :
+    print "Need either --nodes or --maxnodes!"
+    print usage_string
+    sys.exit(0)
+
+account_string = argdict['--account']
+if argdict.has_key('--nodes') :
+    nodes_string = argdict['--nodes']
+if argdict.has_key('--maxnodes') :
+    maxnodes_string = argdict['--maxnodes']
+    nodes_string = argdict['--maxnodes']
+duration_string = argdict['--duration']
+earliest_start_string = argdict['--earliest_start']
+latest_end_string = argdict['--latest_end']
+email_string = argdict['--email']
+if argdict.has_key('--sharedmap') :
+    sharedmap_string = argdict['--sharedmap']
+if argdict.has_key('--featurelist') :
+    featurelist_string = argdict['--featurelist']
+if argdict.has_key('--qoslist') :
+    qoslist_string = argdict['--qoslist']
+
+account_reo = re.compile(r"\S+")
+nodes_reo = re.compile(r"^\d+$")
+duration_reo = re.compile(r"\d+")
+start_reo = re.compile(r"\d\d:\d\d_\d\d/\d\d/\d\d\d\d")
+end_reo = re.compile(r"\d\d:\d\d_\d\d/\d\d/\d\d\d\d")
+email_reo = re.compile(r"[.\w]+@@[\w]+")
+sharedmap_reo = re.compile(r"(\d+#type:[\w_]+#((\w+:\w+\+*)+)+@@*)")
+featurelist_reo = re.compile(r"(([\w_]+),*)+")
+qoslist_reo = re.compile(r"(([\w_]+),*)+")
+start_epoch_reo = re.compile(r"\d+\.?\d*")
+end_epoch_reo = re.compile(r"\d+\.?\d*")
+
+# Check account
+if account_reo.match(account_string) == None :
+    print "Bad account format"
+    sys.exit(1)
+if nodes_reo.match(nodes_string) == None and \
+  max_resource_reo.match(nodes_string) == None :
+    print "Bad nodes format"
+    sys.exit(1)
+if duration_reo.match(duration_string) == None :
+    print "Bad duration format"
+    sys.exit(1)
+if start_reo.match(earliest_start_string) == None \
+  and start_epoch_reo.match(earliest_start_string) == None :
+    print "Bad earliest start time format"
+    sys.exit(1)
+if end_reo.match(latest_end_string) == None \
+  and end_epoch_reo.match(latest_end_string) == None :
+    print "Bad latest end time format"
+    sys.exit(1)
+if email_string != 'NONOTIFY' :
+    if email_reo.match(email_string) == None :
+        print "Bad email format"
+        sys.exit(1)
+if argdict.has_key('--sharedmap') :
+    if sharedmap_reo.match(sharedmap_string) == None :
+        print "Bad sharedmap format"
+        sys.exit(1)
+
+# Convert strings to other forms
+nodes_int = None
+max_resource_int = None
+if argdict.has_key('--nodes') :
+    nodes_mo = nodes_reo.match(nodes_string)
+else :
+    nodes_mo = None
+if argdict.has_key('--maxnodes') :
+    max_resource_mo = nodes_reo.match(maxnodes_string)
+    #nodes_mo = max_resource_mo
+else :
+    max_resource_mo = None
+if nodes_mo != None :
+    nodes_int = string.atoi(nodes_string)
+elif max_resource_mo != None :
+    max_resource_int = string.atoi(maxnodes_string)
+duration_float = string.atof(duration_string)
+if start_reo.match(earliest_start_string) != None :
+    earliest_start_tuple = time.strptime(earliest_start_string,
+      "%H:%M_%m/%d/%Y")
+    earliest_start_list = list(earliest_start_tuple)
+    earliest_start_list[8] = -1
+    earliest_start_tuple = tuple(earliest_start_list)
+    earliest_start_epoch = time.mktime( earliest_start_tuple )
+elif start_epoch_reo.match(earliest_start_string) != None :
+    earliest_start_epoch = float(earliest_start_string)
+else :
+    raise TimeConversionError
+if end_reo.match(latest_end_string) != None :
+    latest_end_tuple = time.strptime(latest_end_string,
+      "%H:%M_%m/%d/%Y")
+    latest_end_list = list(latest_end_tuple)
+    latest_end_list[8] = -1
+    latest_end_tuple = tuple(latest_end_list)
+    latest_end_epoch = time.mktime( latest_end_tuple )
+elif end_epoch_reo.match(latest_end_string) != None :
+    latest_end_epoch = float(latest_end_string)
+else :
+    raise TimeConversionError
+if argdict.has_key('--sharedmap') :
+    requested_resource_list = []
+    node_usage = 'node_shared'
+    reqs = string.split(sharedmap_string,'@@')
+    for req in reqs :
+        sharedlist_list = string.split(req,'#')
+        req_count = string.atol(sharedlist_list[0])
+        type,share_type = string.split(sharedlist_list[1],':')
+        cm_list = string.split(sharedlist_list[2],'+')
+        req_list = []
+        req_dict = {}
+        for cm in cm_list :
+            cm_name,cm_value = string.split(cm,':')
+            req_dict[cm_name] = string.atol(cm_value)
+        req_list.append(req_dict)
+        req_dict_dict = { 'type' : share_type,
+                          'req_list' : req_list }
+        requested_resource_list.append(req_dict_dict)
+else :
+    requested_resource_list = []
+    node_usage = 'node_exclusive'
+
+if argdict.has_key('--featurelist') :
+    features = string.split(featurelist_string, ',')
+else :
+    features = []
+
+if argdict.has_key('--qoslist') :
+    qoss = string.split(qoslist_string, ',')
+else :
+    qoss = []
+
+# Check if account in valid accounts list
+if not account_string in valid_accounts_dict.keys() :
+    limit_key = 'DEFAULT'
+else :
+    limit_key = account_string
+
+# Check if nodes is within limit
+if nodes_int != None and \
+  valid_accounts_dict[limit_key]['nodes_int'] >= 0 and \
+  nodes_int > valid_accounts_dict[limit_key]['nodes_int'] :
+    print "%s exceeds node limit for account %s:%s" % \
+      (nodes_int, account_string, valid_accounts_dict[limit_key]['nodes_int'])
+    sys.exit(1)
+
+# Set max request
+if max_resource_int != None :
+    if valid_accounts_dict[limit_key]['nodes_int'] >= 0 :
+        if max_resource_int > valid_accounts_dict[limit_key]['nodes_int'] :
+            max_resource_int = valid_accounts_dict[limit_key]['nodes_int']
+
+# Check if duration is within limit
+if valid_accounts_dict[limit_key]['seconds_int'] >= 0 and \
+  duration_float > valid_accounts_dict[limit_key]['seconds_int'] :
+    print "%s exceeds duration limit for account %s:%s" % \
+      (duration_float, account_string, valid_accounts_dict[limit_key]['seconds_int'])
+    sys.exit(1)
+
+if valid_accounts_dict[limit_key]['instances_int'] == 0 :
+    print "%s not valid for user settable reservations!" % account_string
+    sys.exit(1)
+
+# Check reslist for user in account and sufficient su to run in reservation
+# This requires duplication of the su formula from jobfilter.  
+if vars(Catalina).has_key('CLASS_PRIORITY_dict') :
+    class_priority_dict = Catalina.CLASS_PRIORITY_dict
+else :
+    print "No CLASS_PRIORITY_DICT_STRING in catalina.config!"
+    sys.exit(1)
+ 
+# set default class for user reservations to express
+if vars(Catalina).has_key('DEFAULT_RES_CLASS') :
+    res_class = Catalina.DEFAULT_RES_CLASS
+else :
+    print "No DEFAULT_RES_CLASS in catalina.config!"
+    sys.exit(1)
+
+# set proc charge to 8
+if vars(Catalina).has_key('DEFAULT_PROC_CHARGE') :
+    PROC_CHARGE = Catalina.DEFAULT_PROC_CHARGE
+else :
+    print "No PROC_CHARGE in catalina.config!"
+    sys.exit(1)
+
+if nodes_int != None :
+    su = nodes_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
+elif max_resource_int != None :
+    su = max_resource_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
+else :
+    raise "SUCalculationFailed"
+
+username_string = pwd.getpwuid(os.getuid())[0]
+
+resargs_tuple = ('username=' + username_string, 'account=' + account_string, 'su=' + "%s" % su)
+
+# This may be insecure...
+return_tuple = forksleep(RESLIST_CMD, resargs_tuple, 30)
+
+if return_tuple[1] == 0 :
+    print "reslist request approved"
+elif return_tuple[1] > 1 or return_tuple[1] < 0 :
+    print "reslist failure"
+else :
+    print "reslist request denied"
+    sys.exit(1)
+
+signal.signal(signal.SIGTSTP,signal.SIG_IGN)
+events_db_handle = Catalina.open_db(Catalina.EVENTS_DB,'write');
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB,'read');
+reservations_db_handle = Catalina.open_db(Catalina.RESERVATIONS_DB,'write');
+resources_db_handle = Catalina.open_ro_db(Catalina.RESOURCE_DB,'read');
+
+# Check for number of existing reservations policy
+# Get existing user set reservations
+res_dict = reservations_db_handle[0]
+existing_reservations = res_dict.values()
+existing_creators_list = \
+map(
+  lambda x :
+      "%s %s" % (x['creator_string'], x['name']),
+  filter(
+    lambda x :
+        x['purpose_type_string'] == 'user_set' and \
+        x['account_string'] == account_string,
+    existing_reservations
+    )
+  )
+if valid_accounts_dict[limit_key]['instances_int'] >= 0 and \
+  len(existing_creators_list) >= valid_accounts_dict[limit_key]['instances_int'] :
+    print "user reservations limit (%s) for account %s exceeded!" % \
+      ( valid_accounts_dict[limit_key]['instances_int'], account_string )
+    print "existing reservations by users: (%s)" % existing_creators_list
+    print "Reservation not created!"
+    Catalina.close_ro_db(resources_db_handle)
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_ro_db(jobs_db_handle)
+    Catalina.close_ro_db(events_db_handle)
+    sys.exit(1)
+
+noderestcode = \
+"""result = 0
+"""
+
+# Check GLOBAL policies, PERCENTAGE_LIMIT and ABSOLUTE_LIMIT
+# According to limits and existing user_set reservations create
+# blocking reservations out to the scheduling horizon
+# create an ordered list of user_set reservation start and end points
+# associate an allocation of nodes to each start and a deallocation
+# of nodes to each end.  For each point, create a blocking
+# reservation until the next point, either start or end.
+# global_dict = { 'window' : <seconds>,
+#                 'PERCENTAGE_LIMIT' : <max percentage of user_set>,
+#                 'ABSOLUTE_LIMIT' : <max seconds of user_set>
+#                 'REQUIREDFEATURESLIST' : <list of node features>
+#               }
+if valid_accounts_dict.has_key('GLOBAL') :
+    global_dict = valid_accounts_dict['GLOBAL']
+    if global_dict.has_key('REQUIREDFEATURESLIST') :
+        requiredfeatures = global_dict['REQUIREDFEATURESLIST']
+        features = features + requiredfeatures
+    # This is a little conservative.  It doesn't give a discount
+    # for shared nodes...
+    if global_dict.has_key('window') :
+        window = global_dict['window']
+    else :
+        window = 24 * 3600
+    #if global_dict.has_key('PERCENTAGE_LIMIT') :
+    #    plimit = global_dict['PERCENTAGE_LIMIT']
+    #else :
+    #    plimit = 100
+    if global_dict.has_key('ABSOLUTE_LIMIT') :
+        alimit_int = global_dict['ABSOLUTE_LIMIT']
+    else :
+        alimit_string = None
+    if nodes_int != None :
+        requested_resource_seconds = nodes_int * duration_float
+        if alimit_int != None :
+            if requested_resource_seconds > alimit_int :
+                print "Requested resource-seconds (%s) exceeds limit (%s)!" % \
+                  (requested_resource_seconds, alimit_int)
+                print "Reservation not created!"
+                Catalina.close_ro_db(resources_db_handle)
+                Catalina.close_db(reservations_db_handle)
+                Catalina.close_db(jobs_db_handle)
+                Catalina.close_ro_db(events_db_handle)
+                sys.exit(1)
+    elif max_resource_int != None :
+        if alimit_int != None :
+            if max_resource_int > alimit_int / duration_float :
+                max_resource_int = alimit_int / duration_float
+                requested_resource_seconds = alimit_int
+            else :
+                requested_resource_seconds = max_resource_int * duration_float
+        else :
+            requested_resource_seconds = 0 * duration_float
+    user_set_res_list = []
+    for res_name in res_dict.keys() :
+        if res_dict[res_name]['purpose_type_string'] == 'user_set' :
+            user_set_res_list.append(res_dict[res_name])
+    if Catalina.DEBUG == 'user_set' :
+        print "len(user_set_res_list) (%s)" % len(user_set_res_list)
+    temp_blocking_reservations_list = get_blocking(
+      duration_float=duration_float,
+      window=window,
+      alimit_int=alimit_int,
+      requested_resource_seconds=requested_resource_seconds,
+      res_list=user_set_res_list
+      )
+
+if len(features) == 0 :
+    noderestcode = None
+else :
+    # noderestcode = \
+    #"""for feature in [%s,%s,%s....] :
+    #    if feature not in input_tuple[0]['properties_list'] :
+    #        return 1
+    #    return 0"""
+    noderestcode = \
+"""result = 0
+if not input_tuple[0].has_key('properties_list') :
+    result = 'NoPropertiesList'
+elif not (input_tuple[0].has_key('State') and input_tuple[0]['State'] in ['Idle', 'Running']) :
+    result = 'NotIdleRunning'
+else :
+    for feature in ["""
+    for featureindex in range(len(features)) :
+        noderestcode = noderestcode + "'" + features[featureindex] + "'"
+        if featureindex < len(features) - 1 :
+            noderestcode = noderestcode + ','
+    noderestcode = noderestcode + \
+"""] :
+        if feature not in input_tuple[0]['properties_list'] :
+            result = 'NoFeature'
+"""
+    if Catalina.DEBUG == 'user_set' :
+        print noderestcode
+
+
+if Catalina.DEBUG == 'user_set' :
+    print "len(temp_blocking_reservations_list) (%s)" % len(temp_blocking_reservations_list)
+for br in temp_blocking_reservations_list :
+    if Catalina.DEBUG == 'user_set' :
+        print "start (%s) (%s) end (%s) (%s)" % ( br['start_time_float'],time.asctime(time.localtime(br['start_time_float'])), br['end_time_float'], time.asctime(time.localtime(br['end_time_float'])))
+
+# If reached here, no policies violated, create the reservation
+affinity_calculation = 'result = 1'
+purpose_type_string = 'user_set'
+mode='real'
+if Catalina.USERNAMESUFFIX != None and Catalina.USERNAMESUFFIX != '@@IGNORE' :
+    restricted_username = username_string + Catalina.USERNAMESUFFIX
+else :
+    restricted_username = username_string
+comment_string = "set by user (%s);" % username_string
+if len(qoss) == 0 :
+    job_restriction = "if input_tuple[0]['user'] == '" + restricted_username + "' : result = 0"
+else :
+    job_restriction = \
+"""result = 0
+if input_tuple[0]['user'] != '""" + restricted_username + """' :
+    result = 'WrongUser'
+elif not input_tuple[0].has_key('QOS') :
+    result = 'NoJobQOS'
+elif not input_tuple[0]['state'] in ['Idle', ] :
+    result = 'NotIdle'
+else :
+    if not input_tuple[0]['QOS'] in ["""
+    for qosindex in range(len(qoss)) :
+        job_restriction = job_restriction + "'" + qoss[qosindex] + "'"
+        if qosindex < len(qoss) - 1 :
+            job_restriction = job_restriction + ','
+    job_restriction = job_restriction + \
+"""] :
+        result = 'NoQOS'
+"""
+    if Catalina.DEBUG == 'user_set' :
+        print job_restriction
+if Catalina.DEBUG == 'user_set' :
+    print "earliest_start (%s)" % (time.asctime(time.localtime(earliest_start_epoch)),)
+
+try :
+    new_res = Catalina.create_reservation(
+      resources_db_handle=resources_db_handle,
+      reservations_db_handle=reservations_db_handle,
+      jobs_db_handle=jobs_db_handle,
+      earliest_start_float=earliest_start_epoch,
+      latest_end_float=latest_end_epoch,
+      resource_amount_int=nodes_int,
+      requested_resource_list=requested_resource_list,
+      node_usage=node_usage,
+      node_restriction=noderestcode,
+      max_resource_int=max_resource_int,
+      duration_float=duration_float,
+      account_string=account_string,
+      affinity_calculation=affinity_calculation,
+      comment_string=comment_string,
+      creator_string=username_string,
+      purpose_type_string = purpose_type_string,
+      blocking_reservations_list=temp_blocking_reservations_list,
+      mode=mode,
+      notify_string = email_string,
+      job_restriction=job_restriction
+      )
+except 'InsufficientNodes' :
+    print "Insufficient nodes found!"
+else :
+    message = """user reservation (%s) created with %d nodes at %s (%s epoch)
+for user (%s) with account (%s) with duration seconds (%s)""" % (
+      new_res['name'], new_res['resource_amount_int'],
+      time.asctime(time.localtime(new_res['start_time_float'])),
+      new_res['start_time_float'], restricted_username, account_string,
+      duration_float )
+    print message
+    subject = "User has set a reservation"
+    if Catalina.__dict__.has_key('USER_SET_RECIPIENT') :
+        recipient = Catalina.USER_SET_RECIPIENT
+    else :
+        recipient = Catalina.MAIL_RECIPIENT
+    Catalina.warn(message, subject, recipient)
+    event = {
+      'name' : 'user_set_res',
+      'res' : copy.deepcopy(new_res),
+    }
+    Catalina.log_event(event, events_db_handle)
+    Catalina.update_object_attribute(
+      'prologuerc',
+      None,
+      new_res,
+      reservations_db_handle
+    )
+    Catalina.update_object_attribute(
+      'epiloguerc',
+      None,
+      new_res,
+      reservations_db_handle
+    )
+
+Catalina.close_ro_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_ro_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)
+@
+
+
+1.39
+log
+@if USER_SET_RECIPIENT not available, use MAIL_RECIPIENT
+@
+text
+@d343 4
+a346 3
+if email_reo.match(email_string) == None :
+    print "Bad email format"
+    sys.exit(1)
+@
+
+
+1.38
+log
+@added user, account, duration to warn message
+@
+text
+@d704 4
+a707 1
+    recipient = Catalina.USER_SET_RECIPIENT
+@
+
+
+1.37
+log
+@interactivebig
+@
+text
+@d696 2
+a697 1
+    message = "user reservation (%s) created with %d nodes at %s (%s epoch)" % (
+d700 2
+a701 1
+      new_res['start_time_float'] )
+@
+
+
+1.36
+log
+@change close order
+@
+text
+@d251 1
+d262 2
+a263 1
+                       [ --featurelist=<comma-delimited list of node features> ]"""
+d309 2
+d320 1
+d417 5
+d627 2
+a628 1
+        
+a642 1
+job_restriction = "if input_tuple[0]['user'] == '" + restricted_username + "' : result = 0"
+d644 23
+d696 1
+a696 1
+    print "user reservation (%s) created with %d nodes at %s (%s epoch)" % (
+d700 4
+d709 12
+@
+
+
+1.35
+log
+@fixed tpe with end_reo.match(earliest_start...
+@
+text
+@d514 1
+a515 1
+    Catalina.close_ro_db(resources_db_handle)
+d517 1
+d562 1
+d564 2
+a565 1
+                Catalina.close_ro_db(resources_db_handle)
+d673 1
+a674 1
+Catalina.close_ro_db(resources_db_handle)
+@
+
+
+1.34
+log
+@log event
+@
+text
+@d212 2
+d374 1
+a374 1
+if end_reo.match(earliest_start_string) != None :
+d631 2
+@
+
+
+1.33
+log
+@fixed bug in featurelist node restriction code
+@
+text
+@d14 1
+d77 2
+a78 2
+            #print "checking discontinuity at (%s) (%s)" % (disc,time.asctime(time.gmtime(disc)))
+            print "start_of_check (%s) (%s)" % (start_of_check,time.asctime(time.gmtime(start_of_check)))
+d140 2
+a141 2
+                    print "rel_res['start_time_float'] (%s)" % time.asctime(time.gmtime(rel_res['start_time_float']))
+                    print "rel_res['end_time_float'] (%s)" % time.asctime(time.gmtime(rel_res['end_time_float']))
+d143 1
+a143 1
+                      start_of_check - window + valid_interval, time.asctime(time.gmtime(start_of_check - window + valid_interval)))
+d145 1
+a145 1
+                      start_of_check, time.asctime(time.gmtime(start_of_check)))
+d171 1
+a171 1
+                print "inc_res['start_time_float'] (%s) (%s)" % (inc_res['start_time_float'],time.asctime(time.gmtime(inc_res['start_time_float'])))
+d180 1
+a180 1
+            print "window_end (%s) (%s)" % (window_end, time.asctime(time.gmtime(window_end)))
+d182 1
+a182 1
+              start_of_check + valid_interval, time.asctime(time.gmtime(start_of_check + window)))
+d184 1
+a184 1
+              start_of_check + window, time.asctime(time.gmtime(start_of_check + window)))
+d188 1
+a188 1
+                  start_of_check - window + valid_interval, time.asctime(time.gmtime(start_of_check - window + valid_interval)))
+d190 1
+a190 1
+                  start_of_check + valid_interval, time.asctime(time.gmtime(start_of_check + valid_interval)))
+d222 1
+a222 1
+                  start_of_check - window + valid_interval, time.asctime(time.gmtime(start_of_check - window + valid_interval)))
+d224 1
+a224 1
+                  start_of_check + valid_interval, time.asctime(time.gmtime(start_of_check + valid_interval)))
+d486 1
+d617 1
+a617 1
+        print "start (%s) (%s) end (%s) (%s)" % ( br['start_time_float'],time.asctime(time.gmtime(br['start_time_float'])), br['end_time_float'], time.asctime(time.gmtime(br['end_time_float'])))
+d660 5
+d669 1
+@
+
+
+1.32
+log
+@FORCETZ
+@
+text
+@d595 1
+a595 1
+elif not (input_tuple[0].has_key('State') and input_tuple[0]['State'] in ['Idle', 'Running'] :
+@
+
+
+1.31
+log
+@fixed bug with max_resource_int and alimit incorrect values
+@
+text
+@d227 4
+a230 1
+print "TZ (%s)" % time.tzname[0]
+@
+
+
+1.30
+log
+@fixed another bug in max nodes
+@
+text
+@d559 5
+a563 2
+            max_resource_int = alimit_int
+            requested_resource_seconds = alimit_int * duration_float
+@
+
+
+1.29
+log
+@fixed bufs with --maxnodes
+@
+text
+@d349 1
+a349 1
+    nodes_mo = max_resource_mo
+d547 16
+a562 8
+    requested_resource_seconds = nodes_int * duration_float
+    if requested_resource_seconds > alimit_int :
+        print "Requested resource-seconds (%s) exceeds limit (%s)!" % \
+          (requested_resource_seconds, alimit_int)
+        print "Reservation not created!"
+        Catalina.close_db(reservations_db_handle)
+        Catalina.close_ro_db(resources_db_handle)
+        sys.exit(1)
+@
+
+
+1.28
+log
+@added Idle,Running for node states
+@
+text
+@d291 1
+d349 1
+@
+
+
+1.27
+log
+@fix GLOBAL policy bug
+@
+text
+@d579 2
+@
+
+
+1.26
+log
+@user long opts, --featurelist support
+@
+text
+@d42 3
+a44 3
+def get_first_window_end(middle,window,alimit_int,requested_resource_seconds,sorted_res_list,slope='positive') :
+    if Catalina.DEBUG == 'user_set' :
+        print "in get_first_window_end, slope (%s)" % slope
+d47 7
+a53 7
+    start = middle - window
+    end = middle + window
+    if Catalina.DEBUG == 'user_set' :
+        print "len(sorted_res_list) (%s)" % len(sorted_res_list)
+    relevant_res_list = sorted_res_list
+    if Catalina.DEBUG == 'user_set' :
+        print "len(relevant_res_list) (%s)" % len(relevant_res_list)
+d59 1
+a59 1
+    for rel_res in relevant_res_list :
+d62 4
+a65 1
+    disc_list.append(Catalina.END_OF_SCHEDULING)
+d67 8
+a74 2
+    previous_disc_interval = 0
+    for disc in disc_list :
+d76 2
+a77 1
+            print "checking discontinuity at (%s) (%s)" % (disc,time.asctime(time.gmtime(disc)))
+d88 15
+a102 4
+        if start <= disc < middle :
+            disc_interval = disc - start
+        elif middle <= disc :
+            disc_interval = disc - middle
+d104 3
+a106 1
+            continue
+d108 1
+a108 1
+            print "disc_interval (%s)" % disc_interval
+d113 1
+a113 1
+        for rel_res in relevant_res_list :
+d118 2
+a119 2
+            if start + previous_disc_interval < rel_res['end_time_float'] <= start + window + previous_disc_interval :
+                if start + disc_interval < rel_res['start_time_float'] <= start + window + disc_interval :
+d127 1
+a127 1
+            elif start + previous_disc_interval <= rel_res['start_time_float'] <= start + window + disc_interval :
+d131 2
+a132 2
+            elif rel_res['start_time_float'] < start + previous_disc_interval and \
+              start + window + disc_interval < rel_res['end_time_float'] :
+d137 8
+d147 2
+d175 1
+a175 1
+            previous_disc_interval = disc_interval
+d180 10
+a189 5
+            print "start + previous_disc_interval (%s) (%s)" % (
+              start + previous_disc_interval, time.asctime(time.gmtime(start + previous_disc_interval)))
+            print "start + window + disc_interval (%s) (%s)" % (
+              start + window + disc_interval, time.asctime(time.gmtime(start + window + disc_interval)))
+        if start + previous_disc_interval <= window_end < start + window + disc_interval :
+d193 3
+a195 1
+                return window_end
+d203 10
+a212 1
+                return window_end
+d220 6
+a225 8
+                print "start + previous_disc_interval (%s) (%s)" % (
+                  start + previous_disc_interval, time.asctime(time.gmtime(start + previous_disc_interval)))
+                print "start + window + disc_interval (%s) (%s)" % (
+                  start + window + disc_interval, time.asctime(time.gmtime(start + window + disc_interval)))
+        previous_dics_interval = disc_interval
+    if Catalina.DEBUG == 'user_set' :
+        print "no window_end found..."
+    return None
+a286 11
+#account_string = sys.argv[1]
+#nodes_string = sys.argv[2]
+#duration_string = sys.argv[3]
+#earliest_start_string = sys.argv[4]
+#latest_end_string = sys.argv[5]
+#email_string = sys.argv[6]
+#if len(sys.argv) > 7 :
+#    sharedmap_string = sys.argv[7]
+#else :
+#    sharedmap_string = ''
+
+a302 1
+#max_resource_reo = re.compile(r"(?P<amount>\d+)MAX")
+a400 18
+    # noderestcode = \
+#"""for feature in [%s,%s,%s....] :
+#    if feature not in input_tuple[0]['properties_list'] :
+#        return 1
+#    return 0"""
+    noderestcode = \
+"""result = 0
+for feature in ["""
+    for featureindex in range(len(features)) :
+        noderestcode = noderestcode + "'" + features[featureindex] + "'"
+        if featureindex < len(features) - 1 :
+            noderestcode = noderestcode + ','
+    noderestcode = noderestcode + \
+"""] :
+    if feature not in input_tuple[0]['properties_list'] :
+        result = 'NoFeature'
+"""
+    print noderestcode
+d402 1
+a402 1
+    noderestcode = None
+d510 4
+d524 1
+a525 12
+res_points_list = []
+for res_name in res_dict.keys() :
+    if res_dict[res_name]['purpose_type_string'] != 'user_set' :
+        continue
+    res_start = res_dict[res_name]['start_time_float']
+    res_end = res_dict[res_name]['end_time_float']
+    amount = res_dict[res_name]['resource_amount_int']
+    res_points_list.append((res_start,amount,'start'))
+    res_points_list.append((res_end,amount,'end'))
+res_points_list.sort()
+temp_blocking_reservations_list = []
+new_blocking_res_number = 0
+d527 4
+a532 1
+    global_dict = valid_accounts_dict['GLOBAL']
+d557 8
+a564 23
+    print "len(user_set_res_list) (%s)" % len(user_set_res_list)
+    # Set up the sorting tuple
+    start_sort_tuple_list = map (
+      lambda x :
+          ( x['start_time_float'], x)
+      , user_set_res_list
+      )
+    start_sort_tuple_list.sort()
+    start_sort_list = map (
+      lambda x :
+          x[1]
+      , start_sort_tuple_list
+      )
+    end_sort_tuple_list = map (
+      lambda x :
+          ( x['end_time_float'], x)
+      , user_set_res_list
+      )
+    end_sort_tuple_list.sort()
+    end_sort_list = map (
+      lambda x :
+          x[1]
+      , end_sort_tuple_list
+d566 24
+d591 1
+a591 57
+        print "len(start_sort_list) (%s)" % len(start_sort_list)
+    for res in start_sort_list :
+        # Find the start of a violation window
+        if Catalina.DEBUG == 'user_set' :
+            print "checking (%s)" % res['name']
+            print "candidate start (%s) end (%s)" % (res['start_time_float'], res['end_time_float'])
+        window_end = get_first_window_end(
+          middle=res['start_time_float'],
+          window=window,
+          alimit_int=alimit_int,
+          requested_resource_seconds=requested_resource_seconds,
+          sorted_res_list=start_sort_list,
+          slope='positive'
+          )
+        if window_end == None :
+            if Catalina.DEBUG == 'user_set' :
+                print "window_end is None for (%s)" % res['name']
+            continue
+        # Find the end of the violation window
+        # Look at each user_set reservation end after window_end.
+        # Does the user_set resource_seconds drop below the alimit?
+        ending_res_list = filter(
+          lambda x,window_end=window_end :
+              window_end - window <= x['end_time_float'],
+          end_sort_list
+          )
+        if Catalina.DEBUG == 'user_set' :
+            print "len(ending_res_list) (%s)" % len(ending_res_list)
+        ending_end = None
+        for ending_res in ending_res_list :
+            if Catalina.DEBUG == 'user_set' :
+                print "candidate end (%s) end (%s)" % (res['start_time_float'], res['end_time_float'])
+            # See if there is a possible end point
+            ending_end = get_first_window_end(
+              middle=ending_res['end_time_float'],
+              window=window,
+              alimit_int=alimit_int,
+              requested_resource_seconds=requested_resource_seconds,
+              sorted_res_list=ending_res_list,
+              slope='negative'
+              )
+            if ending_end != None :
+                break
+        if ending_end == None :
+            if Catalina.DEBUG == 'user_set' :
+                print "ending_end is None"
+            ending_end = Catalina.END_OF_SCHEDULING
+        # Create a blocking reservation from window_end - window to
+        # ending_end.
+        new_blocking_res_number = new_blocking_res_number + 1
+        new_blocking_res_name = 'tempblock' + "%s" % new_blocking_res_number
+        new_blocking_res = Catalina.initialize_reservation(new_blocking_res_name)
+        new_blocking_res['start_time_float'] = window_end - window + duration_float
+        new_blocking_res['end_time_float'] = ending_end - duration_float
+        resources_dict = resources_db_handle[0]
+        new_blocking_res['node_list'] = resources_dict.keys()
+        temp_blocking_reservations_list.append(new_blocking_res)
+a594 1
+#print "temp_blocking_reservations_list (%s)" % temp_blocking_reservations_list
+@
+
+
+1.25
+log
+@smp
+@
+text
+@d13 1
+d185 79
+a263 10
+account_string = sys.argv[1]
+nodes_string = sys.argv[2]
+duration_string = sys.argv[3]
+earliest_start_string = sys.argv[4]
+latest_end_string = sys.argv[5]
+email_string = sys.argv[6]
+if len(sys.argv) > 7 :
+    sharedmap_string = sys.argv[7]
+else :
+    sharedmap_string = ''
+d267 1
+a267 1
+max_resource_reo = re.compile(r"(?P<amount>\d+)MAX")
+d273 1
+d299 1
+a299 1
+if sharedmap_string != '' :
+d307 8
+a314 2
+nodes_mo = nodes_reo.match(nodes_string)
+max_resource_mo = max_resource_reo.match(nodes_string)
+d318 1
+a318 1
+    max_resource_int = string.atoi(max_resource_mo.group('amount'))
+d342 1
+a342 1
+if sharedmap_string != '' :
+d364 23
+d655 1
+@
+
+
+1.24
+log
+@added run_at_risk
+@
+text
+@d190 4
+d195 1
+a195 1
+account_reo = re.compile(r"\w\w\w\d\d\d\d?")
+d202 1
+d228 4
+d265 21
+d417 2
+d553 2
+@
+
+
+1.23
+log
+@removed lower_account_string references
+@
+text
+@d333 1
+d360 1
+d515 3
+a517 2
+      resources_db_handle,
+      reservations_db_handle,
+d543 1
+@
+
+
+1.22
+log
+@removed lowercasing and 6-character truncation of account_string.
+@
+text
+@d268 1
+a268 1
+      (nodes_int, lower_account_string, valid_accounts_dict[limit_key]['nodes_int'])
+d281 1
+a281 1
+      (duration_float, lower_account_string, valid_accounts_dict[limit_key]['seconds_int'])
+d285 1
+a285 1
+    print "%s not valid for user settable reservations!" % lower_account_string
+d319 1
+a319 1
+resargs_tuple = ('username=' + username_string, 'account=' + lower_account_string, 'su=' + "%s" % su)
+d347 1
+a347 1
+        x['account_string'] == lower_account_string,
+d354 1
+a354 1
+      ( valid_accounts_dict[limit_key]['instances_int'], lower_account_string )
+d520 1
+a520 1
+      account_string=lower_account_string,
+@
+
+
+1.21
+log
+@fixed lower_account_string bug
+@
+text
+@d258 1
+a258 8
+firstsix = account_string[:6]
+lowersix = string.lower(firstsix)
+if len(account_string) > 6 :
+    lower_account_string = lowersix + account_string[6]
+else :
+    lower_account_string = lowersix
+
+if not lower_account_string in valid_accounts_dict.keys() :
+d261 1
+a261 1
+    limit_key = lower_account_string
+@
+
+
+1.20
+log
+@added policy for GLOBAL limit
+@
+text
+@d358 2
+a359 2
+if valid_accounts_dict[lower_account_string]['instances_int'] >= 0 and \
+  len(existing_creators_list) >= valid_accounts_dict[lower_account_string]['instances_int'] :
+d361 1
+a361 1
+      ( valid_accounts_dict[lower_account_string]['instances_int'], lower_account_string )
+@
+
+
+1.19
+log
+@changed IGNORE to @@IGNORE
+@
+text
+@d41 138
+d266 3
+a268 1
+    lower_account_string = 'OTHERS'
+d272 2
+a273 2
+  valid_accounts_dict[lower_account_string]['nodes_int'] >= 0 and \
+  nodes_int > valid_accounts_dict[lower_account_string]['nodes_int'] :
+d275 1
+a275 1
+      (nodes_int, lower_account_string, valid_accounts_dict[lower_account_string]['nodes_int'])
+d280 3
+a282 3
+    if valid_accounts_dict[lower_account_string]['nodes_int'] >= 0 :
+        if max_resource_int > valid_accounts_dict[lower_account_string]['nodes_int'] :
+            max_resource_int = valid_accounts_dict[lower_account_string]['nodes_int']
+d285 2
+a286 2
+if valid_accounts_dict[lower_account_string]['seconds_int'] >= 0 and \
+  duration_float > valid_accounts_dict[lower_account_string]['seconds_int'] :
+d288 1
+a288 1
+      (duration_float, lower_account_string, valid_accounts_dict[lower_account_string]['seconds_int'])
+d291 1
+a291 1
+if valid_accounts_dict[lower_account_string]['instances_int'] == 0 :
+d297 41
+a337 43
+# Do this only if the account was found in valid_accounts_dict.
+if lower_account_string != 'OTHERS' :
+    if vars(Catalina).has_key('CLASS_PRIORITY_dict') :
+        class_priority_dict = Catalina.CLASS_PRIORITY_dict
+    else :
+        print "No CLASS_PRIORITY_DICT_STRING in catalina.config!"
+        sys.exit(1)
+     
+    # set default class for user reservations to express
+    if vars(Catalina).has_key('DEFAULT_RES_CLASS') :
+        res_class = Catalina.DEFAULT_RES_CLASS
+    else :
+        print "No DEFAULT_RES_CLASS in catalina.config!"
+        sys.exit(1)
+    
+    # set proc charge to 8
+    if vars(Catalina).has_key('DEFAULT_PROC_CHARGE') :
+        PROC_CHARGE = Catalina.DEFAULT_PROC_CHARGE
+    else :
+        print "No PROC_CHARGE in catalina.config!"
+        sys.exit(1)
+    
+    if nodes_int != None :
+        su = nodes_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
+    elif max_resource_int != None :
+        su = max_resource_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
+    else :
+        raise "SUCalculationFailed"
+    
+    username_string = pwd.getpwuid(os.getuid())[0]
+    
+    resargs_tuple = ('username=' + username_string, 'account=' + lower_account_string, 'su=' + "%s" % su)
+    
+    # This may be insecure...
+    return_tuple = forksleep(RESLIST_CMD, resargs_tuple, 30)
+    
+    if return_tuple[1] == 0 :
+        print "reslist request approved"
+    elif return_tuple[1] > 1 or return_tuple[1] < 0 :
+        print "reslist failure"
+    else :
+        print "reslist request denied"
+        sys.exit(1)
+d368 139
+d532 1
+@
+
+
+1.18
+log
+@ignore USERNAMESUFFIX if == 'IGNORE'
+@
+text
+@d234 1
+a234 1
+if Catalina.USERNAMESUFFIX != None and Catalina.USERNAMESUFFIX != 'IGNORE' :
+@
+
+
+1.17
+log
+@added max_resource_int.
+@
+text
+@d234 1
+a234 1
+if Catalina.USERNAMESUFFIX != None :
+@
+
+
+1.16
+log
+@take start and end in epoch also
+@
+text
+@d54 2
+a55 1
+nodes_reo = re.compile(r"\d+")
+d67 2
+a68 1
+if nodes_reo.match(nodes_string) == None :
+d87 8
+a94 1
+nodes_int = string.atoi(nodes_string)
+d131 2
+a132 1
+if valid_accounts_dict[lower_account_string]['nodes_int'] >= 0 and \
+d138 6
+d179 6
+a184 1
+    su = nodes_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
+d248 1
+@
+
+
+1.15
+log
+@added comma
+@
+text
+@d59 2
+d72 2
+a73 1
+if start_reo.match(earliest_start_string) == None :
+d76 2
+a77 1
+if end_reo.match(latest_end_string) == None :
+d87 22
+a108 12
+earliest_start_tuple = time.strptime(earliest_start_string,
+  "%H:%M_%m/%d/%Y")
+earliest_start_list = list(earliest_start_tuple)
+earliest_start_list[8] = -1
+earliest_start_tuple = tuple(earliest_start_list)
+earliest_start_epoch = time.mktime( earliest_start_tuple )
+latest_end_tuple = time.strptime(latest_end_string,
+  "%H:%M_%m/%d/%Y")
+latest_end_list = list(latest_end_tuple)
+latest_end_list[8] = -1
+latest_end_tuple = tuple(latest_end_list)
+latest_end_epoch = time.mktime( latest_end_tuple )
+@
+
+
+1.14
+log
+@added epoch time info to output
+@
+text
+@d228 1
+a228 1
+      time.asctime(time.localtime(new_res['start_time_float']))
+@
+
+
+1.13
+log
+@dst tag -1
+@
+text
+@d226 1
+a226 1
+    print "user reservation (%s) created with %d nodes at %s" % (
+d228 2
+a229 1
+      time.asctime(time.localtime(new_res['start_time_float'])) )
+@
+
+
+1.12
+log
+@changed username_string to restricted_username
+@
+text
+@d5 1
+d41 2
+d83 12
+a94 4
+earliest_start_epoch = time.mktime(time.strptime(earliest_start_string,
+  "%H:%M_%m/%d/%Y"))
+latest_end_epoch = time.mktime(time.strptime(latest_end_string,
+  "%H:%M_%m/%d/%Y"))
+d228 1
+a228 1
+      time.asctime(time.gmtime(new_res['start_time_float'])) )
+@
+
+
+1.11
+log
+@fixed ':' typo
+@
+text
+@d192 1
+a192 1
+job_restriction = "if input_tuple[0]['user'] == '" + username_string + "' : result = 0"
+@
+
+
+1.10
+log
+@use USERNAMESUFFIX, if it exists
+@
+text
+@d188 1
+a188 1
+if Catalina.USERNAMESUFFIX != None:
+d190 1
+a190 1
+else
+@
+
+
+1.9
+log
+@changed STOP to TSTP
+@
+text
+@d188 4
+@
+
+
+1.8
+log
+@add notification and get_broken_reservations_tuple
+@
+text
+@d155 1
+a155 1
+signal.signal(signal.SIGSTOP,signal.SIG_IGN)
+@
+
+
+1.7
+log
+@timeout if reslist hangs
+@
+text
+@d11 1
+d48 1
+d55 1
+d73 3
+d155 1
+d205 1
+@
+
+
+1.6
+log
+@allow -1 = infinite for nodes and duration
+@
+text
+@d12 27
+d136 1
+a136 1
+    resargs_string = ' username=' + username_string + ' account=' + lower_account_string + ' su=' + "%s" % su
+d139 1
+a139 1
+    reslist_return = os.popen(RESLIST_CMD + resargs_string).readlines()
+d141 1
+a141 1
+    if string.strip(reslist_return[-1:][0]) == 'YES' :
+d143 2
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d64 2
+a65 1
+if nodes_int > valid_accounts_dict[lower_account_string]['nodes_int'] :
+d71 2
+a72 1
+if duration_float > valid_accounts_dict[lower_account_string]['seconds_int'] :
+@
+
+
+1.4
+log
+@added display of users for existing string
+@
+text
+@a13 2
+reservations_db_handle = Catalina.open_db(Catalina.RESERVATIONS_DB,'write');
+resources_db_handle = Catalina.open_ro_db(Catalina.RESOURCE_DB,'read');
+d63 12
+a110 1
+    print "reslist_return (%s)" % reslist_return
+d118 3
+d125 11
+a135 6
+#existing_number = 0
+existing_list = map(lambda x : x['creator_string'], filter(lambda x : x['purpose_type_string'] == 'user_set' and x['account_string'] == lower_account_string, existing_reservations))
+#for reservation in existing_reservations :
+#    if reservation['purpose_type_string'] == 'user_set' and \
+#      reservation['account_string'] == lower_account_string :
+#        existing_number = existing_number + 1
+d137 7
+a143 3
+  len(existing_list) >= valid_accounts_dict[lower_account_string]['instances_int'] :
+    print "user reservations limit for account %s exceeded!" % lower_account_string
+    print "existing reservations by users: (%s)" % existing_list
+@
+
+
+1.3
+log
+@changed lots
+@
+text
+@d113 6
+a118 5
+existing_number = 0
+for reservation in existing_reservations :
+    if reservation['purpose_type_string'] == 'user_set' and \
+      reservation['account_string'] == lower_account_string :
+        existing_number = existing_number + 1
+d120 1
+a120 1
+  existing_number >= valid_accounts_dict[lower_account_string]['instances_int'] :
+d122 1
+@
+
+
+1.2
+log
+@get some stuff from catalina.config
+@
+text
+@d65 1
+a65 1
+if valid_accounts_dict[lower_account_string]['instances'] == 0 :
+d73 1
+a73 1
+    if CLASS_PRIORITY_dict in Catalina.vars():
+d80 1
+a80 1
+    if DEFAULT_RES_CLASS in Catalina.vars():
+d87 2
+a88 2
+    if PROC_CHARGE in Catalina.vars():
+        PROC_CHARGE = Catalina.PROC_CHARGE
+d101 1
+d118 2
+a119 1
+if existing_number >= valid_accounts_dict[lower_account_string]['instances_int'] :
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d12 1
+a12 4
+valid_accounts_dict = {
+  'sys200' : (1,),
+  'use300' : (1,)
+  }
+d63 3
+d70 37
+a106 45
+# This requires duplication of the su formula from jobfilter.  needs to be
+# kept up to date...
+class_priority_dict = {
+  'interactive' : 1.8,
+  'premium' : 1.0,
+  'express' : 1.8,
+  'high' : 1.8,
+  'normal' : 1.0,
+  'low' : 0.5,
+  'standby' : 0.0,
+  'legion' : 0.0,
+  'WH' : 0.0,
+  'Diag' : 0.0,
+  'Diag0' : 0.0,
+  'Diag1' : 0.0,
+  'Diag2' : 0.0,
+  'Diag3' : 0.0,
+  'Diag4' : 0.0,
+  'Diag5' : 0.0,
+  'Diag6' : 0.0,
+  'Diag7' : 0.0,
+  'Diag8' : 0.0,
+  'Diag9' : 0.0
+  }
+ 
+# set default class for user reservations to express
+res_class = 'express'
+
+# set proc charge to 8
+PROC_CHARGE = 8
+
+su = nodes_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
+
+username_string = pwd.getpwuid(os.getuid())[0]
+
+resargs_string = ' username=' + username_string + ' account=' + lower_account_string + ' su=' + "%s" % su
+
+# This may be insecure...
+reslist_return = os.popen(RESLIST_CMD + resargs_string).readlines()
+
+if string.strip(reslist_return[-1:][0]) == 'YES' :
+    print "reslist request approved"
+else :
+    print "reslist request denied"
+    sys.exit(1)
+d117 1
+a117 1
+if existing_number >= valid_accounts_dict[lower_account_string][0] :
+@

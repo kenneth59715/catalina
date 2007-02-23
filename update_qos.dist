@@ -1,0 +1,44 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update QOS of a job
+
+import Catalina
+import sys
+import getopt
+
+usage_string = \
+"""Usage: update_qos --job=<job id>
+               --QOS=<desired QOS>"""
+
+options = ['?', 'help', 'job=', 'QOS=']
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist :
+    argdict[pair[0]] = pair[1]
+    if pair[0] == '--job' :
+        job = pair[1]
+    elif pair[0] == '--QOS' :
+        QOS = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+if not argdict.has_key('--job') or not argdict.has_key('--QOS') :
+    print usage_string
+    sys.exit(1)
+
+JOBS_DB = 'jobs'
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+try :
+    temp_job = Catalina.get_object(job, jobs_db_handle)
+except 'KeyNotFound' :
+    print "Job (%s) not found in Catalina DB" % job
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+Catalina.update_object_attribute( 'QOS', QOS, temp_job, jobs_db_handle )
+
+Catalina.close_db(jobs_db_handle)

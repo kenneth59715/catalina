@@ -1,0 +1,45 @@
+/* utility for getting job info */
+#include <pbs_error.h>
+#include <pbs_ifl.h>
+#include <string.h>
+
+main () {
+	int pbs_connect_id, disconnect_return;
+	extern char *pbs_server;
+	/*struct attrl *attrib;*/
+	struct batch_status *job_status;
+	struct batch_status *temp_job_status;
+	struct attrl *temp_attrib;
+
+	pbs_connect_id = 0;
+	disconnect_return = 0;
+	printf("pbs_server (%i)\n", pbs_server);
+	pbs_connect_id = pbs_connect(pbs_server);
+	if ( pbs_connect_id < 0 ) {
+		exit(pbs_connect_id);
+	}
+	printf("pbs_connect_id (%i)\n", pbs_connect_id);
+	job_status = pbs_statjob(pbs_connect_id, NULL, NULL, NULL);
+	if ( job_status == NULL && pbs_errno != 0 ) {
+		exit(pbs_errno);
+	}
+	if ( job_status != NULL ) {
+		temp_job_status = job_status;
+		while ( temp_job_status != NULL ) {
+			printf("job_name#cat_sep#%s#cat_delim#", temp_job_status->name);
+			temp_attrib = temp_job_status->attribs;
+			while ( temp_attrib != NULL ) {
+				printf("%s#cat_sep#%s#cat_sep#%s#cat_delim#", temp_attrib->name, temp_attrib->resource, temp_attrib->value);
+				temp_attrib = temp_attrib->next;
+			}
+			printf("\n");
+			temp_job_status = temp_job_status->next;
+		}
+	} else {
+		printf("job_status is Null\n");
+	}
+	disconnect_return = pbs_disconnect(pbs_connect_id);
+	printf("disconnect_return (%i)\n", disconnect_return);
+	pbs_statfree(job_status);
+	printf("qj FINISHED\n");
+}

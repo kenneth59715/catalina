@@ -1,0 +1,62 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2004.08.11.17.49.05;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.03.05.17.50.23;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@removed pids from configuration db
+@
+
+
+1.2
+log
+@no TZ
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+
+import Catalina
+import time
+import sys
+import os
+
+CONFIGURATION_DB = Catalina.CONFIGURATION_DB
+
+configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+
+Catalina.delete_object('server_hosts_pidslist_dict',
+  configuration_db_handle)
+
+Catalina.insert_new_object_with_key('server_hosts_pidslist_dict',
+  {}, configuration_db_handle)
+
+Catalina.close_db(configuration_db_handle)
+
+result = 0
+sys.exit(0)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d6 1
+a9 2
+print "TZ (%s)" % time.tzname[0]
+
+@

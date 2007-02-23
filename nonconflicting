@@ -1,0 +1,505 @@
+# This python code fragment can be used to obtain a list of available
+# node reservation windows.
+# It works on input_tuple containing
+# ( <nodes matching requirements>, <the requested reservation>,
+#   <all existing reservations> , Now)
+# returns a list, each element of which is a tuple:
+# ( <window start_time_float>, <window end_time_float>, <node name> )
+# To accomodate cpu and memory scheduling, need to return
+# ( <window start_time_float>, <window end_time_float>, { 'nodename' : <node name>, 'cpu' : <cpus>, 'memory' : <memory>} )
+def sort_by_start(first, second) :
+    if first[0] < second[0] :
+        return -1
+    if first[0] == second[0] :
+        return 0
+    if first[0] > second[0] :
+        return 1
+accepted_nodes = input_tuple[0]
+new_res = input_tuple[1]
+reservations = input_tuple[2]
+resources_db_handle = input_tuple[4]
+resources_dict = resources_db_handle[0]
+end_limit = END_OF_SCHEDULING
+reservation_windows = []
+node_reservations = {}
+if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+    print "len(accepted_nodes) (%s)" % len(accepted_nodes)
+for reservation in reservations :
+    #print "reservation (%s)" % reservation
+    res_id = reservation['name']
+    node_list = reservation['node_list']
+    if reservation.has_key('allocated_dict_list') and reservation['allocated_dict_list'] != None :
+        allocated_dict_list = reservation['allocated_dict_list']
+        if DEBUGJOB != None :
+            print "existing allocated_dict_list (%s)" % (allocated_dict_list,)
+    else :
+        allocated_dict_list = []
+        for node in reservation['node_list'] :
+            allocated_dict_list.append(
+              { 'nodename' : node,
+                'type' : 'node_exclusive',
+                'node' : 1,
+                'cpu' : resources_dict[node]['ConsumableCpus'],
+                'memory' : resources_dict[node]['ConsumableMemory'] }
+              )
+        if DEBUGJOB != None :
+            print "generated allocated_dict_list (%s)" % (allocated_dict_list,)
+    #print "allocated_dict_list (%s)" % (allocated_dict_list,)
+    node_resource_list = filter(lambda x : x.has_key('nodename'), allocated_dict_list)
+    #print "node_resource_list (%s)" % (node_resource_list,)
+    if DEBUGJOB != None :
+        print "node_resource_list (%s)" % (node_resource_list,)
+    start_time_float = reservation['start_time_float']
+    if reservation.has_key('end_time_float') :
+        end_time_float = reservation['end_time_float']
+    else :
+        end_time_float = END_OF_SCHEDULING
+    #print "node_resource_list (%s)" % (node_resource_list,)
+    for index in range(len(node_resource_list)) :
+        node = node_resource_list[index]['nodename']
+        if not resources_dict.has_key(node) or not node in accepted_nodes :
+            continue
+        if not node_reservations.has_key(node) :
+            node_reservations[node] = []
+            if DEBUGJOB != None :
+                print "node_reservations[node].append (%s)" % ( (0.0, 'increment', 
+              { 'nodename' : node, 'type' : 'node_exclusive',
+                'node' : 1,
+                'cpu' : resources_dict[node]['ConsumableCpus'],
+                'memory' : resources_dict[node]['ConsumableMemory']
+              }
+              ),
+              )
+            #print "node (%s)" % node
+            node_reservations[node].append( (0.0, 'add', 
+              { 'nodename' : node, 'type' : 'node_exclusive',
+                'node' : 1,
+                'cpu' : resources_dict[node]['ConsumableCpus'],
+                'memory' : resources_dict[node]['ConsumableMemory']
+              }
+              )
+              )
+            node_reservations[node].append( (END_OF_SCHEDULING, 'decrement', 
+              { 'nodename' : node, 'type' : 'node_exclusive',
+                'node' : 1,
+                'cpu' : resources_dict[node]['ConsumableCpus'],
+                'memory' : resources_dict[node]['ConsumableMemory']
+              } )
+              )
+        if node in accepted_nodes :
+            if node_reservations.has_key(node) :
+                #node_reservations[node].append( (start_time_float, end_time_float, node_resource_list[index]) )
+                node_reservations[node].append( (start_time_float, 'decrement', node_resource_list[index]) )
+                node_reservations[node].append( (end_time_float, 'add', node_resource_list[index]) )
+            else :
+                node_reservations[node] = [ (start_time_float, 'decrement', node_resource_list[index]) ]
+                node_reservations[node].append( (end_time_float, 'add', node_resource_list[index]) )
+            if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                print "appending node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+#potential_start_time_float = new_res['earliest_start_float']
+#if potential_start_time_float == None :
+#    potential_start_time_float = Now_float
+potential_start_time_float = 0.0
+for accepted_node in accepted_nodes :
+    if not node_reservations.has_key(accepted_node) :
+        # node is free, create window for Now_float
+        #reservation_windows.append( (potential_start_time_float, end_limit, accepted_node) )
+        # I need resource_dict here, to see ConsumableCpus and ConsumableMemory for the node...
+        reservation_windows.append( (potential_start_time_float, end_limit, {'nodename' : accepted_node,
+     'node' : 1}) )
+        reservation_windows.append( (potential_start_time_float, end_limit, {'nodename' : accepted_node,
+     'cpu' : resources_dict[accepted_node]['ConsumableCpus']}) )
+        reservation_windows.append( (potential_start_time_float, end_limit, {'nodename' : accepted_node,
+     'memory' : resources_dict[accepted_node]['ConsumableMemory']}) )
+        if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+            print "appending open window (%s, %s, %s)" % (potential_start_time_float, end_limit, accepted_node)
+            print "end_limit is (%s)" % time.asctime(time.localtime(end_limit))
+# sort the reservations for each node, in ascending start_time_float order
+# keep a potential start time for the reservation window.
+# for each reservation, if the start_time_float - the potential start_time_float
+# is less than the duration_float, the window is too small (or negative)
+# instead of doing this by reservation, need to do it by event
+# + or - of cpus or memory.  Create an open window between each event
+for node in node_reservations.keys() :
+    #node_reservations[node].sort(sort_by_start)
+    node_reservations[node].sort()
+    if DEBUGJOB != None :
+        print "node_reservations[node] (%s)" % (node_reservations[node],)
+    #potential_start_time_float = new_res['earliest_start_float']
+    #if potential_start_time_float == None :
+    #    potential_start_time_float = Now_float
+    potential_start_time_float = 0.0
+    freenodes = 0
+    freecpus = 0
+    freememory = 0
+    #for index in range(len(node_reservations[node])) :
+    started_windows_list = []
+    negative_node = 0
+    negative_cpu = 0
+    negative_memory = 0
+    for event in node_reservations[node] :
+        if event[1] == 'add' :
+            if DEBUGJOB != None :
+                print "add event (%s)" % (event,)
+            #if event[2]['type'] == 'node_exclusive' :
+            if event[2].has_key('node') :
+                started_windows_list.append(
+                  ( event[0],
+                    { 'start' : event[0], 'type' : 'node',
+                      'amount' : event[2]['node'], 'state' : 'active'
+                    }
+                  )
+                  )
+            else :
+                started_windows_list.append(
+                  ( event[0],
+                    { 'start' : event[0], 'type' : 'node',
+                      'amount' : 1, 'state' : 'active'
+                    }
+                  )
+                  )
+            started_windows_list.append(
+              ( event[0],
+                { 'start' : event[0], 'type' : 'cpu',
+                  'amount' : event[2]['cpu'], 'state' : 'active'
+                }
+              )
+              )
+            started_windows_list.append(
+              ( event[0],
+                { 'start' : event[0], 'type' : 'memory',
+                  'amount' : event[2]['memory'], 'state' : 'active'
+                }
+              )
+              )
+        if event[1] == 'decrement' :
+            # sort started_windows_list LASTAVAILABLE
+            if DEBUGJOB != None :
+                print "decrement event(%s)" % (event,)
+            #if negative_cpu > 0 :
+            #    # choose early cpu starts first, to get
+            #    # rid of cpu debt
+            #    cpu_started_windows_list.sort()
+            #else :
+            #    cpu_started_windows_list.sort()
+            #    cpu_started_windows_list.reverse()
+            #if negative_memory > 0 :
+            #    # choose early memory starts first, to get
+            #    # rid of memory debt
+            #    memory_started_windows_list.sort()
+            #else :
+            #    memory_started_windows_list.sort()
+            #    memory_started_windows_list.reverse()
+            started_windows_list.sort()
+            started_windows_list.reverse()
+            if DEBUGJOB != None :
+                print "started_windows_list (%s)" % (started_windows_list,)
+            foundnodes = 0
+            foundcpus = 0
+            foundmemory = 0
+            #if event[2]['type'] == 'node_exclusive' :
+            #    neednode = event[2]['node']
+            #else :
+            #    neednode = 0
+            if event[2].has_key('node') :
+                neednodes = event[2]['node']
+            else :
+                neednodes = 1
+            needcpus = event[2]['cpu']
+            needmemory = event[2]['memory']
+            new_windows_list = []
+
+            # pay node debt
+            if negative_node > 0 :
+                if DEBUGJOB != None :
+                    print "negative_node (%s)" % negative_node
+                # choose early node starts first, to get
+                # rid of cpu debt
+                started_windows_list.sort()
+                extranodes = 0
+                for index in range(len(started_windows_list)) :
+                    started_window = started_windows_list[index]
+                    if started_window[1]['state'] == 'inactive' :
+                        continue
+                    if started_window[1]['type'] == 'node' :
+                        if DEBUGJOB != None :
+                            print "started_window (%s)" % (started_window,)
+                        if negative_node == 0 :
+                            break
+                        foundnodes = started_window[1]['amount']
+                        if foundnodes >= negative_node :
+                            extranodes = foundnodes - negative_node
+                            negative_node = 0
+                            if extranodes > 0 :
+                                new_started_window = copy.deepcopy(started_window)
+                                new_started_window[1]['amount'] = extranodes
+                                if DEBUGJOB != None :
+                                    print "new_started_window (%s)" % (new_started_window,)
+                                new_windows_list.append(new_started_window)
+                        else :
+                            negative_node = negative_node - foundnodes
+                        started_windows_list[index][1]['state'] = 'inactive'
+
+            # pay cpu debt
+            if negative_cpu > 0 :
+                if DEBUGJOB != None :
+                    print "negative_cpu (%s)" % negative_cpu
+                # choose early cpu starts first, to get
+                # rid of cpu debt
+                started_windows_list.sort()
+                extracpus = 0
+                for index in range(len(started_windows_list)) :
+                    started_window = started_windows_list[index]
+                    if started_window[1]['state'] == 'inactive' :
+                        continue
+                    if started_window[1]['type'] == 'cpu' :
+                        if DEBUGJOB != None :
+                            print "started_window (%s)" % (started_window,)
+                        if negative_cpu == 0 :
+                            break
+                        foundcpus = started_window[1]['amount']
+                        if foundcpus >= negative_cpu :
+                            extracpus = foundcpus - negative_cpu
+                            negative_cpu = 0
+                            if extracpus > 0 :
+                                new_started_window = copy.deepcopy(started_window)
+                                new_started_window[1]['amount'] = extracpus
+                                if DEBUGJOB != None :
+                                    print "new_started_window (%s)" % (new_started_window,)
+                                new_windows_list.append(new_started_window)
+                        else :
+                            negative_cpu = negative_cpu - foundcpus
+                        started_windows_list[index][1]['state'] = 'inactive'
+
+
+
+
+            # pay memory debt
+            if negative_memory > 0 :
+                if DEBUGJOB != None :
+                    print "negative_memory (%s)" % negative_memory
+                # choose early memory starts first, to get
+                # rid of memory debt
+                started_windows_list.sort()
+                extramemory = 0
+                for index in range(len(started_windows_list)) :
+                    started_window = started_windows_list[index]
+                    if started_window[1]['state'] == 'inactive' :
+                        continue
+                    if started_window[1]['type'] == 'memory' :
+                        if DEBUGJOB != None :
+                            print "started_window (%s)" % (started_window,)
+                        if negative_memory == 0 :
+                            break
+                        foundmemory = started_window[1]['amount']
+                        if foundmemory >= negative_memory :
+                            extramemory = foundmemory - negative_memory
+                            negative_memory = 0
+                            if extramemory > 0 :
+                                new_started_window = copy.deepcopy(started_window)
+                                new_started_window[1]['amount'] = extramemory
+                                if DEBUGJOB != None :
+                                    print "new_started_window (%s)" % (new_started_window,)
+                                new_windows_list.append(new_started_window)
+                        else :
+                            negative_memory = negative_memory - foundmemory
+                        started_windows_list[index][1]['state'] = 'inactive'
+
+
+            started_windows_list = started_windows_list + new_windows_list
+            new_windows_list = []
+            started_windows_list.sort()
+            started_windows_list.reverse()
+            foundnodes = 0
+            foundcpus = 0
+            foundmemory = 0
+            if DEBUGJOB != None :
+                print "negative_node (%s) negative_cpu (%s) negative_memory (%s)" % (negative_node, negative_cpu, negative_memory)
+            for index in range(len(started_windows_list)) :
+                started_window = started_windows_list[index]
+                if DEBUGJOB != None :
+                    print "started_window (%s)" % (started_window,)
+                if started_window[1]['state'] == 'inactive' :
+                    continue
+
+                if started_window[1]['type'] == 'node' :
+                    if foundnodes >= neednodes :
+                        continue
+                    foundnodes = foundnodes + started_window[1]['amount']
+                    if foundnodes >= 0 :
+                        negative_node = 0
+                    if DEBUGJOB != None :
+                        print "foundnodes (%s)" % foundnodes
+                        print "neednodes (%s)" % neednodes
+                    if foundnodes >= neednodes :
+                        extranodes = foundnodes - neednodes
+                        if extranodes > 0 :
+                            new_started_window = copy.deepcopy(started_window)
+                            new_started_window[1]['amount'] = extranodes
+                            if DEBUGJOB != None :
+                                print "new_started_window (%s)" % (new_started_window,)
+                            new_windows_list.append(new_started_window)
+                        if started_window[1]['start'] != event[0] :
+                            if DEBUGJOB != None :
+                                print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                  {'nodename' : node,
+                                   'node' : started_window[1]['amount'] - extranodes}
+                                  ),
+                                  )
+                            reservation_windows.append(
+                              (started_window[1]['start'], event[0],
+                               {'nodename' : node,
+                                'node' : started_window[1]['amount'] - extranodes}
+                              )
+                              )
+                    else :
+                        # remove started_window from list,
+                        # end the previously started windows
+                        # append to reservation_windows
+                        if started_window[1]['amount'] > 0 and foundnodes > 0 :
+                            if started_window[1]['start'] != event[0] :
+                                if DEBUGJOB != None :
+                                    print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                      {'nodename' : node,
+                                       'node' : started_window[1]['amount']}
+                                      ),
+                                      )
+                                reservation_windows.append(
+                                  (started_window[1]['start'], event[0],
+                                   {'nodename' : node,
+                                    'node' : started_window[1]['amount']}
+                                  )
+                                  )
+                    started_windows_list[index][1]['state'] = 'inactive'
+
+
+                if started_window[1]['type'] == 'cpu' :
+                    if foundcpus >= needcpus :
+                        continue
+                    foundcpus = foundcpus + started_window[1]['amount']
+                    if foundcpus >= 0 :
+                        negative_cpu = 0
+                    if DEBUGJOB != None :
+                        print "foundcpus (%s)" % foundcpus
+                        print "needcpus (%s)" % needcpus
+                    if foundcpus >= needcpus :
+                        extracpus = foundcpus - needcpus
+                        if extracpus > 0 :
+                            new_started_window = copy.deepcopy(started_window)
+                            new_started_window[1]['amount'] = extracpus
+                            if DEBUGJOB != None :
+                                print "new_started_window (%s)" % (new_started_window,)
+                            new_windows_list.append(new_started_window)
+                        if started_window[1]['start'] != event[0] :
+                            if DEBUGJOB != None :
+                                print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                  {'nodename' : node,
+                                   'cpu' : started_window[1]['amount'] - extracpus}
+                                  ),
+                                  )
+                            reservation_windows.append(
+                              (started_window[1]['start'], event[0],
+                               {'nodename' : node,
+                                'cpu' : started_window[1]['amount'] - extracpus}
+                              )
+                              )
+                    else :
+                        # remove started_window from list,
+                        # end the previously started windows
+                        # append to reservation_windows
+                        if started_window[1]['amount'] > 0 and foundcpus > 0 :
+                            if started_window[1]['start'] != event[0] :
+                                if DEBUGJOB != None :
+                                    print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                      {'nodename' : node,
+                                       'cpu' : started_window[1]['amount']}
+                                      ),
+                                      )
+                                reservation_windows.append(
+                                  (started_window[1]['start'], event[0],
+                                   {'nodename' : node,
+                                    'cpu' : started_window[1]['amount']}
+                                  )
+                                  )
+                    started_windows_list[index][1]['state'] = 'inactive'
+
+
+
+                if started_window[1]['type'] == 'memory' :
+                    if foundmemory >= needmemory :
+                        continue
+                    foundmemory = foundmemory + started_window[1]['amount']
+                    if foundmemory >= 0 :
+                        negative_memory = 0
+                    if DEBUGJOB != None :
+                        print "foundmemory (%s)" % foundmemory
+                        print "needmemory (%s)" % needmemory
+                    if foundmemory >= needmemory :
+                        extramemory = foundmemory - needmemory
+                        if extramemory > 0 :
+                            new_started_window = copy.deepcopy(started_window)
+                            new_started_window[1]['amount'] = extramemory
+                            if DEBUGJOB != None :
+                                print "new_started_window (%s)" % (new_started_window,)
+                            new_windows_list.append(new_started_window)
+                        if started_window[1]['start'] != event[0] :
+                            if DEBUGJOB != None :
+                                print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                  {'nodename' : node,
+                                   'memory' : started_window[1]['amount'] - extramemory}
+                                  ),
+                                  )
+                            reservation_windows.append(
+                              (started_window[1]['start'], event[0],
+                               {'nodename' : node,
+                                'memory' : started_window[1]['amount'] - extramemory}
+                              )
+                              )
+                    else :
+                        # remove started_window from list,
+                        # end the previously started windows
+                        # append to reservation_windows
+                        if started_window[1]['amount'] > 0 and foundmemory > 0 :
+                            if started_window[1]['start'] != event[0] :
+                                if DEBUGJOB != None :
+                                    print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                      {'nodename' : node,
+                                       'memory' : started_window[1]['amount']}
+                                      ),
+                                      )
+                                reservation_windows.append(
+                                  (started_window[1]['start'], event[0],
+                                   {'nodename' : node,
+                                    'memory' : started_window[1]['amount']}
+                                  )
+                                  )
+                    #del started_windows_list[index]
+                    started_windows_list[index][1]['state'] = 'inactive'
+                if foundnodes >= neednodes and foundcpus >= needcpus and foundmemory >= needmemory :
+                    if DEBUGJOB != None :
+                        print "found nodes and cpus and memory (%s) (%s) (%s)" % (foundnodes, foundcpus, foundmemory)
+                    break
+            if foundnodes < neednodes or foundcpus < needcpus or foundmemory < needmemory :
+                # nodes or cpus or memory are overcommitted.  Create
+                # a negative amount started window.
+                if foundnodes < neednodes :
+                    if DEBUGJOB != None :
+                        print "overcommitted nodes neednodes - foundnodes (%s)" % (neednodes - foundnodes,)
+                    negative_cpu = negative_cpu + needcpus - foundcpus
+                if foundcpus < needcpus :
+                    if DEBUGJOB != None :
+                        print "overcommitted cpus needcpus - foundcpus (%s)" % (needcpus - foundcpus,)
+                    negative_cpu = negative_cpu + needcpus - foundcpus
+                if foundmemory < needmemory :
+                    if DEBUGJOB != None :
+                        print "overcommitted cpus needmemory - foundmemory (%s)" % (needmemory - foundmemory,)
+                    negative_memory = negative_memory + needmemory - foundmemory
+            started_windows_list = started_windows_list + new_windows_list
+    # handle the last window for the node
+reservation_windows.sort()
+if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+    print "checking reservation_windows before returning"
+    for new_window in reservation_windows :
+        print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+          (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+result = reservation_windows

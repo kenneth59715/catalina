@@ -1,0 +1,58 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update preempting/preemptible of a job
+
+import Catalina
+import sys
+import getopt
+
+usage_string = \
+"""Usage: update_preemption --job=<job id>
+               [--preempting=<0|1>] |
+               [--preemptible=<0|1>]"""
+
+options = ['?', 'help', 'job=', 'preempting=', 'preemptible=']
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist :
+    argdict[pair[0]] = pair[1]
+    if pair[0] == '--job' :
+        job = pair[1]
+    elif pair[0] == '--preempting' :
+        preempting = pair[1]
+    elif pair[0] == '--preemptible' :
+        preemptible = pair[1]
+
+if not (argdict.has_key('--preempting') or argdict.has_key('--preemptible')) :
+    print """Neither --preempting nor --preemptible provided.
+No action taken.
+"""
+    print usage_string
+    sys.exit(1)
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+if not argdict.has_key('--job') :
+    print """No --job provided."""
+    print usage_string
+    sys.exit(1)
+
+JOBS_DB = 'jobs'
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+try :
+    temp_job = Catalina.get_object(job, jobs_db_handle)
+except 'KeyNotFound' :
+    print "Job (%s) not found in Catalina DB" % job
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+if argdict.has_key('--preempting') :
+    Catalina.update_object_attribute( 'preempting', preempting, temp_job, jobs_db_handle )
+if argdict.has_key('--preemptible') :
+    Catalina.update_object_attribute( 'preemptible', preemptible, temp_job, jobs_db_handle )
+
+Catalina.close_db(jobs_db_handle)

@@ -1,0 +1,24 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.01.08.19.24.28;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@query configured and available disk
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@@

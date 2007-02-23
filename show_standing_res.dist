@@ -1,0 +1,162 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# LOCK_SH for read, LOCK_EX for write, LOCK_UN to release
+
+import sys
+import getopt
+import string
+import Catalina
+import time
+
+def by_start(first, second) :
+    if first['start_time_float'] < second['start_time_float'] :
+        return -1
+    if first['start_time_float'] == second['start_time_float'] :
+        return 0
+    if first['start_time_float'] > second['start_time_float'] :
+        return 1
+
+def residsort(first, second) :
+    if string.atof(first) < string.atof(second) :
+        return -1
+    if string.atof(first) == string.atof(second) :
+        return 0
+    if string.atof(first) > string.atof(second) :
+        return 1
+
+default_argdict = {
+       '--readable' : None,
+       '--depth' : None,
+       '--latency' : None,
+       '--creator' : None,
+       '--comment' : None,
+  }
+
+options = ['res_id=',
+           'readable',
+           'depth',
+           'start',
+           'end',
+           'duration',
+           'affinity_calculation',
+           'latency',
+           'creator',
+           'nodes',
+           'job_rest',
+           'node_rest',
+           'runID',
+           'purpose',
+           'start_spec',
+           'comment',
+           'overlap_running',
+           'node_list']
+args = sys.argv[1:]
+if len(args) == 0 :
+    argdict = default_argdict
+else :
+    argdict = {}
+    optlist, lineargs = getopt.getopt(args, 'r:a', options)
+    for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+STANDING_RESERVATIONS_DB = Catalina.STANDING_RESERVATIONS_DB
+
+# open the reservations file for read, set exclusive lock
+db_handle = Catalina.open_ro_db(STANDING_RESERVATIONS_DB, 'read')
+
+# read in reservation ids
+res_dict = db_handle[0]
+reservations_list = res_dict.values()
+if argdict.has_key('--res_id') :
+    reservations_list = res_dict[argdict['--res_id']]
+else :
+    reservations_list.sort(by_start)
+nodegrep_dict = {}
+noderes_dict = {}
+overlap_dict = {}
+header_string = ''
+format_string = ''
+header_string = "StandingResID "
+format_string = "%13s "
+if argdict.has_key('--nodes') :
+    header_string = header_string + "Nodes "
+    format_string = format_string + "%5s "
+if argdict.has_key('--runID') :
+    header_string = header_string + "RunID               "
+    format_string = format_string + "%20s "
+if argdict.has_key('--purpose') :
+    header_string = header_string + "Purpose              "
+    format_string = format_string + "%20s "
+if argdict.has_key('--duration') :
+    header_string = header_string + "Duration   "
+    format_string = format_string + "%10s "
+if argdict.has_key('--depth') :
+    header_string = header_string + "Depth "
+    format_string = format_string + "%4s  "
+if argdict.has_key('--latency') :
+    header_string = header_string + "Latency    "
+    format_string = format_string + "%10s "
+if argdict.has_key('--comment') :
+    header_string = header_string + "Comment "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--affinity_calculation') :
+    header_string = header_string + "Affinity "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--node_list') :
+    header_string = header_string + "NodeList "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--job_rest') :
+    header_string = header_string + "JobRestriction "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--node_rest') :
+    header_string = header_string + "NodeRestriction "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--start_spec') :
+    header_string = header_string + "StartSpec                 "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--overlap_running') :
+    header_string = header_string + "Overlap_Running "
+    format_string = format_string + "%15s "
+if argdict.has_key('--creator') :
+    header_string = header_string + "Creator "
+    format_string = format_string + "(%s) "
+
+if not argdict.has_key('--nodegrep') and \
+  not argdict.has_key('--overlap') :
+    print header_string
+
+for res in reservations_list :
+    print_list = []
+    print_list.append(res['name'])
+    if argdict.has_key('--nodes') :
+        print_list.append(res['resource_amount_int'])
+    if argdict.has_key('--runID') :
+        print_list.append(res['job_runID'])
+    if argdict.has_key('--purpose') :
+        print_list.append(res['purpose_type_string'])
+    if argdict.has_key('--duration') :
+        print_list.append(res['duration_float'])
+    if argdict.has_key('--depth') :
+        print_list.append(res['depth'])
+    if argdict.has_key('--latency') :
+        print_list.append(res['latency_float'])
+    if argdict.has_key('--comment') :
+        print_list.append(res['comment_string'])
+    if argdict.has_key('--affinity_calculation') :
+        print_list.append(res['affinity_calculation'])
+    if argdict.has_key('--node_list') :
+        print_list.append(res['node_list'])
+    if argdict.has_key('--job_rest') :
+        print_list.append(res['job_restriction'])
+    if argdict.has_key('--node_rest') :
+        print_list.append(res['node_restriction'])
+    if argdict.has_key('--start_spec') :
+        print_list.append(res['start_spec_string'])
+    if argdict.has_key('--overlap_running') :
+        print_list.append(res['overlap_running_int'])
+    if argdict.has_key('--creator') :
+        print_list.append(res['creator_string'])
+    print_tuple = tuple(print_list)
+    print format_string % print_tuple
+
+# release lock, close the file
+Catalina.close_ro_db(db_handle)

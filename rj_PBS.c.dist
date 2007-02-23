@@ -1,0 +1,45 @@
+/* utility for running job */
+/* runjob jobname master-node:other-node:other-node...*/
+#include <pbs_error.h>
+#include <pbs_ifl.h>
+#include <string.h>
+#include <time.h>
+
+main (int argc, char *argv[]) {
+	int pbs_connect_id, rc, argindex;
+	extern char *pbs_server;
+	struct attrl comment_attrib;
+	struct attrl neednodes_attrib;
+        char start_string[50];
+	time_t Now;
+
+	pbs_connect_id = 0;
+	rc = 0;
+	printf("pbs_server (%i)\n", pbs_server);
+	pbs_connect_id = pbs_connect(pbs_server);
+	printf("pbs_connect_id (%i)\n", pbs_connect_id);
+	neednodes_attrib.name = ATTR_l;
+	neednodes_attrib.resource = "neednodes";
+	neednodes_attrib.value = argv[2];
+	neednodes_attrib.next = NULL;
+	rc = pbs_alterjob(pbs_connect_id, argv[1], &neednodes_attrib, "");
+	if ( rc != 0 ) {
+		printf("pbs_alterjob failed argv[1] (%s) argv[2] (%s)\n", argv[1], argv[2]);
+	}
+	/*rc = pbs_asyrunjob(pbs_connect_id, argv[1], argv[2], NULL);*/
+	rc = pbs_asyrunjob(pbs_connect_id, argv[1], NULL, NULL);
+	if ( rc != 0 ) {
+		printf("argv[1] (%s) argv[2] (%s)\n", argv[1], argv[2]);
+	} else {
+		time(&Now);
+		comment_attrib.name = ATTR_comment;
+		comment_attrib.resource = NULL;
+		sprintf(start_string, "Catalina job start time (%d)",  (int) Now);
+		comment_attrib.value = start_string;
+		comment_attrib.next = NULL;
+		pbs_alterjob(pbs_connect_id, argv[1], &comment_attrib, "");
+	}
+	printf("rc from pbs_asyrunjob is >%i<\n", rc);
+	rc = pbs_disconnect(pbs_connect_id);
+	printf("rc (%i)\n", rc);
+}

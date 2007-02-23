@@ -1,0 +1,394 @@
+[main]
+# Example project account checking script.  Only used by
+# user_set_res.py.  Set this to the path of an executable
+# that will take arguments:
+# username=<username of job owner> account=<charge account> su=<charge units integer>
+# return 1 for rejection.
+RESLIST_CMD=___RESLIST_CMD_PLACEHOLDER___
+
+# Force TZ to something.  This may help keep set_res requests
+# consistent, but will override the environment TZ.
+
+FORCETZ=___FORCETZ_PLACEHOLDER___
+
+# Settings for warning emails
+MAIL_RECIPIENT=___MAIL_RECIPIENT_PLACEHOLDER___
+USER_SET_RECIPIENT=___USER_SET_RECIPIENT_PLACEHOLDER___
+MAILX=___MAILX_PLACEHOLDER___
+ECHO=___ECHO_PLACEHOLDER___
+LOGGER=___LOGGER_PLACEHOLDER___
+LOGGER_FACILITY=___LOGGER_FACILITY_PLACEHOLDER___
+PROLOGUE_RES=___PROLOGUE_RES_PLACEHOLDER___
+EPILOGUE_RES=___EPILOGUE_RES_PLACEHOLDER___
+
+# Owner and group for lock files
+CAT_LOCK_OWNER=___CAT_LOCK_OWNER_PLACEHOLDER___
+CAT_LOCK_GROUP=___CAT_LOCK_GROUP_PLACEHOLDER___
+
+# Server mode. 'NORMAL' means really cancel and run
+# jobs, otherwise, just log.
+# 'SIM' means get job and resource info from sim commands instead
+# of from a real resource manager.
+SERVERMODE=TEST
+
+# Feature 669
+# Allows administrator to set the interval between reload_job_resource_lists()
+# function call. minimum is 1. Greater value speeds up Catalina in the expense
+# of accuracy (especially on DS)
+MACHINE_REFRESH_INTERVAL=1
+
+# For simulation mode, query job command and query machine command
+QJ_SIM=___INSTALLDIR_PLACEHOLDER___/qj_sim
+QM_SIM=___INSTALLDIR_PLACEHOLDER___/qm_sim
+TIME_SIM=___INSTALLDIR_PLACEHOLDER___/time_sim
+RJ_SIM=___INSTALLDIR_PLACEHOLDER___/rj_sim
+CJ_SIM=___INSTALLDIR_PLACEHOLDER___/cj_sim
+
+DEBUG=None
+# Catalina install directory
+HOMEDIR=___INSTALLDIR_PLACEHOLDER___
+# Catalina database directory
+DBDIR=___DBDIR_PLACEHOLDER___
+# Large directory, for storing archive db files
+ARCHIVE_DIR=___ARCHIVEDIR_PLACEHOLDER___
+# this config file
+CONFIGFILE=%(HOMEDIR)s/catalina.config
+
+# Database information
+CONFIGURATION_DB=configuration
+CONFIGURED_RESOURCES_DB=configured_resources
+EVENTS_DB=events
+JOBS_DB=jobs
+OLD_JOBS_DB=old_jobs
+OLD_RESERVATIONS_DB=old_reservations
+RESERVATIONS_DB=reservations
+RESOURCE_DB=resource
+STANDING_RESERVATIONS_DB=standing_reservations
+LOCK_SUFFIX=.lock
+
+# Policy
+# ON = enforce max jobs running per user.  All other queued
+# jobs for that user go into non-queued
+# need to test these for use in the code...
+MAXJOBPERUSERPOLICY=OFF
+# number of running jobs to allow each user
+MAXJOBPERUSERCOUNT=4
+# ON = enforce max jobs queued per user.  All other non-running
+# jobs go in to non-queued
+MAXJOBQUEUEDPERUSERPOLICY=OFF
+# number of queued jobs to allow each user
+MAXJOBQUEUEDPERUSERCOUNT=4
+# ON = enforce max jobs running per account.  All other queued
+# jobs for that account go into non-queued
+MAXJOBPERACCOUNTPOLICY=OFF
+# number of running jobs to allow each account
+MAXJOBPERACCOUNTCOUNT=4
+# ON = enforce max jobs queued per account.  All other non-running
+# jobs go in to non-queued
+MAXJOBQUEUEDPERACCOUNTPOLICY=OFF
+# number of queued jobs to allow each user
+MAXJOBQUEUEDPERACCOUNTCOUNT=4
+# ON = check for eligible queued jobs in SubmitTime order,
+# rather than priority order.
+# This may result in situations where later higher priority
+# jobs are kept waiting.  
+FIFOSCREEN=OFF
+# ON = enforce requirements check.  If job does not find any
+# resources, job goes into non-queued.
+BADRESOURCELIST=ON
+# seconds to pad reservations with.  job reservations are longer
+# than actual requested wallclock limit by this amount.
+FUDGE_FACTOR=300.0
+# seconds job may exceed its wall clock limit
+MAXJOBOVERRUN=120.0
+# global max priority value.  Jobs may not have a priority larger
+# than this.
+MAXPRIORITY=10000000000000000000000
+# sort code for choosing among possible nodes
+# last_available will choose the nodes that free up at
+# the latest time.  This preserves the largest backfill window.
+NODE_SORT_POLICY_CODE_FILE=%(HOMEDIR)s/last_available
+# number of jobs to set reservation for.  None means
+# set for all eligible jobs
+RESERVATION_DEPTH=None
+# max bytes for each db file before archiving
+DBSIZE_LIMIT=5000000
+# Latest time considered for scheduling, in seconds from now.
+SCHEDULING_WINDOW = 7776000.0
+# Timeouts for job start and down nodes in seconds
+JOB_START_TIME_LIMIT=___JOB_START_TIME_LIMIT_PLACEHOLDER___
+DB_WARN_LIMIT=___DB_WARN_LIMIT_PLACEHOLDER___
+JOB_START_WARN_LIMIT=___JOB_START_WARN_LIMIT_PLACEHOLDER___
+RESOURCE_DOWN_TIME_LIMIT=___RESOURCE_DOWN_TIME_LIMIT_PLACEHOLDER___
+LOST_JOB_LIMIT=___LOST_JOB_LIMIT_PLACEHOLDER___
+LOST_JOB_WARN=___LOST_JOB_WARN_PLACEHOLDER___
+#Recommended for PBS (PBS does not keep info of completed jobs):
+#JOB_START_TIME_LIMIT=5.0
+#DB_WARN_LIMIT=3
+#JOB_START_WARN_LIMIT=3
+#RESOURCE_DOWN_TIME_LIMIT=900.0
+#LOST_JOB_LIMIT=0
+#LOST_JOB_WARN=FALSE
+
+# Priority
+# Priority Calculation:
+#(time in seconds, resource in nodes)
+#priority =
+#resource_number      * Resource_Weight                    +
+#local_admin_float    * Local_Admin_Weight                 +
+#local_user_float     * Local_User_Weight                  +
+#expansion_factor     * Expansion_Factor_Weight            +
+#queue_wait_time      * System_Queue_Time_Weight           +
+#submit_wait_time     * Submit_Time_Weight                 +
+#wall_clock_time      * Wall_Time_Weight                   +
+#QOS_priority         * QOS_Priority_Weight                +
+#QOS_target_xf_value  * QOS_Target_Expansion_Factor_Weight +
+#QOS_target_qwt_value * QOS_Target_Queue_Wait_Time_Weight
+
+# Feature 582 Fairshare penalty
+# penalize users who have been using a lot of resources during the past week
+FAIRSHARE_BONUS_WEIGHT=0
+
+RESOURCE_WEIGHT=250.0
+EXPANSION_FACTOR_WEIGHT=1.0
+SYSTEM_QUEUE_TIME_WEIGHT=0.030
+SUBMIT_TIME_WEIGHT=0.0000001
+LOCAL_USER_WEIGHT=0.0
+LOCAL_ADMIN_WEIGHT=0.004
+WALL_TIME_WEIGHT=0.0
+QOS_PRIORITY_WEIGHT = 425.0
+QOS_TARGET_EXPANSION_FACTOR_WEIGHT = 1.0
+QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT = 1.0
+# each QOS has a starting priority value
+QOS_PRIORITY_STRING = { '0' : 0L,
+                 '1' : 10L,
+                 '2' : 20L,
+                 '3' : 30L,
+                 '4' : 40L,
+                 '5' : 50L,
+                 '6' : 10000000000L,
+                 '7' : 40L,
+                 '8' : 40L,
+                 '9' : 10000000000000000L,
+                '10' : 5L,
+                '11' : 10000000000L
+                }
+# each QOS has a max priority
+QOS_MAX_PRIORITY_STRING = { '0' : 100000000L,
+                 '1' : 1000000000L,
+                 '2' : 1000000000L,
+                 '3' : 1000000000L,
+                 '4' : 1000000000L,
+                 '5' : 1000000000L,
+                 '6' : 1000000000000000L,
+                 '7' : 10000000000L,
+                 '8' : 10000000000L,
+                 '9' : 10000000000000000000L,
+                '10' : 1000000000000000L,
+                '11' : 100000000000000L
+                }
+# each QOS may have a target expansion factor
+QOS_TARGETXF_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : None,
+                 '8' : None,
+                 '9' : None,
+                '10' : None,
+                '11' : None
+                }
+# each QOS may have a target queue wait time
+QOS_TARGETQT_STRING = { '0' : None,
+                 '1' : 864000,
+                 '2' : 345600,
+                 '3' : 172800,
+                 '4' : 172800,
+                 '5' : 172800,
+                 '6' : None,
+                 '7' : 172800,
+                 '8' : None,
+                 '9' : None,
+                '10' : None
+                }
+# each QOS may have a max running jobs per user policy
+QOS_MAXJOBPERUSERPOLICY_STRING = { '0' : 6,
+                 '1' : 6,
+                 '2' : 6,
+                 '3' : 6,
+                 '4' : 6,
+                 '5' : 6,
+                 '6' : 6,
+                 '7' : 6,
+                 '8' : 6,
+                 '9' : None,
+                '10' : 6,
+                '11' : 6
+                }
+# each QOS may have a max queued jobs per user policy
+QOS_MAXJOBQUEUEDPERUSERPOLICY_STRING = { '0' : 6,
+                 '1' : 6,
+                 '2' : 6,
+                 '3' : 6,
+                 '4' : 6,
+                 '5' : 6,
+                 '6' : 6,
+                 '7' : 6,
+                 '8' : 6,
+                 '9' : None,
+                '10' : 6,
+                '11' : 6
+                }
+
+# each QOS may have a max running jobs per account policy
+QOS_MAXJOBPERACCOUNTPOLICY_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : None,
+                 '8' : None,
+                 '9' : None,
+                '10' : None,
+                '11' : 1
+                }
+# each QOS may have a max queued jobs per account policy
+QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : None,
+                 '8' : None,
+                 '9' : None,
+                '10' : None,
+                '11' : 1
+                }
+# each QOS may have a max queued node-seconds per account policy
+QOS_MAXNODESECQUEUEDPERACCOUNTPOLICY_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : None,
+                 '8' : None,
+                 '9' : None,
+                '10' : None,
+                '11' : 2764800
+                }
+# each QOS may have a max running node-seconds per account policy
+QOS_MAXNODESECRUNNINGPERACCOUNTPOLICY_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : None,
+                 '8' : None,
+                 '9' : None,
+                '10' : None,
+                '11' : 2764800
+                }
+
+# for PBS
+# used by testres9.py for test job name
+#SUBMITCMD = /usr/local/bin/qsub -q standard
+#CANCELCMD = /usr/local/bin/qsub -q standard
+#TEST_JOB = testjob.PBS.1
+#USERNAMESUFFIX = @yylogin
+# Translate PBS node states to Catalina node states
+#RM_TO_CAT_RESOURCE_DICT_STRING = {
+#  'free' : 'Idle',
+#  'Idle' : 'Idle',
+#  'down' : 'Down',
+#  'Down' : 'Down',
+#  'state-unknown,down' : 'Down',
+#  'offline' : 'Down',
+#  'busy' : 'Running',
+#  'Running' : 'Running',
+#  'job-exclusive' : 'Running',
+#  'job-sharing' : 'Running'
+#  }
+# Translate PBS job states to Catalina node states
+#RM_TO_CAT_JOB_DICT_STRING = {
+#  'qtime' : 'Submit_Time',
+#  'R' : 'Running',
+#  'E' : 'Running',
+#  'H' : 'Hold',
+#  'Q' : 'Idle',
+#  'S' : 'Hold',
+#  'T' : 'Hold',
+#  'W' : 'Hold'
+#  }
+
+# for LL
+SUBMITCMD=___SUBMITCMD_PLACEHOLDER___
+CANCELCMD=___CANCELCMD_PLACEHOLDER___
+TEST_JOB = ___TEST_JOB_PLACEHOLDER___
+TEST_JOB_RUN_AT_RISK = ___TEST_JOB_RUN_AT_RISK_PLACEHOLDER___
+USERNAMESUFFIX = ___USERNAMESUFFIX_PLACEHOLDER___
+LOADL_ADMIN_FILE=___LOADL_ADMIN_FILE_PLACEHOLDER___
+# Translate LoadL node states to Catalina node states
+RM_TO_CAT_RESOURCE_DICT_STRING = ___RM_TO_CAT_RESOURCE_DICT_STRING_PLACEHOLDER___
+# Translate LoadL job states to Catalina node states
+RM_TO_CAT_JOB_DICT_STRING = ___RM_TO_CAT_JOB_DICT_STRING_PLACEHOLDER___
+
+# Used by show_bf and show_q to make assumptions.
+DEFAULT_JOB_CLASS = ___DEFAULT_JOB_CLASS_PLACEHOLDER___
+# code used by Catalina to screen nodes.  If result = 0,
+# node is accepted.
+NODERESTCODE_STRING = ___NODERESTCODE_STRING_PLACEHOLDER___
+# User-settable limits dictionary
+# should set number of instances, nodes/instance, seconds/instance
+# the values can be an integer, with negative meaning no limit
+USER_SET_LIMITS_DICT_STRING = {
+  'DEFAULT' : { 'instances_int' : 2,
+                   'nodes_int' : 4,
+                 'seconds_int' : 3600
+             },
+  'sys200' : { 'instances_int' : -1,
+                   'nodes_int' : -1,
+                 'seconds_int' : -1
+             },
+  'use300' : { 'instances_int' : 4,
+                   'nodes_int' : 32,
+                 'seconds_int' : 64800 },
+  'GLOBAL' : { 'window' : 86400,
+       'ABSOLUTE_LIMIT' : 115200,
+       'REQUIREDFEATURESLIST' : [] }
+  }
+
+# used by user_set_res to compute potential cost of
+# a user reservation
+CLASS_PRIORITY_DICT_STRING = ___CLASS_PRIORITY_DICT_STRING_STRING_PLACEHOLDER___
+
+# user_set_res uses this class to compute charge
+DEFAULT_RES_CLASS = ___DEFAULT_RES_CLASS_PLACEHOLDER___
+# user_set_res uses this proc count to compute charge
+DEFAULT_PROC_CHARGE = ___DEFAULT_PROC_CHARGE_PLACEHOLDER___
+
+# Test config info
+TEST_SHORTPOOL_AMOUNT = 2
+TEST_SHORTPOOL_SPEC = 0 0 * * 0,1,2,3,4
+TEST_SHORTPOOL_DURATION = 43200
+TEST_STANDING_AMOUNT = 2
+TEST_STANDING_SPEC = 0 12 * * 0,1,2,3,4
+TEST_STANDING_DURATION = 43200
+TEST_ACCOUNT_STRING = ___TESTACCOUNT_PLACEHOLDER___
+TEST_EMAIL = ___TEST_MAIL_RECIPIENT_PLACEHOLDER___
+TEST_USERRES_AMOUNT = 2
+TEST_USERRES_MOD_AMOUNT = 2
+TEST_USERRES_END = 1209600
+TEST_BINDING_AMOUNT = 2
+TEST_NOEARLIEST_AMOUNT = 2
+

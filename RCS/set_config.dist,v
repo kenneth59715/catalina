@@ -1,0 +1,51 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2001.09.12.22.29.05;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@change configuration info
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# script to update the resource database
+
+import Catalina
+import getopt
+import sys
+import string
+
+CONFIGURATION_DB = 'configuration'
+
+options = ['key_value=']
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+if not argdict.has_key('--key_value') :
+    print "'--key_value=<key>:<value>' required..."
+    sys.exit(1)
+
+(key, value) = string.split(argdict['--key_value'], ':')
+
+configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+configuration_dict = configuration_db_handle[0]
+
+configuration_dict[key] = value
+Catalina.close_db(configuration_db_handle)
+@

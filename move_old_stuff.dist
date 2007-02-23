@@ -1,0 +1,26 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to move old jobs and reservations to old dbs
+
+import Catalina
+
+EVENTS_DB = 'events'
+JOBS_DB = 'jobs'
+OLD_JOBS_DB = 'old_jobs'
+OLD_RESERVATIONS_DB = 'old_reservations'
+RESERVATIONS_DB = 'reservations'
+
+events_db_handle = Catalina.open_db(EVENTS_DB,'write')
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+old_jobs_db_handle = Catalina.open_db(OLD_JOBS_DB,'write')
+old_reservations_db_handle = Catalina.open_db(OLD_RESERVATIONS_DB,'write')
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+
+Catalina.move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle )
+Catalina.move_old_reservations(events_db_handle, reservations_db_handle, old_reservations_db_handle )
+
+
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(old_reservations_db_handle)
+Catalina.close_db(old_jobs_db_handle)
+Catalina.close_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)

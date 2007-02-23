@@ -1,0 +1,12 @@
+#!/usr/bin/ksh
+#@ output = LL_out.$(jobid)
+#@ error = LL_err.$(jobid)
+#@ job_type = parallel
+#@ wall_clock_limit = 00:10:00
+#@ class = ___DEFAULT_JOB_CLASS_PLACEHOLDER___
+#@ account_no = ___TESTACCOUNT_PLACEHOLDER___
+#@ node = 2
+#@ tasks_per_node = 1
+#@ comment = Catalina_preempting = 1 ; Catalina_preemptible = 1 ; Catalina_local_admin_priority = 92091 ; Catalina_local_user_priority = -100 ; Catalina_res_bind = testholder ; QOS = ___DEFAULT_JOB_QOS_PLACEHOLDER___ ;
+#@ queue
+poe sleep 600

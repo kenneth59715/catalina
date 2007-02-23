@@ -1,0 +1,15 @@
+#!/bin/bash
+
+## This script exists because none of the tools on
+## datastar (LoadLeveler or Catalina) hold information
+## to clasify the available queues into P655 and/or P690 
+
+## This script also should provide the same options
+## and interface as provided by the production showq
+## script on DataStar, so pass in any arguments given
+## by the user and set the queue names to P690 queues.
+
+## Time sensitive note : this script might require 
+## an update if the names of the P690 queues change
+ 
+___HOMEDIR_PLACEHOLDER___/show_q $* --queue=normal32,high32

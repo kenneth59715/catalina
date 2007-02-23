@@ -1,0 +1,482 @@
+head	1.12;
+access;
+symbols;
+locks
+	mmargo:1.12; strict;
+comment	@# @;
+
+
+1.12
+date	2006.08.11.22.43.40;	author mmargo;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2006.06.07.23.50.00;	author mmargo;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2003.05.08.16.07.27;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2003.04.14.23.25.37;	author kenneth;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2003.04.09.16.51.40;	author kenneth;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2003.01.25.00.37.07;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2003.01.25.00.18.04;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2003.01.02.19.16.22;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2002.12.19.22.08.45;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.12.16.21.05.17;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.12.16.20.20.44;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.22.15.14;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@readme
+@
+
+
+1.12
+log
+@reflected new changes on settings
+mmargo
+@
+text
+@# Someone needs to set this up for autoconf and automake
+# Only supports LoadL or PBS, for now.
+Prerequisites:
+
+1.  LoadLeveler v2.2 or OpenPBS
+
+2. Python v2.4.1+
+
+To extract dist.tar:
+cd <temp dir>
+tar xf <path to dist.tar file>
+cd catalina
+
+There are two ways to setup Catalina. 
+A. Interactive setup
+B. Manual setup
+
+A is recommended. 
+
+
+A. Interactive setup
+====================
+
+
+1.  Execute configure.sh with no argument
+    ./configure.sh
+
+	<an interactive script will run asking for the following config >
+*****************************************************************
+# PBS or LL
+export RESOURCEMANAGER=PBS
+# Cluster name (DS or TG)
+export CLUSTER_NAME=DS
+# Resource manager library path
+export CATALINA_RMLIBDIRS=-L/usr/local/lib
+# Resource manager include path
+export CATALINA_RMINCDIRS=-I/usr/local/include
+# owner of Catalina files
+export CATALINA_CATOWNER=kenneth
+# group of Catalina files
+export CATALINA_CATLOCKGROUP=ops100
+# directory in which to place man pages
+export CATALINA_MANPATH=/home/sdsc/kenneth/catalina/man
+# directory in which to install executables
+export CATALINA_INSTALLDIR=/home/sdsc/kenneth/catalina/install
+# directory in which to store database files
+export CATALINA_DBDIR=/home/sdsc/kenneth/catalina/db
+# directory in which to store archived logs
+export CATALINA_ARCHIVEDIR=/home/sdsc/kenneth/catalina/archive
+# C compiler
+export CC=/usr/bin/gcc
+# Python interpreter
+export CATALINA_PYTHONPATH=/paci/loadl/diag/python152/bin/python
+# permissions for user-settable reservation commands
+export CATALINA_CATUSERPERMS=2755
+# default job class or queue
+export CATALINA_DEFAULT_JOB_CLASS=standard
+# If LL, location of LoadLeveler admin file
+export CATALINA_LOADL_ADMIN_FILE=/paci/loadl/LoadL_admin.AIX5L
+# If PBS, name of host from which jobs will be submitted and reservations set
+# If desired, this can be set to IGNORE.  In that case, Catalina will not
+# consider the <@@hostname> part of the jobowner field.  All users will be
+# considered equivalent, regardless of host.
+#export CATALINA_PBS_SUBMITHOST=ctf01
+export CATALINA_PBS_SUBMITHOST=IGNORE
+******************************************************************* 
+
+Note:
+  optionally the user can tell this script to dump the settings to a file
+  this is recommended. With this source file, you don't have to restart
+  configuration from the beginning if the install fail in any case
+ 
+Note :
+  This script will set the necessary environment variables, run
+  conf.sh ; make ; make install at the user prompt.
+
+Note :
+  If the install fails for any reason, you have to source the settings.sh
+  file and retry the command that failed after taking corrective actions. 
+  Alternatively you can restart from step 1.
+
+
+B. Manual setup
+=====================
+
+1. Manually set these environment variables.
+
+# PBS or LL
+export RESOURCEMANAGER=PBS
+# Cluster name (DS or TG)
+export CLUSTER_NAME=DS
+# Resource manager library path
+export CATALINA_RMLIBDIRS=-L/usr/local/lib
+# Resource manager include path
+export CATALINA_RMINCDIRS=-I/usr/local/include
+# owner of Catalina files
+export CATALINA_CATOWNER=kenneth
+# group of Catalina files
+export CATALINA_CATLOCKGROUP=ops100
+# directory in which to place man pages
+export CATALINA_MANPATH=/home/sdsc/kenneth/catalina/man
+# directory in which to install executables
+export CATALINA_INSTALLDIR=/home/sdsc/kenneth/catalina/install
+# directory in which to store database files
+export CATALINA_DBDIR=/home/sdsc/kenneth/catalina/db
+# directory in which to store archived logs
+export CATALINA_ARCHIVEDIR=/home/sdsc/kenneth/catalina/archive
+# C compiler
+export CC=/usr/bin/gcc
+# Python interpreter
+export CATALINA_PYTHONPATH=/paci/loadl/diag/python152/bin/python
+# permissions for user-settable reservation commands
+export CATALINA_CATUSERPERMS=2755
+# default job class or queue
+export CATALINA_DEFAULT_JOB_CLASS=standard
+# If LL, location of LoadLeveler admin file
+export CATALINA_LOADL_ADMIN_FILE=/paci/loadl/LoadL_admin.AIX5L
+# If PBS, name of host from which jobs will be submitted and reservations set
+# If desired, this can be set to IGNORE.  In that case, Catalina will not
+# consider the <@@hostname> part of the jobowner field.  All users will be
+# considered equivalent, regardless of host.
+#export CATALINA_PBS_SUBMITHOST=ctf01
+
+
+2. Run conf.sh
+
+./conf.sh
+
+Many other environment variables are available to customize the install.
+Check the conf.sh script for these.
+
+3.  Run
+make
+
+4.  Run
+make install
+
+At first install: 
+
+5. Run
+make config
+
+6. Copy catalina.config to install directory.
+(It's not done by make install, so that existing config files are preserved in
+upgrades)
+cp catalina.config <install directory>
+
+7.  Initialize databases.  This will wipe out any existing databases.
+cd <install directory>
+./intialize_dbs
+
+8.  Run tests.  This will also wipe out any existing databases.
+./scratchtest.py
+
+To upgrade:
+
+1. Follow steps 1-4 of 'To set up:'
+
+2. Integrate config file changes.
+cd <build directory>
+diff catalina.config <install directory>/catalina.config
+
+Reconcile any differences.
+
+Notes:
+
+- To modify Catalina behaviour at build time, check the conf.sh file for
+  environment variables that may be used to change default values in the
+  Makefile or catalina.config file.
+@
+
+
+1.11
+log
+@add CLUSTER_NAME
+mmargo
+@
+text
+@d7 1
+a7 1
+2. Python v1.5.2+
+d14 3
+d18 1
+a18 1
+To set up:
+a19 1
+1.  Create the Makefile with the default conf.sh script
+d21 9
+a29 2
+set the following environment variables, for example :
+/bin/ksh
+d66 60
+d132 1
+a132 1
+2.  Run
+d135 1
+a135 1
+3.  Run
+d140 1
+a140 1
+4. Run
+d143 1
+a143 1
+5. Copy catalina.config to install directory.
+d148 1
+a148 1
+6.  Initialize databases.  This will wipe out any existing databases.
+d152 1
+a152 1
+7.  Run tests.  This will also wipe out any existing databases.
+@
+
+
+1.10
+log
+@changed CATALINA_USERPERMS to CATALINA_CATUSERPERMS
+@
+text
+@a13 3
+To check CHECKSUM of contents:
+cat `cat MANIFEST` | md5sum | awk '{print $1}'
+compare with CHECKSUM
+d23 2
+@
+
+
+1.9
+log
+@instructions of comparing CHECKSUM
+@
+text
+@d47 1
+a47 1
+export CATALINA_USERPERMS=2755
+@
+
+
+1.8
+log
+@added RM lib and include
+@
+text
+@d14 4
+@
+
+
+1.7
+log
+@added upgrade section
+@
+text
+@d22 4
+@
+
+
+1.6
+log
+@IGNORE
+@
+text
+@d79 10
+@
+
+
+1.5
+log
+@added DBDIR
+@
+text
+@d16 1
+a16 1
+1a.  Create the Makefile with the default conf.sh script
+d45 5
+a49 1
+export CATALINA_PBS_SUBMITHOST=ctf01
+@
+
+
+1.4
+log
+@Only give instructions for conf.sh
+@
+text
+@d28 1
+a28 1
+# directory in which to install executables and database files
+d30 2
+a76 3
+- The show_guess utility has several site-specific inputs that will
+  probably need modification.  Use this only as an example of how to
+  display a guesstimate of job start time.
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@a49 51
+1b.  Alternatively, if conf.sh is not used, copy Makefile.dist to Makefile.
+Edit Makefile
+
+# Path to python
+PYTHONPATH=/usr/local/apps/python/bin/python
+
+# Directory for man page install
+MANPATH=/tmp
+
+# Directory in which to place production files.
+INSTALLDIR=/tmp
+
+# Owner for files :
+CATOWNER=kenneth
+
+# user to own lock files, enables database write
+CATLOCKOWNER=$(CATOWNER)
+
+# group to own lock files, enables database write
+CATLOCKGROUP=sys200
+
+# This is the owner of the user_* files
+# for Blue Horizon, this can be anyone, since the file will use
+# setgid security for obtaining db writing privileges
+CATUSEROWNER=kenneth
+
+# Group for user_* files, group should have write permission
+# for the database files, since the wrappers are sgid.
+CATUSERGROUP=sys200
+
+# CATPERMS is the permissions for the user_* commands
+CATUSERPERMS=2755
+
+# CFLAGS for the user_* wrappers.
+# for Blue Horizon gcc, -static
+# for Suns cc, -Bstatic
+CATUSERCFLAGS=-static
+
+# C compiler to use
+CC=/usr/bin/cc
+
+# Machine-specific paths
+CP=/usr/bin/cp
+CHMOD=/usr/bin/chmod
+CHOWN=/usr/bin/chown
+MKDIR=/usr/bin/mkdir
+SED=/usr/bin/sed
+CAT=/usr/bin/cat
+FIND=/usr/bin/find
+RM=/usr/bin/rm
+
+d56 3
+a58 1
+4a. Either run
+d61 1
+a61 3
+4b. Or if 'make config' is not used, edit catalina.config
+
+5.  Copy catalina.config to install directory.
+a65 2
+At first install: 
+
+d72 9
+@
+
+
+1.2
+log
+@added conf.sh
+@
+text
+@d107 1
+a107 4
+This will create a (relatively) sane catalina.config file.
+Copy to the install directory.
+
+4a. Run
+d110 1
+a110 1
+4b. If 'make config' is not used, edit catalina.config
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 36
+a51 1
+1.  Copy Makefile.dist to Makefile.  Edit Makefile
+a99 2
+STTY=/usr/bin/stty
+
+d107 11
+a117 2
+4.  Copy catalina.config to install directory.  (It's not done by
+make install, so that existing config files are preserved in upgrades)
+a118 2
+
+5.  Edit catalina.config
+@

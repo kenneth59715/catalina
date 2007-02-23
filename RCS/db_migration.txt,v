@@ -1,0 +1,103 @@
+head	1.2;
+access;
+symbols;
+locks
+	mmargo:1.2; strict;
+comment	@# @;
+
+
+1.2
+date	2006.11.21.22.50.25;	author mmargo;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2006.08.11.23.13.58;	author mmargo;	state Exp;
+branches;
+next	;
+
+
+desc
+@readme for data migration
+mmargo
+@
+
+
+1.2
+log
+@newest version
+mmargo
+@
+text
+@Catalina database migration Readme (db_migration.txt)
+======================================================
+
+Introduction:
+This documentation is provided to help users understand how to migrate 
+Catalina database from the old format into the new format. The new
+format is smaller in size, faster to access, and has more efficient
+organization. 
+
+Applicability:
+This document doesn't apply if the previous installation of Catalina is
+of version 20060811 or newer.
+
+Tools needed:
+Unix shell
+redump.py. 
+
+Redump.py:
+Redump.py is a utility provided to convert old database files into new
+database format file. The syntax is
+
+redump.py /target_dir /path/to/database/ db_name
+
+	where
+		/target_dir : Directory where the new database should reside. This is
+		  usually the same location of the old db dir. However, specify other
+		  scratch directory to dump the databases and then later on copy them
+		  to the original location.
+		
+		/path/to/database: Directory where previous version of Catalina 
+		  database is stored.
+		
+		db_name: The name of the database
+		   example:
+		      jobs
+		      jobs_readonly
+		      resource
+		      resource_readonly
+		      ...etc...
+	
+How to use:
+1. Stop Catalina
+2. Install the new Catalina from www.sdsc.edu/catalina
+3. After make install, 
+    create a new scratch dir (e.g. /scratch/new_db)
+    mkdir -p /scratch/new_db
+4. cd to the old database directory (e.g. cd /catalina/db)
+    cd /catalina/db
+5. Get the database name list
+    find . -type f  | grep -v lock > /scratch/new_db/dbnames.txt
+6. if your shell is *sh (bash, ksh, sh), 
+    for i in `cat /scratch/new_db/dbnames.txt`; do redump.py /scratch/new_db/ /catalina/db $i ; echo $i ; done
+7. check for errors.
+8. IMPORTANT!! backup old database
+    cp -r /catalina/database /catalina/database.backup.{YYYYMMDD}
+9. copy over new converted database to the old database location
+    for i in `cat /scratch/new_db/dbnames.txt`; do echo $i ; cp /scratch/new_db/$i /catalina/db; done
+10. clean-up
+    rm -rf /scratch/new_db
+
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d50 1
+a50 1
+    ls | grep -v lock > /scratch/new_db/dbnames.txt
+@

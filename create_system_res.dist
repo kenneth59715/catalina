@@ -1,0 +1,178 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# ./create_system_res --offset=<seconds from now> --duration=<seconds> [--resource_amount=<resource amount>]
+
+import sys
+import getopt
+import string
+import os
+import re
+import copy
+import Catalina
+import time
+
+RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+JOBS_DB = Catalina.JOBS_DB
+RESOURCE_DB = Catalina.RESOURCE_DB
+
+if os.environ.has_key('TZ') :
+    print "TZ (%s)" % os.environ['TZ']
+else :
+    print "No TZ found"
+
+def checkargs(argdict) :
+
+    if argdict.has_key('--help') or argdict.has_key('--?') :
+        print usage_string
+        sys.exit(1)
+
+    if not argdict.has_key('--duration') :
+        print "--duration must be provided!"
+        sys.exit(1)
+
+    if string.atol(argdict['--duration']) < 0 :
+        print "--duration must be non-negative!"
+        sys.exit(1)
+
+    return argdict
+
+options = [
+  '?',
+  'help',
+  'start=',
+  'offset=',
+  'duration=',
+  'resource_amount=',
+  'node_list='
+  ]
+usage_string = \
+"""Usage: create_system_res --duration=<seconds>
+                         --offset=<seconds to reservation start | --start=<HH:MM_mm/dd/yyy>
+                         [--resource_amount=<number of nodes> | --node_list=<comma-delimited list of node names>]"""
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+        argdict[pair[0]] = pair[1]
+tempdict = checkargs(argdict)
+argdict = tempdict
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'read');
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write');
+resources_db_handle = Catalina.open_db(RESOURCE_DB,'read');
+
+if argdict.has_key('--offset') and argdict.has_key('--start') :
+    print "--offset and --start are mutually exclusive!"
+    print "System reservation not created!"
+    Catalina.close_db(resources_db_handle)
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+if not argdict.has_key('--offset') and not argdict.has_key('--start') :
+    print "Either --offset or --start must be provided!"
+    print "System reservation not created!"
+    Catalina.close_db(resources_db_handle)
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+if argdict.has_key('--offset') :
+    offset = string.atof(argdict['--offset'])
+else :
+    offset = None
+if argdict.has_key('--start') :
+    start_string = argdict['--start']
+    start_tuple = time.strptime(start_string, "%H:%M_%m/%d/%Y")
+    start_list = list(start_tuple)
+    start_list[8] = -1
+    start_tuple = tuple(start_list)
+    start_epoch = time.mktime(start_tuple)
+else :
+    start_string = None
+if argdict.has_key('--duration') :
+    duration = string.atof(argdict['--duration'])
+else :
+    raise 'NoDuration'
+if argdict.has_key('--resource_amount') :
+    resource_amount = string.atoi(argdict['--resource_amount'])
+else :
+    resource_amount = None
+if argdict.has_key('--job_restriction') :
+    job_restriction = argdict['--job_restriction']
+else :
+    job_restriction = None
+if argdict.has_key('--node_restriction') :
+    node_restriction = argdict['--node_restriction']
+else :
+    node_restriction = 'result = 0'
+if argdict.has_key('--node_list') :
+    nodes_string = argdict['--node_list']
+else :
+    nodes_string = None
+if argdict.has_key('--node_sort_policy') :
+    node_sort_policy = argdict['--node_sort_policy']
+else :
+    node_sort_policy = None
+if argdict.has_key('--conflict_policy') :
+    conflict_policy = argdict['--conflict_policy']
+else :
+    conflict_policy = None
+
+existing_reservations = Catalina.get_object_list(reservations_db_handle)
+ignore_reservations_list = Catalina.get_object_names_list(existing_reservations)
+    
+mode = 'real'
+purpose_type = 'system'
+job_restriction = 'result = 1'
+if argdict.has_key('--offset') :
+    earliest_start = Catalina.Now_float + string.atof(argdict['--offset'])
+if argdict.has_key('--start') :
+    earliest_start = start_epoch
+# if --node_list provided, it should be in the form of a comma-delimited
+# list of node names.  reformat this to ['<name1>', '<name2>',...]
+# format, and create node_restriction code to check each node for
+# a match to this list of names.
+if nodes_string != None :
+    nodes_string = "['" + nodes_string + "']"
+    nodes_string = re.sub(",", "','", nodes_string)
+    node_restriction = "if input_tuple[0]['name'] in " + nodes_string + " : result = 0"
+
+try :
+    new_res = Catalina.create_reservation(
+      resources_db_handle=resources_db_handle,
+      reservations_db_handle=reservations_db_handle,
+      jobs_db_handle=jobs_db_handle,
+      earliest_start_float=earliest_start,
+      duration_float=duration,
+      resource_amount_int=resource_amount,
+      job_restriction=job_restriction,
+      node_restriction=node_restriction,
+      node_sort_policy=node_sort_policy,
+      conflict_policy=conflict_policy,
+      ignore_reservations_list=ignore_reservations_list,
+      purpose_type_string=purpose_type,
+      mode=mode
+    )
+except 'InsufficientNodes', new_res :
+    print "Insufficient nodes found! "
+    Catalina.close_db(resources_db_handle)
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+if mode == 'lookahead' :
+    print "reservation possible on %s nodes with start_time %s for duration %s" % \
+      ( new_res['resource_amount_int'],
+        time.asctime(time.localtime(new_res['start_time_float'])),
+        new_res['duration_float'] )
+else :
+    print "reservation %s created on %s nodes with start_time %s for duration %s" % \
+      ( new_res['name'],
+        new_res['resource_amount_int'],
+        time.asctime(time.localtime(new_res['start_time_float'])),
+        new_res['duration_float'] )
+
+Catalina.close_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(jobs_db_handle)
+
+sys.exit(0)

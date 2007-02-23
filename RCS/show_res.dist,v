@@ -1,0 +1,872 @@
+head	1.19;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.19
+date	2007.01.30.21.28.11;	author kenneth;	state Exp;
+branches;
+next	1.18;
+
+1.18
+date	2006.07.05.21.20.20;	author mmargo;	state Exp;
+branches;
+next	1.17;
+
+1.17
+date	2005.04.22.23.17.04;	author kenneth;	state Exp;
+branches;
+next	1.16;
+
+1.16
+date	2004.08.18.17.16.43;	author kenneth;	state Exp;
+branches;
+next	1.15;
+
+1.15
+date	2004.08.18.17.14.05;	author kenneth;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2004.08.11.17.51.03;	author kenneth;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2004.04.19.22.58.43;	author kenneth;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2004.04.08.15.15.26;	author kenneth;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2004.02.05.17.55.34;	author kenneth;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2003.03.07.23.46.22;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2002.12.21.04.19.35;	author kenneth;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2002.12.19.22.54.33;	author kenneth;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2002.04.09.16.52.50;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2002.04.09.03.25.16;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2002.01.03.00.28.30;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2001.10.23.16.58.00;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2001.10.18.18.04.47;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2001.10.16.17.53.09;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.21.28.55;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@show reservation info
+@
+
+
+1.19
+log
+@with --endpriority, sort started reservations by end time and
+job reservations by priority
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# LOCK_SH for read, LOCK_EX for write, LOCK_UN to release
+
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import getopt
+import string
+import Catalina
+import time
+import os
+import cPickle
+
+def by_start(first, second) :
+    if first['start_time_float'] < second['start_time_float'] :
+        return -1
+    if first['start_time_float'] == second['start_time_float'] :
+        return 0
+    if first['start_time_float'] > second['start_time_float'] :
+        return 1
+
+def by_endpriority(first, second) :
+    if first['start_time_float'] < Catalina.Now_float and second['start_time_float'] < Catalina.Now_float :
+        # Both res have already started
+        # sort by end time
+        if first['end_time_float'] < second['end_time_float'] :
+            return -1
+        if first['end_time_float'] == second['end_time_float'] :
+            return 0
+        if first['end_time_float'] > second['end_time_float'] :
+            return 1
+    if first['start_time_float'] < Catalina.Now_float and second['start_time_float'] > Catalina.Now_float :
+        # first res has already started, second res has not
+        return -1
+    if first['start_time_float'] > Catalina.Now_float and second['start_time_float'] < Catalina.Now_float :
+        # second res has already started, first res has not
+        return 1
+    if first['start_time_float'] > Catalina.Now_float and second['start_time_float'] > Catalina.Now_float :
+        # both res have yet to start
+        if first['purpose_type_string'] == 'job' and second['purpose_type_string'] == 'job' :
+            # sort by priority of job
+            # need either a global job dict or need to pass in job
+            # priority with each first and second.
+            if first['jobs_db_handle'][0].has_key(first['job_runID']) \
+              and second['jobs_db_handle'][0].has_key(second['job_runID']) :
+                # sort by job priority
+                if first['jobs_db_handle'][0][first['job_runID']]['priority'] > second['jobs_db_handle'][0][second['job_runID']]['priority'] :
+                    return -1
+                if first['jobs_db_handle'][0][first['job_runID']]['priority'] == second['jobs_db_handle'][0][second['job_runID']]['priority'] :
+                    return 0
+                if first['jobs_db_handle'][0][first['job_runID']]['priority'] < second['jobs_db_handle'][0][second['job_runID']]['priority'] :
+                    return 1
+            else :
+                if first['start_time_float'] < second['start_time_float'] :
+                    return -1
+                if first['start_time_float'] == second['start_time_float'] :
+                    return 0
+                if first['start_time_float'] > second['start_time_float'] :
+                    return 1
+        if not first['purpose_type_string'] == 'job' and second['purpose_type_string'] == 'job' :
+            # sort non-job reservations first
+            return -1
+        if first['purpose_type_string'] == 'job' and not second['purpose_type_string'] == 'job' :
+            # sort non-job reservations first
+            return 1
+        if not first['purpose_type_string'] == 'job' and not second['purpose_type_string'] == 'job' :
+            # sort by start time
+            if first['start_time_float'] < second['start_time_float'] :
+                return -1
+            if first['start_time_float'] == second['start_time_float'] :
+                return 0
+            if first['start_time_float'] > second['start_time_float'] :
+                return 1
+
+def residsort(first, second) :
+    if string.atof(first) < string.atof(second) :
+        return -1
+    if string.atof(first) == string.atof(second) :
+        return 0
+    if string.atof(first) > string.atof(second) :
+        return 1
+
+default_argdict = {
+       '--relstart' : None,
+       '--relend' : None,
+       '--duration' : None,
+       '--nodes' : None,
+       '--job' : None,
+       '--creator' : None,
+       '--purpose' : None
+  }
+
+eva_argdict = {
+  '--relstart' : None,
+  '--nodes' : None,
+  '--job' : None,
+  '--purpose' : None
+  }
+
+options = ['res=',
+           'eva',
+           'old',
+           'archive=',
+           'full',
+           '?',
+           'help',
+           'readable',
+           'start',
+           'creator',
+           'relstart',
+           'end',
+           'relend',
+           'duration',
+           'affinity_calculation',
+           'latency',
+           'nodes',
+           'cpu',
+           'memory',
+           'job_rest',
+           'node_rest',
+           'job',
+           'purpose',
+           'account',
+           'start_spec',
+           'nodegrep',
+           'overlap',
+           'comment',
+           'node_list',
+           'endpriority',
+           'user_list'] ### Eva H. wanted this feature
+usage_string = \
+"""
+Usage: show_res [--res=<res id>]
+                [--eva]
+                [--full]
+                [--?]
+                [--help]
+                [--readable]
+                [--start]
+                [--creator]
+                [--relstart]
+                [--end]
+                [--relend]
+                [--duration]
+                [--affinity_calculation]
+                [--latency]
+                [--nodes]
+                [--cpu]
+                [--memory]
+                [--job_rest]
+                [--node_rest]
+                [--job]
+                [--purpose]
+                [--account]
+                [--start_spec]
+                [--nodegrep]
+                [--overlap]
+                [--comment]
+                [--node_list]
+                [--endpriority]
+                [--user_list]""" ## Eva H. wanted this feature
+args = sys.argv[1:]
+if len(args) == 0 :
+    argdict = default_argdict
+else :
+    argdict = {}
+    try :
+        optlist, lineargs = getopt.getopt(args, '', options)
+    except :
+        print usage_string
+        sys.exit(0)
+    for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--eva') :
+    argdict.update(eva_argdict)
+
+if argdict.has_key('--full') :
+    argdict.update(default_argdict)
+    argdict['--cpu'] = None
+    argdict['--memory'] = None
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+if os.environ.has_key('TZ') :
+    print "TZ (%s)" % os.environ['TZ']
+else :
+    print "No TZ found"
+
+if argdict.has_key('--old') :
+    RESERVATIONS_DB = Catalina.OLD_RESERVATIONS_DB
+    db_handle = Catalina.open_ro_db(RESERVATIONS_DB, 'read')
+    jobs_db_handle = [{},]
+elif argdict.has_key('--archive') :
+    FO = open(argdict['--archive'], 'r')
+    res_dict = cPickle.load(FO)
+    FO.close
+    jobs_db_handle = [{},]
+else :
+    RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+    db_handle = Catalina.open_ro_db(RESERVATIONS_DB, 'read')
+    JOBS_DB = Catalina.JOBS_DB
+    jobs_db_handle = Catalina.open_ro_db(JOBS_DB, 'read')
+
+
+# read in reservation ids
+if not argdict.has_key('--archive') :
+    res_dict = db_handle[0]
+    
+reservations_list = res_dict.values()
+if argdict.has_key('--res') :
+    #res_ids = [ argdict['--res'] ]
+    reservations_list = [res_dict[argdict['--res']], ]
+else :
+    if argdict.has_key('--endpriority') :
+        for reservation in reservations_list :
+            reservation['jobs_db_handle'] = jobs_db_handle
+        reservations_list.sort(by_endpriority)
+    else :
+        reservations_list.sort(by_start)
+nodegrep_dict = {}
+noderes_dict = {}
+overlap_dict = {}
+header_string = ''
+format_string = ''
+header_string = "ResID       "
+format_string = "%10s "
+if argdict.has_key('--start') :
+    if argdict.has_key('--readable') :
+        header_string = header_string + "StartTime                 "
+        format_string = format_string + "%25s "
+    else :
+        header_string = header_string + "StartTime  "
+        format_string = format_string + "%10s "
+if argdict.has_key('--end') :
+    if argdict.has_key('--readable') :
+        header_string = header_string + "EndTime                   "
+        format_string = format_string + "%25s "
+    else :
+        header_string = header_string + "EndTime    "
+        format_string = format_string + "%10s "
+if argdict.has_key('--relstart') :
+    header_string = header_string + "RelStart(hr) "
+    format_string = format_string + "%12.2f "
+if argdict.has_key('--relend') :
+    header_string = header_string + "RelEnd(hr)   "
+    format_string = format_string + "%12.2f "
+if argdict.has_key('--duration') :
+    header_string = header_string + "Duration(hr) "
+    format_string = format_string + "%12.2f "
+if argdict.has_key('--nodes') :
+    header_string = header_string + "Nodes "
+    format_string = format_string + "%5s "
+if argdict.has_key('--cpu') :
+    header_string = header_string + "Procs "
+    format_string = format_string + "%5i "
+if argdict.has_key('--memory') :
+    header_string = header_string + "Memory "
+    format_string = format_string + "%6i "
+if argdict.has_key('--job') :
+    header_string = header_string + "RunID               "
+    format_string = format_string + "%20s "
+if argdict.has_key('--purpose') :
+    header_string = header_string + "Purpose              "
+    format_string = format_string + "%20s "
+if argdict.has_key('--account') :
+    header_string = header_string + "Account "
+    format_string = format_string + "%7s "
+if argdict.has_key('--latency') :
+    header_string = header_string + "Latency    "
+    format_string = format_string + "%10s "
+if argdict.has_key('--comment') :
+    header_string = header_string + "Comment "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--affinity_calculation') :
+    header_string = header_string + "Affinity "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--node_list') :
+    header_string = header_string + "NodeList "
+    format_string = format_string + " %s  "
+if argdict.has_key('--job_rest') :
+    header_string = header_string + "JobRestriction "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--node_rest') :
+    header_string = header_string + "NodeRestriction "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--start_spec') :
+    header_string = header_string + "StartSpec                 "
+    format_string = format_string + "(%s) "
+if argdict.has_key('--creator') :
+    header_string = header_string + "Creator   "
+    format_string = format_string + "(%s) "
+## Add feature to list usernames from job_restrictions (if exist)
+if argdict.has_key('--user_list') :
+    header_string = header_string + "Eligible user         " 
+    format_string = format_string + "(%s) "
+
+
+if not argdict.has_key('--nodegrep') and \
+  not argdict.has_key('--overlap') :
+    print header_string
+
+for res in reservations_list :
+    cpu = 0
+    memory = 0
+    if res.has_key('allocated_dict_list') :
+        allocated_dict_list = res['allocated_dict_list']
+        for allocated_dict in allocated_dict_list :
+            #print "allocated_dict (%s)" % allocated_dict
+            if allocated_dict.has_key('cpu') and not allocated_dict['cpu'] == None :
+                cpu = cpu + allocated_dict['cpu']
+            if allocated_dict.has_key('memory') and not allocated_dict['memory'] == None :
+                memory = memory + allocated_dict['memory']
+    print_list = []
+    if argdict.has_key('--readable') :
+        start_time = time.asctime(time.localtime(res['start_time_float']))
+        end_time = time.asctime(time.localtime(res['end_time_float']))
+    else :
+        start_time = res['start_time_float']
+        end_time = res['end_time_float']
+    out_string = "res_id: %s" % res['name']
+    print_list.append(res['name'])
+    if argdict.has_key('--start') :
+        out_string = out_string + " start_time: %s" % start_time
+        print_list.append(start_time)
+    if argdict.has_key('--end') :
+        out_string = out_string + " end_time: %s" % end_time
+        print_list.append(end_time)
+    if argdict.has_key('--relstart') :
+        out_string = out_string + " relative_start_time: %s" % (res['start_time_float'] - Catalina.Now_float)
+        print_list.append((res['start_time_float'] - Catalina.Now_float)/3600)
+    if argdict.has_key('--relend') :
+        out_string = out_string + " relative_end_time: %s" % (res['end_time_float'] - Catalina.Now_float)
+        print_list.append((res['end_time_float'] - Catalina.Now_float)/3600)
+    if argdict.has_key('--duration') :
+        out_string = out_string + " duration: %s" % res['duration_float']
+        print_list.append(res['duration_float']/3600)
+    if argdict.has_key('--nodes') :
+        if res.has_key('allocated_dict_list') :
+            node_dict = {}
+            for allocated_dict in res['allocated_dict_list'] :
+                if allocated_dict.has_key('nodename') :
+                    node_dict[allocated_dict['nodename']] = None
+            out_string = out_string + " node_number: %s" % len(node_dict.keys())
+            print_list.append(len(node_dict.keys()))
+        else :
+            out_string = out_string + " node_number: %s" % res['resource_amount_int']
+            print_list.append(res['resource_amount_int'])
+    if argdict.has_key('--cpu') :
+        out_string = out_string + " proc_number: %i" % cpu
+        print_list.append(int(cpu))
+    if argdict.has_key('--memory') :
+        out_string = out_string + " memory_number: %i" % memory
+        print_list.append(int(memory))
+    if argdict.has_key('--job') :
+        out_string = out_string + " job_runID: %s" % res['job_runID']
+        print_list.append(res['job_runID'])
+    if argdict.has_key('--purpose') :
+        out_string = out_string + " purpose: %s" % res['purpose_type_string']
+        print_list.append(res['purpose_type_string'])
+    if argdict.has_key('--account') :
+        out_string = out_string + " account: %s" % res['account_string']
+        print_list.append(res['account_string'])
+    if argdict.has_key('--latency') :
+        out_string = out_string + " latency: %s" % res['latency_float']
+        print_list.append(res['latency_float'])
+    if argdict.has_key('--comment') :
+        out_string = out_string + " comment: %s" % res['comment_string']
+        print_list.append(res['comment_string'])
+    if argdict.has_key('--creator') :
+        out_string = out_string + " creator: %s" % res['creator_string']
+        print_list.append(res['creator_string'])
+    if argdict.has_key('--affinity_calculation') :
+        out_string = out_string + " affinity_calculation: %s" % res['affinity_calculation']
+        print_list.append(res['affinity_calculation'])
+    if argdict.has_key('--node_list') :
+        node_list = ''
+        out_string = out_string + " node_list:"
+        for node in res['node_list'] :
+            out_string = out_string + `node`
+            node_list = node_list + " %s" % node
+        print_list.append(node_list)
+    if argdict.has_key('--job_rest') :
+        out_string = out_string + " job_restriction: %s" % res['job_restriction']
+        print_list.append(res['job_restriction'])
+    if argdict.has_key('--node_rest') :
+        out_string = out_string + " node_restriction: %s" % res['node_restriction']
+        print_list.append(res['node_restriction'])
+    if argdict.has_key('--start_spec') :
+        out_string = out_string + " start_spec: %s" % res['start_spec_string']
+        print_list.append(res['start_spec_string'])
+    ## list eligible user (if exist) for this reservation
+    if argdict.has_key('--user_list') :
+		## I will copy the job restriction string to copy_str
+        copy_str=res['job_restriction']
+		## If I can find ['user'], I will print them, else print blank
+        if copy_str.find('[\'user\']') > 0:
+            copy_list=copy_str.split() #split restriction to strings (this is a list)
+            while copy_list:
+                if copy_list[0].find('[\'user\']') > 0 :
+                    copy_list=copy_list[2:3] ## slice with comma separated names
+                    copy_str=copy_list[0] ## convert list into string
+                    copy_str=copy_str.replace('\'',"") # throw away ',[,]
+                    copy_str=copy_str.replace('[',"")
+                    copy_str=copy_str.replace(']',"")
+                    output=copy_str
+                    break
+                else: 
+                    copy_list=copy_list[1:] # iterate through next slice
+        else:
+            output=""
+	    out_string = out_string + " job_restriction_users: %s" % output
+        print_list.append(output)
+	out_string = out_string + '\n'
+    if argdict.has_key('--nodegrep') :
+        # Create a dictionary with nodenames as the keys
+        # The value should be a list of out_strings
+        # after all reservations are processed, for each node,
+        # the list out out_strings should be printed, with the
+        # node name as the first field
+        nodes_list = res['node_list']
+        for node in nodes_list :
+            if nodegrep_dict.has_key(node) :
+                nodegrep_dict[node].append(out_string)
+            else :
+                nodegrep_dict[node] = [out_string]
+    elif argdict.has_key('--overlap') :
+        # Create a dictionary with nodenames as the keys
+        # The value should be a tuple with name, epoch start,
+        # epoch end, purpose, comment
+        nodes_list = res['node_list']
+        for node in nodes_list :
+            # Check to see if this reservation overlaps any of the
+            # listed ones for this node
+            overlap_start_time = res['start_time_float']
+            overlap_end_time = res['end_time_float']
+            res_name = res['name']
+            overlapping_noderes_list = []
+            if noderes_dict.has_key(node) :
+                existing_noderes_list = noderes_dict[node]
+            else :
+                existing_noderes_list = []
+            if len(existing_noderes_list) > 0 :
+                # start <= noderes[0] or noderes[1] <= end is used,
+                # instead of < and <, because exact start and end overlaps
+                # would otherwise be missed!
+                overlapping_noderes_list = filter( lambda noderes, overlap_start_time=overlap_start_time, overlap_end_time=overlap_end_time, res_name=res_name : res_name != noderes[2] and ((overlap_start_time <= noderes[0] < overlap_end_time) or (overlap_start_time < noderes[1] <= overlap_end_time) or (noderes[0] <= overlap_start_time < noderes[1]) or (noderes[0] < overlap_end_time <= noderes[1])) , existing_noderes_list )
+            if len(overlapping_noderes_list) > 0 :
+                # overlap with previous noderes found, so add
+                # to overlap dictionary.
+                if overlap_dict.has_key(node) :
+                    overlap_dict[node].append( (res['name'],
+                      overlap_start_time, overlap_end_time,
+                      overlapping_noderes_list, out_string) )
+                else :
+                    overlap_dict[node] = [ (res['name'], \
+                      overlap_start_time, overlap_end_time, \
+                      overlapping_noderes_list, out_string) ]
+            if noderes_dict.has_key(node) :
+                # Node already has a list of node start and end times,
+                # add one for this reservation
+                noderes_dict[node].append( (res['start_time_float'], res['end_time_float'], res['name'], out_string) )
+            else :
+                # Node doesn't have a list, yet.  Initiate one.
+                noderes_dict[node] = [(res['start_time_float'], res['end_time_float'], res['name'], out_string)]
+    else :
+        print_tuple = tuple(print_list)
+        print format_string % print_tuple
+
+if argdict.has_key('--nodegrep') :
+    for key in nodegrep_dict.keys() :
+        print ""
+        for out_string in nodegrep_dict[key] :
+            print "%s %s" % (key, out_string)
+        
+if argdict.has_key('--overlap') :
+    for node_name in overlap_dict.keys() :
+        print ""
+        for overlap_tuple in overlap_dict[node_name] :
+            print "%s %s" % \
+              ( node_name, overlap_tuple[4] )
+            for instance_tuple in overlap_tuple[3] :
+                print "overlaps %s" %  instance_tuple[3]
+
+# release lock, close the file
+if not argdict.has_key('--archive') :
+    Catalina.close_ro_db(db_handle)
+@
+
+
+1.18
+log
+@Add a new flag --user_list
+to show who owns the reservations
+mmargo
+@
+text
+@d21 53
+d128 1
+d159 1
+d194 1
+d199 1
+d203 2
+d216 6
+a221 1
+    reservations_list.sort(by_start)
+@
+
+
+1.17
+log
+@display creator_string
+@
+text
+@d74 2
+a75 1
+           'node_list']
+d104 2
+a105 1
+                [--node_list]"""
+d230 5
+d329 23
+a351 1
+    out_string = out_string + '\n'
+@
+
+
+1.16
+log
+@import cPickle
+@
+text
+@d35 1
+d55 1
+d84 1
+d225 3
+d300 3
+@
+
+
+1.15
+log
+@add --old and --archive options
+@
+text
+@d11 1
+@
+
+
+1.14
+log
+@FORCETZ
+@
+text
+@d46 2
+d130 10
+a139 1
+RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+a140 2
+# open the reservations file for read, set exclusive lock
+db_handle = Catalina.open_ro_db(RESERVATIONS_DB, 'read')
+d143 3
+a145 1
+res_dict = db_handle[0]
+d384 2
+a385 1
+Catalina.close_ro_db(db_handle)
+@
+
+
+1.13
+log
+@if bogus options, print usage and exit
+@
+text
+@d10 1
+d123 4
+a126 1
+print "TZ (%s)" % time.tzname[0]
+@
+
+
+1.12
+log
+@don't break if resource cpu or memory are None
+@
+text
+@d102 5
+a106 1
+    optlist, lineargs = getopt.getopt(args, '', options)
+@
+
+
+1.11
+log
+@smp
+@
+text
+@d213 2
+a214 1
+            if allocated_dict.has_key('cpu') :
+d216 1
+a216 1
+            if allocated_dict.has_key('memory') :
+@
+
+
+1.10
+log
+@removed privacy_string code
+@
+text
+@d57 2
+d85 2
+d111 2
+d166 6
+d208 9
+d242 16
+a257 2
+        out_string = out_string + " node_number: %s" % res['resource_amount_int']
+        print_list.append(res['resource_amount_int'])
+@
+
+
+1.9
+log
+@consistent opts
+@
+text
+@a60 1
+           'privacy',
+a86 1
+                [--privacy]
+a162 3
+if argdict.has_key('--privacy') :
+    header_string = header_string + "Privacy   "
+    format_string = format_string + "%10s "
+a225 3
+    if argdict.has_key('--privacy') :
+        out_string = out_string + " privacy: %s" % res['privacy_type_string']
+        print_list.append(res['privacy_type_string'])
+@
+
+
+1.8
+log
+@don't show overlaps of self with --overlap
+@
+text
+@d32 1
+a32 1
+       '--runID' : None,
+d39 1
+a39 1
+  '--runID' : None,
+d43 1
+a43 1
+options = ['res_id=',
+d59 1
+a59 1
+           'runID',
+d70 1
+a70 1
+Usage: show_res [--res_id=<res id>]
+d86 1
+a86 1
+                [--runID]
+d124 3
+a126 3
+if argdict.has_key('--res_id') :
+    #res_ids = [ argdict['--res_id'] ]
+    reservations_list = [res_dict[argdict['--res_id']], ]
+d162 1
+a162 1
+if argdict.has_key('--runID') :
+d228 1
+a228 1
+    if argdict.has_key('--runID') :
+@
+
+
+1.7
+log
+@removed two debug print statements
+@
+text
+@d288 1
+d298 1
+a298 1
+                overlapping_noderes_list = filter( lambda noderes, overlap_start_time=overlap_start_time, overlap_end_time=overlap_end_time : ((overlap_start_time <= noderes[0] < overlap_end_time) or (overlap_start_time < noderes[1] <= overlap_end_time) or (noderes[0] <= overlap_start_time < noderes[1]) or (noderes[0] < overlap_end_time <= noderes[1])) , existing_noderes_list )
+@
+
+
+1.6
+log
+@dst tag -1
+@
+text
+@a114 2
+print "timezone offset (%d)" % time.timezone
+print "daylight (%s)" % time.daylight
+@
+
+
+1.5
+log
+@append HOMEDIR
+@
+text
+@d115 2
+@
+
+
+1.4
+log
+@removed --readable from default_dict
+@
+text
+@d5 1
+@
+
+
+1.3
+log
+@added default argdict, added --full
+@
+text
+@a26 1
+       '--readable' : None,
+@
+
+
+1.2
+log
+@added check in filter for case of noderes totally encompassing res
+@
+text
+@d33 1
+a33 3
+       '--purpose' : None,
+       '--comment' : None,
+       '--start' : None
+d45 1
+d72 1
+d106 3
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d294 1
+a294 1
+                overlapping_noderes_list = filter( lambda noderes, overlap_start_time=overlap_start_time, overlap_end_time=overlap_end_time : ((overlap_start_time <= noderes[0] < overlap_end_time) or (overlap_start_time < noderes[1] <= overlap_end_time)) , existing_noderes_list )
+@

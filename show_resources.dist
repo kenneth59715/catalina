@@ -1,0 +1,57 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to query the resource database
+
+import Catalina
+import string
+
+DB = Catalina.RESOURCE_DB
+
+def by_name(first, second) :
+    first_number = first['name']
+    second_number = second['name']
+    if first_number < second_number :
+        return -1
+    if first_number == second_number :
+        return 0
+    if first_number > second_number :
+        return 1
+
+db_handle = Catalina.open_ro_db(DB,'read')
+resource_list = Catalina.get_object_list(db_handle)
+
+print 160 * '-'
+print "Name            Machine   Arch     OpSys Feature                     Max_Starters Memory   Cpus Pool    State   ConfiguredClasses#AvailableClasses#Adapter"
+print 160 * '-'
+
+resource_list.sort(by_name)
+
+for resource in resource_list :
+    if resource.has_key('ConfiguredClasses_list') and resource['ConfiguredClasses_list'] != None :
+        conf_dict = {}
+        for res in resource['ConfiguredClasses_list'] :
+            if conf_dict.has_key(res) :
+                conf_dict[res] = conf_dict[res] + 1
+            else :
+                conf_dict[res] = 1
+        configured_classes = ''
+        for job_class in conf_dict.keys() :
+            configured_classes = configured_classes + job_class + '(' + "%s" % conf_dict[job_class] + ')'
+    else :
+        configured_classes = None
+    print "configured_classes (%s)" % configured_classes
+    print "%6s %15s %8s %8s %27s %2s         %6s    %2s    %2s %12s %s#%s#%s" % (
+    resource['name'],
+    resource['Machine'],
+    resource['Arch'],
+    resource['OpSys'],
+    resource['Feature'],
+    resource['Max_Starters'],
+    resource['Memory'],
+    resource['Cpus'],
+    resource['Pool'],
+    resource['State'],
+    configured_classes,
+    resource['AvailableClasses'],
+    resource['Adapter'])
+
+Catalina.close_ro_db(db_handle)

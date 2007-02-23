@@ -1,0 +1,183 @@
+head	1.4;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2004.05.24.18.13.05;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2004.05.24.17.43.27;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2001.10.23.17.05.44;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.21.27.32;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@sort policy for taking last available nodes, running first
+@
+
+
+1.4
+log
+@revert to r1.2, could not replicate problem with 1.2
+@
+text
+@# policy for sorting reservation windows
+# in ascending start_time (first available chosen first)
+import string
+
+def sortfunc (first, second) :
+    # choose running nodes first (those with availability window
+    # start time later than Now_float)
+    if first[0] > Now_float and second[0] <= Now_float :
+        return -1
+    if second[0] > Now_float and first[0] <= Now_float :
+        return 1
+    # If reached here, the nodes are either both Idle or both Running
+    # Take the latest available, to preserve backfill window.
+    if first[0] > second[0] :
+        return -1
+    if first[0] == second[0] :
+        return 0
+    if first[0] < second[0] :
+        return 1
+
+windows = input_tuple[0]
+nodes = input_tuple[1]
+new_res = input_tuple[2]
+Now_float = input_tuple[3]
+
+windows.sort(sortfunc)
+
+result = windows
+@
+
+
+1.3
+log
+@changed to match LAST_AVAILABLE_IGNORED_FIRST in Catalina.py
+@
+text
+@d2 7
+a8 7
+# last available, ignored first, good for standing_reservations
+def sortfunc_immediate (first, second) :
+    if DEBUGJOB != None :
+        print "first[1] (%s), second[1] (%s)" % (first[1], second[1])
+    if first[1] == 'Running' and second[1] == 'Idle' :
+        if DEBUGJOB != None :
+            print "first[1] == 'Running' and second[1] == 'Idle', returning -1"
+d10 1
+a10 3
+    if first[1] == 'Idle' and second[1] == 'Running' :
+        if DEBUGJOB != None :
+            print "first[1] == 'Idle' and second[1] == 'Running', returning 1"
+d12 3
+a14 1
+    if first[0][0] > second[0][0] :
+d16 1
+a16 1
+    if first[0][0] == second[0][0] :
+d18 1
+a18 12
+    if first[0][0] < second[0][0] :
+        return 1
+def sortfunc_future (first, second) :
+    #if first[0][2] in first[2] and not second[0][2] in second[2] :
+    #    return -1
+    #if second[0][2] in second[2] and not first[0][2] in first[2] :
+    #    return 1
+    if first[0][0] > second[0][0] :
+        return -1
+    if first[0][0] == second[0][0] :
+        return 0
+    if first[0][0] < second[0][0] :
+d20 1
+d24 4
+a27 19
+resources_dict = input_tuple[5]
+windows_state_list = []
+#original_nodes = ___ORIGINAL_NODE_PLACEHOLDER___
+future = 0
+for window in windows :
+    windows_state_list.append((window, resources_dict[window[2]]['State']))
+    #print "window[0] (%s) window[1] (%s) window[2] (%s)" % (time.asctime(time.g
+mtime(window[0])), time.asctime(time.gmtime(window[1])), window[2])
+    if window[0] > Now_float :
+        future = 1
+if future == 0 :
+    #print "using sortfunc_immediate"
+    windows_state_list.sort(sortfunc_immediate)
+else :
+    #print "using softfunc_future"
+    windows_state_list.sort(sortfunc_future)
+windows = []
+for window_tuple in windows_state_list :
+    windows.append(window_tuple[0])
+a28 1
+
+@
+
+
+1.2
+log
+@removed import regex
+@
+text
+@d2 13
+a14 7
+# in ascending start_time (first available chosen first)
+import string
+
+def sortfunc (first, second) :
+    # choose running nodes first (those with availability window
+    # start time later than Now_float)
+    if first[0] > Now_float and second[0] <= Now_float :
+d16 3
+a18 1
+    if second[0] > Now_float and first[0] <= Now_float :
+d20 6
+a25 3
+    # If reached here, the nodes are either both Idle or both Running
+    # Take the latest available, to preserve backfill window.
+    if first[0] > second[0] :
+d27 1
+a27 1
+    if first[0] == second[0] :
+d29 1
+a29 1
+    if first[0] < second[0] :
+a30 1
+
+d34 20
+a53 1
+Now_float = input_tuple[3]
+a54 3
+windows.sort(sortfunc)
+
+result = windows
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a2 1
+import regex
+@

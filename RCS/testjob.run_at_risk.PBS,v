@@ -1,0 +1,30 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.06.26.18.23.42;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@testjob for run_at_risk feature
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#PBS -l nodes=2,walltime=43200,mem=320kb
+#PBS -A sys200
+#PBS -v QOS=2,Catalina_local_admin_priority=92091,Catalina_local_user_priority=-100,Catalina_res_bind=testholder,Catalina_run_at_risk=1
+/bin/hostname
+cat $PBS_NODEFILE
+sleep 120
+@

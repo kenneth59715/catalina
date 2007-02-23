@@ -1,0 +1,29 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update reservations for running and starting jobs
+
+import Catalina
+
+#RESOURCES_DB = 'resource'
+#JOBS_DB = 'jobs'
+#EVENTS_DB = 'events'
+#RESERVATIONS_DB = 'reservations'
+
+RESOURCES_DB = Catalina.RESOURCE_DB
+JOBS_DB = Catalina.JOBS_DB
+EVENTS_DB = Catalina.EVENTS_DB
+RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+
+events_db_handle = Catalina.open_db(EVENTS_DB,'read')
+jobs_db_handle = Catalina.open_db(JOBS_DB,'read')
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+resources_db_handle = Catalina.open_db(RESOURCES_DB,'read')
+
+(eligible_jobs, runningstarting_jobs) = Catalina.get_eligible_and_running_jobs(jobs_db_handle,
+  resources_db_handle, reservations_db_handle)
+Catalina.update_running_reservations(runningstarting_jobs, reservations_db_handle, resources_db_handle, jobs_db_handle, events_db_handle)
+
+
+Catalina.close_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)

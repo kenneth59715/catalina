@@ -1,0 +1,24 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to bind job to reservations
+
+import Catalina
+import getopt
+import sys
+
+options = ['res=', 'job=']
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, 'r:j', options)
+for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+EVENTS_DB = 'events'
+JOBS_DB = 'jobs'
+
+events_db_handle = Catalina.open_db(EVENTS_DB,'write')
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+Catalina.bind_job_to_reservation(argdict['--job'], argdict['--res'], events_db_handle, jobs_db_handle)
+
+Catalina.close_db(events_db_handle)
+Catalina.close_db(jobs_db_handle)

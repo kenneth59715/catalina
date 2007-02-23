@@ -1,0 +1,335 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# python script for creating a standing reservation
+# a shortpool is a type of standing reservation that moves to short-running
+# nodes, if possible.  This maintains a pool of nodes that will be shortly
+# available for high priority jobs, while maintaining backfill window
+# better than a plain standing res restricted to short-running jobs.
+# Shortpool reservations should have --latency=<seconds until shortpool
+# nodes should be available> --node_sort_policy_file=./samples/last_available_running_first
+# times are in epoch
+
+import sys
+import getopt
+import string
+import os
+import re
+import Catalina
+import copy
+
+STANDING_RESERVATIONS_DB = Catalina.STANDING_RESERVATIONS_DB
+
+def reconcile_file_to_arg(dict, arg, filearg) :
+    if dict.has_key(arg) and dict.has_key(filearg) :
+        print "Can't specify both (%s) and (%s)" % (arg, filearg)
+        sys.exit(1)
+    elif dict.has_key(filearg) :
+        if os.path.isfile(dict[filearg]) :
+            input = open(dict[filearg], 'r')
+            filestring = input.read()
+            input.close()
+            return filestring
+        else :
+            print "%s not a file!" % dict[filearg]
+            sys.exit(1)
+    elif dict.has_key(arg) :
+        return dict[arg]
+    else :
+        if dict.has_key(arg) :
+            print "dict[arg] is (%s)" % dict[arg]
+        if dict.has_key(filearg) :
+            print "dict[filearg] is (%s)" % dict[filearg]
+        return ''
+
+def checkargs(argdict) :
+
+    if argdict.has_key('--help') or argdict.has_key('--?') :
+        print usage_string
+        sys.exit(1)
+
+    job_restriction_code = reconcile_file_to_arg(
+    argdict, '--job_restriction', '--job_restriction_file'
+    )
+    if job_restriction_code != '' :
+        argdict['--job_restriction'] = job_restriction_code
+
+    node_restriction_code = reconcile_file_to_arg(
+    argdict, '--node_restriction', '--node_restriction_file'
+    )
+    if node_restriction_code != '' :
+        argdict['--node_restriction'] = node_restriction_code
+
+    policy_restriction_code = reconcile_file_to_arg(
+    argdict, '--node_sort_policy', '--node_sort_policy_file'
+    )
+    if policy_restriction_code != '' :
+        argdict['--node_sort_policy'] = policy_restriction_code
+
+    if argdict.has_key('--conflict_policy') or argdict.has_key('--conflict_policy_file') :
+        conflict_code = reconcile_file_to_arg(
+        argdict, '--conflict_policy', '--conflict_policy_file'
+        )
+        if conflict_code != '' :
+            argdict['--conflict_policy'] = conflict_code
+
+    if argdict.has_key('--affinity_calculation') or argdict.has_key('--affinity_calculation_file') :
+        affinity_calculation = reconcile_file_to_arg(
+          argdict, '--affinity_calculation', '--affinity_calculation_file'
+          )
+        if affinity_calculation != '' :
+            argdict['--affinity_calculation'] = affinity_calculation
+    
+    if not argdict.has_key('--duration') :
+        print "--duration must be provided!"
+        print usage_string
+        sys.exit(1)
+
+    if not argdict.has_key('--start_spec') :
+        print "--start_spec must be provided!"
+        print usage_string
+        sys.exit(1)
+
+    if not argdict.has_key('--depth') :
+        print "--depth must be provided!"
+        print usage_string
+        sys.exit(1)
+
+    if not argdict.has_key('--resource_amount') :
+        print "--resource_amount must be provided!"
+        print usage_string
+        sys.exit(1)
+
+    if string.atof(argdict['--duration']) < 0 :
+        print "--duration must be non-negative!"
+        print usage_string
+        sys.exit(1)
+
+    return argdict
+
+options = [
+  'help',
+  '?',
+  'tz=',
+  'latency=',
+  'depth=',
+  'start_spec=',
+  'latest_end=',
+  'duration=',
+  'resource_amount=',
+  'sharedmap=',
+  'job_restriction=',
+  'job_restriction_file=',
+  'node_restriction=',
+  'node_restriction_file=',
+  'node_sort_policy=',
+  'node_sort_policy_file=',
+  'conflict_policy=',
+  'conflict_policy_file=',
+  'affinity_calculation=',
+  'affinity_calculation_file=',
+  'mode=',
+  'debug',
+  'comment=',
+  'overlap_running='
+  ]
+usage_string = \
+"""Usage: create_standing_res --depth=<integer> Number of instances.
+        --start_spec=<specification>    Cron-like specification for the start
+                                        of each instance.
+                                        <minutes> <hours> <mday> <months> <wdays>
+        --duration=<seconds>            Duration of each instance
+        --resource_amount=<integer>     Number of nodes
+        --job_restriction=<code>        Python code to select jobs to run in    
+                                        the reservation.
+        [--tz=<TZ string>]              For example, GMT0, to be used with
+                                        start_spec
+                                        If this is not provided and FORCETZ
+                                        has been set in catalina.config,
+                                        FORCETZ will be used, otherwise,
+                                        the TZ environment variable will
+                                        be used, and if that is not set or
+                                        is set to an empty string, GMT0 will
+                                        be used.
+        [--mode=<real|lookahead>]
+        [--sharedmap=<number of nodes>#type:<node_shared|node_exclusiv
+e>[#cpu:<cpus>+memory:<memory>#@<number of nodes>#type:<node_shared|node_exclusi
+ve>[#cpu:<cpus>+memory:<memory>#...]
+        for shared nodes, the desired amount of procs and memory
+        should be specified with one of these options.  --sharedmap
+        means use a different number of cpus and memory for each node.
+        If there are more nodes in --resource_amount than in
+        --sharedmap, the last sharedmap element will be used for
+        the remaining nodes.
+
+        [--node_restriction=<node restriction code>]
+           <node restriction code> is a Python code fragment used to filter
+           nodes to be used in the reservation.  Arbitrary node attributes
+           can be used to qualify a node for the reservation.  input_tuple[0]
+           is the node to be checked.  If the result is set to 0, then the
+           node is accepted.  For example:
+           --node_restriction="if input_tuple[0]['ConfiguredClasses_list'] != \
+           None and 'normal' in input_tuple[0]['ConfiguredClasses_list'] and \
+           input_tuple[0]['Max_STarters'] != 0 : result = 0"
+           will cause only nodes with normal class to be used.
+        Options not described here:
+        [--affinity_calculation]
+        [--node_sort_policy]
+        [--comment]
+        [--overlap_running]"""
+args = sys.argv[1:]
+#print "args (%s)" % (sys.argv[1:],)
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+#print "optlist (%s)" % (optlist,)
+#print "lineargs (%s)" % (lineargs,)
+for pair in optlist:
+    #print "pair (%s)" % (pair,)
+    argdict[pair[0]] = pair[1]
+tempdict = checkargs(argdict)
+argdict = tempdict
+
+standing_reservations_db_handle = Catalina.open_db(STANDING_RESERVATIONS_DB,'write');
+    
+if argdict.has_key('--start_spec') :
+    start_spec = argdict['--start_spec']
+else :
+    start_spec = None
+if argdict.has_key('--tz') :
+    standing_TZ = argdict['--tz']
+elif Catalina.FORCETZ != 'NOFORCE' :
+    print "using FORCETZ (%s) to interpret start_spec" % Catalina.FORCETZ
+    standing_TZ = Catalina.FORCETZ
+elif os.environ.has_key('TZ') and os.environ['TZ'] != None and os.environ['TZ'] != '' :
+    print "using $TZ (%s) to interpret start_spec" % os.environ['TZ']
+    standing_TZ = os.environ['TZ']
+else :
+    print "using GMT0 to interpret start_spec"
+    standing_TZ = 'GMT0'
+if argdict.has_key('--depth') :
+    depth = argdict['--depth']
+else :
+    depth = None
+if argdict.has_key('--earliest_start') :
+    earliest_start = string.atof(argdict['--earliest_start'])
+else :
+    earliest_start = None
+if argdict.has_key('--latest_end') :
+    latest_end = string.atof(argdict['--latest_end'])
+else :
+    latest_end = None
+if argdict.has_key('--duration') :
+    duration = string.atof(argdict['--duration'])
+else :
+    duration = None
+if argdict.has_key('--latency') :
+    latency = string.atof(argdict['--latency'])
+else :
+    latency = None
+if argdict.has_key('--resource_amount') :
+    resource_amount = string.atoi(argdict['--resource_amount'])
+else :
+    resource_amount = None
+if argdict.has_key('--sharedmap') :
+    #print "argdict['--sharedmap'] (%s)" % argdict['--sharedmap']
+    node_usage = 'node_shared'
+    requested_resource_list = []
+    reqs = string.split(argdict['--sharedmap'],'@')
+    for req in reqs :
+        sharedlist_list = string.split(req,'#')
+        req_count = string.atol(sharedlist_list[0])
+        type,share_type = string.split(sharedlist_list[1],':')
+        cm_list = string.split(sharedlist_list[2],'+')
+        req_list = []
+        req_dict = {}
+        for cm in cm_list :
+            cm_name,cm_value = string.split(cm,':')
+            req_dict[cm_name] = string.atol(cm_value)
+        req_list.append(req_dict)
+        req_dict_dict = { 'type' : share_type,
+                          'req_list' : req_list }
+        for req_index in range(req_count) :
+            requested_resource_list.append(copy.deepcopy(req_dict_dict))
+else :
+    node_usage = 'node_exclusive'
+    requested_resource_list = []
+if argdict.has_key('--job_restriction') :
+    job_restriction = argdict['--job_restriction']
+else :
+    job_restriction = None
+if argdict.has_key('--node_restriction') :
+    node_restriction = argdict['--node_restriction']
+else :
+    node_restriction = Catalina.NODERESTCODE
+if argdict.has_key('--node_sort_policy') :
+    node_sort_policy = argdict['--node_sort_policy']
+else :
+    node_sort_policy = None
+if argdict.has_key('--conflict_policy') :
+    conflict_policy = argdict['--conflict_policy']
+else :
+    conflict_policy = None
+if argdict.has_key('--affinity_calculation') :
+    affinity_calculation = argdict['--affinity_calculation']
+else :
+    affinity_calculation = None
+if argdict.has_key('--mode') :
+    mode = argdict['--mode']
+else :
+    mode = 'lookahead'
+if argdict.has_key('--debug') :
+    Catalina.DEBUG = 'TRUE'
+if argdict.has_key('--comment') :
+    comment = argdict['--comment']
+else :
+    comment = ''
+if argdict.has_key('--overlap_running') :
+    overlap_running_int = int(argdict['--overlap_running'])
+else :
+    overlap_running_int = 1
+
+#print "requested_resource_list (%s)" % (requested_resource_list,)
+
+try :
+    new_res = Catalina.create_standing_reservation(
+      standing_reservations_db_handle=standing_reservations_db_handle,
+      start_spec_string=start_spec,
+      standing_TZ=standing_TZ,
+      duration_float=duration,
+      resource_amount_int=resource_amount,
+      requested_resource_list=requested_resource_list,
+      node_usage=node_usage,
+      affinity_calculation=affinity_calculation,
+      sort_policy=node_sort_policy,
+      depth=depth,
+      mode=mode,
+      comment=comment,
+      conflict_policy=conflict_policy,
+      latency_float=latency,
+      job_restriction=job_restriction,
+      node_restriction=node_restriction,
+      overlap_running_int=overlap_running_int
+    )
+except 'InsufficientNodes', new_res :
+    print "Insufficient nodes found! (%d) < (%d)" % \
+    (len(chosen_nodes), string.atoi(argdict['--resource_amount']))
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_db(resources_db_handle)
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+else :
+    if mode == 'lookahead' :
+        print "standing reservation possible on %s nodes with start_time %s for duration %s" % \
+          ( new_res['resource_amount_int'],
+            new_res['start_time_float'],
+            new_res['duration_float'] )
+    else :
+        print "standing reservation %s created on %s nodes with start_spec %s for duration %s" % \
+          ( new_res['name'],
+            new_res['resource_amount_int'],
+            new_res['start_spec_string'],
+            new_res['duration_float'] )
+
+
+Catalina.close_db(standing_reservations_db_handle)
+
+sys.exit(0)

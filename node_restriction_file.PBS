@@ -1,0 +1,27 @@
+# Restrict nodes to those with ConfiguredClasses normal  and Max_Starters > 0
+# If node does not have normal class or has Max_Starters == 0, reject
+import re
+import string
+
+resource = input_tuple[0]
+
+pattName = re.compile('.*normal')
+
+#print "in node_restriction_file, %s has state %s" % (resource['name'], resource['State'])
+
+
+if resource['State'] == 'Down' :
+    result = 'Down'
+elif resource['State'] == 'Drain' :
+    result = 'Drain'
+elif resource['State'] == 'Drained' :
+    result = 'Drained'
+elif resource['State'] == 'None' :
+    result = 'None'
+elif resource['State'] == None :
+    result = None
+elif resource['State'] == 'Unknown' :
+    result = 'Unknown'
+else :
+    result = 0
+

@@ -1,0 +1,53 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2001.09.25.16.01.30;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.22.38.34;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@script to stop the scheduler
+@
+
+
+1.2
+log
+@look for schedule_jobs instead of schedule_jobs_iterate
+@
+text
+@#!___KSH_PATH_PLACEHOLDER___
+cd ___HOMEDIR_PLACEHOLDER___
+./set_config --key_value=state:stopped
+count=`___PS_PLACEHOLDER___ -ef | ___GREP_PLACEHOLDER___ 'schedule_jobs' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'`
+while [[ $count > 0 ]]
+do
+___SLEEP_PLACEHOLDER___ 5
+echo "waiting for stop"
+count=`___PS_PLACEHOLDER___ -ef | ___GREP_PLACEHOLDER___ 'schedule_jobs' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'`
+done
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d4 1
+a4 1
+count=`___PS_PLACEHOLDER___ -ef | ___GREP_PLACEHOLDER___ 'schedule_jobs_iterate' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'`
+d9 1
+a9 1
+count=`___PS_PLACEHOLDER___ -ef | ___GREP_PLACEHOLDER___ 'schedule_jobs_iterate' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'`
+@

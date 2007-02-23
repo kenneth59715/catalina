@@ -1,0 +1,4 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# dummy reslist.  always exit 0
+import sys
+sys.exit(0)

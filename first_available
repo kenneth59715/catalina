@@ -1,0 +1,19 @@
+# policy for sorting reservation windows
+# in ascending start_time (first available chosen first)
+import string
+
+def sortfunc (first, second) :
+    if first[0] < second[0] :
+        return -1
+    if first[0] == second[0] :
+        return 0
+    if first[0] > second[0] :
+        return 1
+
+windows = input_tuple[0]
+nodes = input_tuple[1]
+new_res = input_tuple[2]
+
+windows.sort(sortfunc)
+
+result = windows

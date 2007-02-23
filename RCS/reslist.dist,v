@@ -1,0 +1,28 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2002.02.27.23.47.03;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@dummy reslist
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# dummy reslist.  always exit 0
+import sys
+sys.exit(0)
+@

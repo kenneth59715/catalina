@@ -1,0 +1,224 @@
+/* adapted from IBM examples */
+#include "/usr/lpp/LoadL/full/include/llapi.h" 
+#define MAXCLASS 1000
+
+main(int argc,char *argv[]){ 
+	LL_element *queryObject=NULL, *machine=NULL, *Adapter=NULL, *resource_element=NULL; 
+	int rc, num, err, index;
+	int Disk, Cpus, Max_Starters, Memory, MachineStartdState, AdapterAvailWindowCount, AdapterTotalWindowCount, PoolListSize, ResourceInitialValue, ResourceAvailableValue;
+	char **AvailableClasses, **ConfiguredClasses, **FeatureList; 
+	char *State, *Machine, *Arch, *OpSys, *AdapterName, *AdapterCommInterface, *ResourceName; 
+	int **Pool;
+
+	/* Initialize the query for machines */ 
+	queryObject = ll_query(MACHINES); 
+
+	rc = ll_set_request(queryObject,QUERY_ALL,NULL,ALL_DATA); 
+	if (rc != 0) {
+		exit(rc);
+	}
+
+	/* Request the objects from the Negotiator daemon */ 
+	machine = ll_get_objs(queryObject,LL_CM,NULL,&num,&err); 
+
+	/* Did we get a list of objects ? */ 
+	if (machine == NULL) { 
+		printf("  ll_get_objs returned a NULL object.\n"); 
+		printf("  err = %d\n",err); 
+	} else { 
+		/* Loop through the list and process */ 
+		while(machine) { 
+			rc = ll_get_data(machine,LL_MachineName,&Machine); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Machine:%s",Machine); 
+				free(Machine); 
+			} 
+			rc = ll_get_data(machine,LL_MachineArchitecture,&Arch); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Arch:%s",Arch); 
+				free(Arch); 
+			} 
+			rc = ll_get_data(machine,LL_MachineOperatingSystem,&OpSys); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#OpSys:%s",OpSys); 
+				free(OpSys); 
+			} 
+			rc = ll_get_data(machine,LL_MachineDisk,&Disk); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Disk:%d",Disk); 
+			} 
+			rc = ll_get_data(machine,LL_MachinePoolList,&Pool); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			rc = ll_get_data(machine,LL_MachinePoolListSize,&PoolListSize); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			printf("#cat_delim#Pool:");
+			for (index = 0; index < PoolListSize ; index++) {
+				printf("%d", *(Pool + index));
+				if ( index < PoolListSize - 1 ) {
+					printf("+");
+				}
+			}
+			free(Pool);
+			rc = ll_get_data(machine,LL_MachineConfiguredClassList,&ConfiguredClasses); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#ConfiguredClasses:"); 
+				for ( index = 0 ; *(ConfiguredClasses + index) != NULL  ; index++ ) {  
+					printf("%s",*(ConfiguredClasses + index)); 
+					if ( *(ConfiguredClasses + index + 1 ) != NULL) {
+						printf("+");
+					}
+				}
+				free(ConfiguredClasses); 
+			} else {
+				printf("Failed to get Configured Classes: %d\n", rc);
+			}
+			rc = ll_get_data(machine,LL_MachineAvailableClassList,&AvailableClasses); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#AvailableClasses:"); 
+				for ( index = 0 ; *(AvailableClasses + index) != NULL  ; index++ ) {  
+					printf("%s",*(AvailableClasses + index)); 
+					if ( *(AvailableClasses + index + 1) != NULL) {
+						printf("+");
+					}
+				}
+				free(AvailableClasses); 
+			} else {
+				printf("Failed to get Available Classes: %d\n", rc);
+			}
+			rc = ll_get_data(machine,LL_MachineFeatureList,&FeatureList); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Feature:");
+				for ( index = 0 ; *(FeatureList + index) != NULL  ; index++ ) {  
+					printf("%s",*(FeatureList + index)); 
+					if ( *(FeatureList + index + 1) != NULL) {
+						printf("+");
+					}
+				}
+				free(FeatureList); 
+			} else {
+				printf("Failed to get FeatureList: %d", rc);
+			}
+			rc = ll_get_data(machine,LL_MachineMaxTasks,&Max_Starters); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Max_Starters:%d",Max_Starters); 
+			} 
+			rc = ll_get_data(machine,LL_MachineRealMemory,&Memory); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Memory:%d",Memory); 
+			} 
+			rc = ll_get_data(machine,LL_MachineCPUs,&Cpus); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#Cpus:%d",Cpus); 
+			} 
+			rc = ll_get_data(machine,LL_MachineGetFirstResource,&resource_element); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#resourcesmap:"); 
+			} 
+			while (resource_element != NULL) {
+
+				rc = ll_get_data(resource_element,LL_ResourceName,&ResourceName); 
+				printf("%s#cat_sep#",ResourceName);
+				rc = ll_get_data(resource_element,LL_ResourceInitialValue,&ResourceInitialValue); 
+				printf("%u#cat_sep#",ResourceInitialValue);
+				rc = ll_get_data(resource_element,LL_ResourceAvailableValue,&ResourceAvailableValue); 
+				printf("%u",ResourceAvailableValue);
+				rc = ll_get_data(machine,LL_MachineGetNextResource,&resource_element); 
+				if (resource_element != NULL) {
+					printf("+");
+				}
+			}
+			rc = ll_get_data(machine,LL_MachineStartdState,&State); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				printf("#cat_delim#State:%s",State); 
+				free(State); 
+			} 
+			index = 0;
+			rc = ll_get_data(machine,LL_MachineGetFirstAdapter,&Adapter); 
+			if (rc != 0) {
+				exit(rc);
+			}
+			if (!rc) { 
+				while ( Adapter != NULL ) {
+					index++;
+					rc = ll_get_data(Adapter,LL_AdapterName,&AdapterName); 
+					if (rc != 0) {
+						exit(rc);
+					}
+					if (!rc) { 
+						printf("#cat_delim#AdapterName%d:%s;",index,AdapterName); 
+						free(AdapterName);
+					} 
+					rc = ll_get_data(Adapter,LL_AdapterTotalWindowCount,&AdapterTotalWindowCount); 
+					if (rc != 0) {
+						exit(rc);
+					}
+					if (!rc) { 
+					printf("AdapterTotalWindowcount:%d;",AdapterTotalWindowCount); 
+					} 
+					rc = ll_get_data(Adapter,LL_AdapterAvailWindowCount,&AdapterAvailWindowCount); 
+					if (rc != 0) {
+						exit(rc);
+					}
+					if (!rc) { 
+						printf("AdapterAvailWindowcount:%d",AdapterAvailWindowCount); 
+					} 
+					rc = ll_get_data(machine,LL_MachineGetNextAdapter,&Adapter); 
+					if (rc != 0) {
+						exit(rc);
+					}
+				}
+			} 
+			printf("\n");
+			machine = ll_next_obj(queryObject); 
+		} 
+	} 
+
+	/* free objects obtained from Negotiator */ 
+	rc = ll_free_objs(queryObject); 
+
+	/* free query element */ 
+	rc = ll_deallocate(queryObject); 
+	printf("qm FINISHED\n");
+} 
+
+

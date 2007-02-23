@@ -1,0 +1,129 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script for running prologue and epilogue at start and end of reservations
+
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import Catalina
+import time
+import os
+import getopt
+import string
+
+# From the Python book:
+# Only one pipe, child out to parent in
+def forksleep (prog, args, timeout) :
+    pipe1 = os.pipe()
+    pid = os.fork()
+    if pid :
+        os.close(pipe1[1])
+        os.dup2(pipe1[0], 0)
+        iterations = 0
+        while iterations < timeout :
+            return_tuple = os.waitpid( pid, os.WNOHANG )
+            if return_tuple[0] == pid :
+                return_out = sys.stdin.read()
+                exit_number = return_tuple[1]
+                exit_status = exit_number >> 8
+                return_data = (return_out, exit_status)
+                break
+            else :
+                time.sleep(1)
+        return (return_data)
+    else :
+        os.close(pipe1[0])
+        os.dup2(pipe1[1], 1)
+        print "child running (%s) with args (%s)" % (prog, args)
+        childargs = (prog,) + args
+        os.execv(prog, childargs)
+
+options = [
+  '?',
+  'help',
+  'test',
+  ]
+
+usage_string = \
+"""Usage: resproepi [--test]"""
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+reservations_db_handle = Catalina.open_db(Catalina.RESERVATIONS_DB,'write');
+
+for res_key in reservations_db_handle[0].keys() :
+    if reservations_db_handle[0][res_key]['purpose_type_string'] == 'user_set' \
+      and reservations_db_handle[0][res_key]['notify_string'] != 'NONOTIFY' \
+      and reservations_db_handle[0][res_key]['start_time_float'] - 7200.0 < Catalina.Now_float \
+      and (not reservations_db_handle[0][res_key].has_key('user2hour') \
+           or reservations_db_handle[0][res_key]['user2hour'] == 0) :
+        # warn user that reservation starts in 7200 sec
+        message = "reservation (%s) for (%s) starts in 2 hours on nodes (%s)" % (
+          res_key,
+          reservations_db_handle[0][res_key]['creator_string'],
+          reservations_db_handle[0][res_key]['node_list']
+          ) 
+        subject = "2 hour warning for user set reservation"
+        recipient = reservations_db_handle[0][res_key]['notify_string']
+        Catalina.warn(message, subject, recipient)
+        Catalina.update_object_attribute(
+          'user2hour',
+          1, 
+          reservations_db_handle[0][res_key],
+          reservations_db_handle
+          )
+    if reservations_db_handle[0][res_key]['start_time_float'] < Catalina.Now_float \
+      and reservations_db_handle[0][res_key].has_key('prologuerc') \
+      and reservations_db_handle[0][res_key]['prologuerc'] != 0 :
+        # run prologue.res <creator_string> <comma-delimited node_list> <purpose_type_string>
+        args_tuple = (
+          "%s" % reservations_db_handle[0][res_key]['creator_string'],
+          string.join(reservations_db_handle[0][res_key]['node_list'],','),
+          reservations_db_handle[0][res_key]['purpose_type_string']
+          )
+        if argdict.has_key('--test') :
+            print "would run %s %s" % (Catalina.PROLOGUE_RES, args_tuple)
+        else :
+            return_tuple = forksleep(Catalina.PROLOGUE_RES, args_tuple, 30)
+            if return_tuple[1] == 0 :
+                Catalina.update_object_attribute(
+                  'prologuerc',
+                  0, 
+                  reservations_db_handle[0][res_key],
+                  reservations_db_handle
+                  )
+    if reservations_db_handle[0][res_key]['end_time_float'] < Catalina.Now_float \
+      and reservations_db_handle[0][res_key].has_key('epiloguerc') \
+      and reservations_db_handle[0][res_key]['epiloguerc'] != 0 :
+        # run epilogue.res <creator_string> <comma-delimited node_list> <purpose_type_string>
+        args_tuple = (
+          "%s" % reservations_db_handle[0][res_key]['creator_string'],
+          string.join(reservations_db_handle[0][res_key]['node_list'],','),
+          reservations_db_handle[0][res_key]['purpose_type_string']
+          )
+        if argdict.has_key('--test') :
+            print "would run %s %s" % (Catalina.EPILOGUE_RES, args_tuple)
+        else :
+            return_tuple = forksleep(Catalina.EPILOGUE_RES, args_tuple, 30)
+            if return_tuple[1] == 0 :
+                Catalina.update_object_attribute(
+                  'epiloguerc',
+                  0, 
+                  reservations_db_handle[0][res_key],
+                  reservations_db_handle
+                  )
+            else :
+                message = """reservation epilogue failed for reservation(%s)
+with nonzero return code (%s)!""" % (res_key, return_tuple[1])
+                subject = "reservation epilogue failed"
+                recipient = Catalina.MAIL_RECIPIENT
+                Catalina.warn(message, subject, recipient)
+
+
+Catalina.close_db(reservations_db_handle)

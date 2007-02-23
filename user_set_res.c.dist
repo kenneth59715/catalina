@@ -1,0 +1,159 @@
+/*
+ * THIS HAS BEEN WEAKENED (NO PATH,OWNERSHIP,PERMISSIONS CHECKS)
+ * DO NOT USE FOR SUID ROOT STUFF
+ * Since this service is not particularly critical, in the face of any error
+ * at all we just report it and quit rather than try to muddle through.
+ */
+
+#include <unistd.h>
+#include <stdlib.h>
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <errno.h>
+#include <pwd.h>
+#include <string.h>
+#include <syslog.h>
+#include <regex.h>
+
+/*
+ * There are no known security problems with an empty set of
+ * environment variables, but provide a safe PATH variable anyway.
+ * This provides necessary functionality to programs like SunOS
+ * mount(8), which legitimately runs some other program.
+ * Also provide a LOGNAME variable, which is the login name of
+ * whomever invoked this program.
+ */
+static char *env[] = {
+        "LOGNAME=12345678",
+        "TZ=GMT0",
+#ifdef sun
+        "PATH=/usr/bin:/usr/etc:/usr/ucb",
+#else
+#if defined(__osf__) || defined(__OSF1__)
+        "PATH=/sbin:/usr/sbin:/usr/bin",
+#else
+#ifdef hpux
+        "PATH=/bin:/usr/bin:/etc:/usr/etc",
+#else
+#ifdef mips
+        "PATH=/usr/sbin:/usr/bsd:/sbin:/usr/bin:/usr/etc",
+#endif /* mips */
+#endif /* hpux */
+#endif /* osf */
+#endif /* sun */
+        (char *)NULL };
+
+static char	program[] = "___USER_SET_RES_PLACEHOLDER___";
+static char	arg_pattern[] = "^[-.=,@_:/a-zA-Z0-9#+]*$";
+static char	tz_pattern[] = "^[A-Z0-9]*$";
+
+#define TOOLONG 100
+/* ARGCOUNT doesn't change the execle args */
+#define MAXARGCOUNT 10
+#define MINARGCOUNT 7
+
+main(int argc, char *argv[])
+{
+char	*arg0;
+char	*timezone;
+int	status;
+int	re_status;
+int	arg_length;
+int	i;
+regex_t	re;
+regex_t	tz_re;
+
+/* Check for right number of arguments */
+/* 1-account, 2-nodes, 3-duration, 4-start_time, 5-end_time, 6-email, 7-sharedmap */
+if ( argc < MINARGCOUNT || argc > MAXARGCOUNT ) {
+	printf("Wrong argument count!\n");
+	printf("Usage: user_set_res --account=<account> --nodes=<number of nodes>|--maxmodes=<max number of nodes> --duration=<duration(sec)> --earliest_start=<earliest start time(HH:MM_mm/dd/yyyy or epoch seconds)> --latest_end=<latest end time(HH:MM_mm/dd/yyyy or epoch seconds)> --email=<email address> [--sharedmap=<1#type:node_shared#cpu:1+memory:1>] [--featurelist=<comma-delimited list of node features>] [--qoslist=<comma-delimited list of allowed QOS>]\n");
+	exit(2);
+}
+
+/* Check for length of each argument */
+for ( i=1; i < argc ; i++ ) {
+	if ( strlen(argv[i]) > TOOLONG ) {
+		printf("argument exceeds limit\n");
+		exit(2);
+	}
+}
+
+/* check that each argument contains only good characters:
+ * '_', '/', ':', a-z, A-Z, 0-9, @, #, + (no spaces allowed)
+ */
+if (regcomp(&re, arg_pattern, REG_NEWLINE) != 0 ) {
+	printf("argument checking (pattern compile) failed\n");
+	exit(2);
+}
+for ( i=1; i < argc ; i++ ) {
+        /*printf("checking %s", argv[i]);*/
+	if (regexec(&re, argv[i], (size_t) 0, NULL, 0) != 0 ) {
+		printf("argument checking (regexec) failed\n");
+		exit(2);
+	}
+}
+
+arg0 = program;
+/*
+ * Set the TZ for environment
+ */
+timezone = getenv("TZ");
+if ( timezone == NULL ) {
+	setenv("TZ", "GMT0", 1);
+}
+if ( strnlen(getenv("TZ"), TOOLONG + 1) > TOOLONG ) {
+	printf("TZ exceeds limit of %d characters\n",TOOLONG);
+	exit(2);
+}
+if (regcomp(&tz_re, tz_pattern, REG_NEWLINE) != 0 ) {
+	printf("TZ format checking (pattern compile) failed\n");
+	exit(2);
+}
+if (regexec(&re, getenv("TZ"), (size_t) 0, NULL, 0) != 0 ) {
+	printf("TZ checking (regexec) failed\n");
+	exit(2);
+}
+timezone = (char *)malloc(strlen("TZ=") + strlen(getenv("TZ")) + 1);
+strcpy(timezone,"TZ=");
+strcat(timezone,getenv("TZ"));
+i = 0;
+while ( 1 ) {
+	if ( env[i] == "TZ=GMT0" ) {
+		env[i] = timezone;
+		break;
+	}
+	if ( env[i] == NULL ) {
+		break;
+	}
+	i = i + 1;
+}
+
+/*
+ * Set the umask value and change to the preferred current directory.
+ */
+(void)umask(002);
+if (chdir("/") != 0) {
+	perror("chdir(/)");
+	return 1;
+	}
+/*
+ * Execute the command.  On success execle() does not return.
+ */
+if (argc == 10) {
+	status = execle(program, arg0, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9], (char *)NULL, env);
+}
+if (argc == 9) {
+	status = execle(program, arg0, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], (char *)NULL, env);
+}
+if (argc == 8) {
+	status = execle(program, arg0, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], (char *)NULL, env);
+}
+if (argc == 7) {
+	status = execle(program, arg0, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], (char *)NULL, env);
+}
+perror("execle");
+return status;
+}

@@ -1,0 +1,28 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2005.03.23.00.00.32;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@dummy script for reservation epilogue
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# dummy epilogue.res.  always exit 0
+import sys
+sys.exit(0)
+@

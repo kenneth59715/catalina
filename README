@@ -1,0 +1,169 @@
+# Someone needs to set this up for autoconf and automake
+# Only supports LoadL or PBS, for now.
+Prerequisites:
+
+1.  LoadLeveler v2.2 or OpenPBS
+
+2. Python v2.4.1+
+
+To extract dist.tar:
+cd <temp dir>
+tar xf <path to dist.tar file>
+cd catalina
+
+There are two ways to setup Catalina. 
+A. Interactive setup
+B. Manual setup
+
+A is recommended. 
+
+
+A. Interactive setup
+====================
+
+
+1.  Execute configure.sh with no argument
+    ./configure.sh
+
+	<an interactive script will run asking for the following config >
+*****************************************************************
+# PBS or LL
+export RESOURCEMANAGER=PBS
+# Cluster name (DS or TG)
+export CLUSTER_NAME=DS
+# Resource manager library path
+export CATALINA_RMLIBDIRS=-L/usr/local/lib
+# Resource manager include path
+export CATALINA_RMINCDIRS=-I/usr/local/include
+# owner of Catalina files
+export CATALINA_CATOWNER=kenneth
+# group of Catalina files
+export CATALINA_CATLOCKGROUP=ops100
+# directory in which to place man pages
+export CATALINA_MANPATH=/home/sdsc/kenneth/catalina/man
+# directory in which to install executables
+export CATALINA_INSTALLDIR=/home/sdsc/kenneth/catalina/install
+# directory in which to store database files
+export CATALINA_DBDIR=/home/sdsc/kenneth/catalina/db
+# directory in which to store archived logs
+export CATALINA_ARCHIVEDIR=/home/sdsc/kenneth/catalina/archive
+# C compiler
+export CC=/usr/bin/gcc
+# Python interpreter
+export CATALINA_PYTHONPATH=/paci/loadl/diag/python152/bin/python
+# permissions for user-settable reservation commands
+export CATALINA_CATUSERPERMS=2755
+# default job class or queue
+export CATALINA_DEFAULT_JOB_CLASS=standard
+# If LL, location of LoadLeveler admin file
+export CATALINA_LOADL_ADMIN_FILE=/paci/loadl/LoadL_admin.AIX5L
+# If PBS, name of host from which jobs will be submitted and reservations set
+# If desired, this can be set to IGNORE.  In that case, Catalina will not
+# consider the <@hostname> part of the jobowner field.  All users will be
+# considered equivalent, regardless of host.
+#export CATALINA_PBS_SUBMITHOST=ctf01
+export CATALINA_PBS_SUBMITHOST=IGNORE
+******************************************************************* 
+
+Note:
+  optionally the user can tell this script to dump the settings to a file
+  this is recommended. With this source file, you don't have to restart
+  configuration from the beginning if the install fail in any case
+ 
+Note :
+  This script will set the necessary environment variables, run
+  conf.sh ; make ; make install at the user prompt.
+
+Note :
+  If the install fails for any reason, you have to source the settings.sh
+  file and retry the command that failed after taking corrective actions. 
+  Alternatively you can restart from step 1.
+
+
+B. Manual setup
+=====================
+
+1. Manually set these environment variables.
+
+# PBS or LL
+export RESOURCEMANAGER=PBS
+# Cluster name (DS or TG)
+export CLUSTER_NAME=DS
+# Resource manager library path
+export CATALINA_RMLIBDIRS=-L/usr/local/lib
+# Resource manager include path
+export CATALINA_RMINCDIRS=-I/usr/local/include
+# owner of Catalina files
+export CATALINA_CATOWNER=kenneth
+# group of Catalina files
+export CATALINA_CATLOCKGROUP=ops100
+# directory in which to place man pages
+export CATALINA_MANPATH=/home/sdsc/kenneth/catalina/man
+# directory in which to install executables
+export CATALINA_INSTALLDIR=/home/sdsc/kenneth/catalina/install
+# directory in which to store database files
+export CATALINA_DBDIR=/home/sdsc/kenneth/catalina/db
+# directory in which to store archived logs
+export CATALINA_ARCHIVEDIR=/home/sdsc/kenneth/catalina/archive
+# C compiler
+export CC=/usr/bin/gcc
+# Python interpreter
+export CATALINA_PYTHONPATH=/paci/loadl/diag/python152/bin/python
+# permissions for user-settable reservation commands
+export CATALINA_CATUSERPERMS=2755
+# default job class or queue
+export CATALINA_DEFAULT_JOB_CLASS=standard
+# If LL, location of LoadLeveler admin file
+export CATALINA_LOADL_ADMIN_FILE=/paci/loadl/LoadL_admin.AIX5L
+# If PBS, name of host from which jobs will be submitted and reservations set
+# If desired, this can be set to IGNORE.  In that case, Catalina will not
+# consider the <@hostname> part of the jobowner field.  All users will be
+# considered equivalent, regardless of host.
+#export CATALINA_PBS_SUBMITHOST=ctf01
+
+
+2. Run conf.sh
+
+./conf.sh
+
+Many other environment variables are available to customize the install.
+Check the conf.sh script for these.
+
+3.  Run
+make
+
+4.  Run
+make install
+
+At first install: 
+
+5. Run
+make config
+
+6. Copy catalina.config to install directory.
+(It's not done by make install, so that existing config files are preserved in
+upgrades)
+cp catalina.config <install directory>
+
+7.  Initialize databases.  This will wipe out any existing databases.
+cd <install directory>
+./intialize_dbs
+
+8.  Run tests.  This will also wipe out any existing databases.
+./scratchtest.py
+
+To upgrade:
+
+1. Follow steps 1-4 of 'To set up:'
+
+2. Integrate config file changes.
+cd <build directory>
+diff catalina.config <install directory>/catalina.config
+
+Reconcile any differences.
+
+Notes:
+
+- To modify Catalina behaviour at build time, check the conf.sh file for
+  environment variables that may be used to change default values in the
+  Makefile or catalina.config file.

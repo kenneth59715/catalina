@@ -1,0 +1,1045 @@
+head	1.17;
+access;
+symbols;
+locks
+	mmargo:1.17; strict;
+comment	@# @;
+
+
+1.17
+date	2006.08.04.18.47.50;	author mmargo;	state Exp;
+branches;
+next	1.16;
+
+1.16
+date	2006.07.25.23.47.33;	author mmargo;	state Exp;
+branches;
+next	1.15;
+
+1.15
+date	2006.06.07.23.38.31;	author mmargo;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2006.05.26.21.55.49;	author mmargo;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2004.11.15.21.59.34;	author kenneth;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2004.08.17.15.51.27;	author kenneth;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2004.05.26.15.45.51;	author kenneth;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2004.04.01.00.25.09;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2004.02.05.17.55.22;	author kenneth;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2002.12.23.17.26.18;	author kenneth;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2002.12.21.04.18.53;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2002.12.17.00.12.01;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2002.01.03.00.27.45;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2001.12.19.18.55.34;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2001.11.28.22.06.10;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2001.10.18.18.05.07;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.22.32.10;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@show the backfill window
+@
+
+
+1.17
+log
+@fix CPU count algorithm
+mmargo
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+
+# ./show_free 
+# create a fake job with the requested characteristics
+# create ignore list for reservations in which the job can run
+# using the ignore list, create a reservation with earliest_start now, no resource amount specified,
+# if start_time_float is Now, report the number of resources found, else report none available now
+
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import getopt
+import fcntl
+import string
+import Catalina
+import time
+import getpass
+import math
+
+def by_end_time(first, second) :
+    if first[1] < second[1] :
+        return -1
+    if first[1] == second[1] :
+        return 0
+    if first[1] > second[1] :
+        return 1
+
+
+def by_node_name(first,second) :
+    """ by Martin Margo: sort by nodename alphabetically """
+    if first[2]['nodename'] < second[2]['nodename'] :
+        return -1
+    if first[2]['nodename'] == second[2]['nodename'] :
+        return 0
+    if first[2]['nodename'] > second[2]['nodename'] :
+        return 1
+
+def reverse_sort(first,second) :
+    """ by Martin Margo: reverse sort, numerically """
+    return cmp(second,first)
+
+def reverse_sort_dict(dict) :
+    """ to reverse sort a dictionary using its keys reversely, return sorted keys """
+    keys = dict.keys()
+    keys.sort(reverse_sort)
+    return keys
+    
+usage_string = \
+"""
+Usage: show_free 
+               [--?]
+               [--help]
+"""
+options = [ 
+            '?',
+            'help'
+           ]
+           
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+node_restriction_code = Catalina.NODERESTCODE
+conflict_policy = None
+
+RESOURCES_DB = 'resource'
+RESERVATIONS_DB = 'reservations'
+
+
+# open the reservations file for read, set exclusive lock
+
+reservations_db_handle = Catalina.open_ro_db(RESERVATIONS_DB, 'read')
+resources_db_handle = Catalina.open_ro_db(RESOURCES_DB, 'read')
+
+
+job_name = None
+fake_job = Catalina.initialize_job_step(job_name)
+fake_job['user'] = getpass.getuser()
+fake_job['account'] = None
+fake_job['group'] = None
+#print "Defaulting job class to '%s' " % Catalina.DEFAULT_JOB_CLASS
+fake_job['job_class'] = Catalina.DEFAULT_JOB_CLASS
+fake_job['QOS'] = '0'
+fake_job['requirements'] = ''
+fake_job['adapter'] = ''
+fake_job['initiatormap'] = '1'
+#print "Defaulting job duration to 3600"
+fake_job['wall_clock_limit'] = 3600.0
+
+
+res_name = Catalina.get_new_db_key(reservations_db_handle)
+fake_res = Catalina.initialize_reservation(res_name)
+fake_res['earliest_start_float'] = Catalina.Now_float
+fake_res['duration_float'] = 1.0
+fake_res['conflict_policy'] = conflict_policy
+
+# get all existing reservations
+existing_reservations = Catalina.get_object_list(reservations_db_handle)
+
+
+
+blocking_reservations_list = []
+
+
+for reservation in existing_reservations :
+    input_tuple = ( fake_job, )
+    result = Catalina.apply_policy_code(reservation['job_restriction'],input_tuple)
+    if result != 0 :
+        blocking_reservations_list.append(reservation)
+    
+
+
+accepted_nodes = Catalina.get_accepted_nodes_list(node_restriction_code, resources_db_handle)
+
+
+resource_dict_list = Catalina.get_resource_dict_list(fake_job, resources_db_handle)
+screened_resource_name_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), accepted_nodes)
+
+screened_nodes_list = []
+for node in accepted_nodes :
+    if node in screened_resource_name_list :
+        screened_nodes_list.append(node)
+
+open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res, blocking_reservations_list, resources_db_handle)
+
+now_windows = filter( lambda window : window[0] <= Catalina.Now_float <= window[1], open_windows_list )
+
+if len(now_windows) == 0 :
+    #if Catalina.DEBUG != None :
+    #    print "Catalina.Now_float is %s" % Catalina.Now_float
+    #    print "len(now_windows) is %s" % len(now_windows)
+    #    for window in open_windows_list :
+    #        print "%s %s %s " % window
+    print "No opportunity available at this time. Please try again later"
+else :
+    pass
+    
+# sort now open_windows by end time
+now_windows.sort(by_end_time)
+now_windows.sort(by_node_name)
+
+
+#window_count = 0
+
+
+# 2 new dictionaries, 1 to keep track of time, and others to keep track
+# of how many nodes found so far
+
+dict_total_node={'___DEFAULT_JOB_CLASS_PLACEHOLDER___':0}
+dict_total_time={'___DEFAULT_JOB_CLASS_PLACEHOLDER___':{}}
+dict_total_cpu={'___DEFAULT_JOB_CLASS_PLACEHOLDER___':{}}
+
+
+set_legit_class = set(dict_total_node.keys())
+set_legit_cpu_class = set(['normal32'])
+
+## oh by the way, we discard any window smaller than 15 minutes.
+minimum_time_considered_in_seconds= 900
+
+## and we set the max duration to 18 hours = 64800
+max_time = 64800
+
+# added by mmargo
+# print a header to show simplified output
+print "Node Backfill window:"
+
+#print "  Queue \tNode(Proc)\tTime (HH:MM:SS)"
+
+for window in now_windows :
+    
+    if window[2].has_key('node') :
+        duration = window[1] - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        #if duration > 18 hours, set it to 18 hours (max time avail)
+        if duration > max_time :
+            duration=max_time        
+        #now we see if the node is part of our keys in dict_total_node
+        # do it via Python intersection of sets
+        set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+        intersection = set_class & set_legit_class
+
+
+        for jobclass in intersection :
+        	# increment total number of nodes found for this specified class
+            dict_total_node[jobclass] += 1
+            # update the time too
+            # we only update dict_total_time if the time found is less than
+            if duration > minimum_time_considered_in_seconds :
+            
+                if not dict_total_time[jobclass].has_key(duration):
+                #never seen a open window from this class before
+                    dict_total_time[jobclass][duration] = 1
+                else :
+                    #I have seen this class before, update it
+                    dict_total_time[jobclass][duration] += 1
+        
+        	
+        
+    if window[2].has_key('cpu') :
+        duration = window[1] - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        # if duration is greater than 18 hours, set it to 18 hours, that's the max time avail
+        if duration > max_time :
+            duration = max_time
+ 
+        set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+        intersection = set_class & set_legit_cpu_class
+        
+        
+        for jobclass in intersection :
+            ## count cpu
+            
+            if duration > minimum_time_considered_in_seconds : 
+                ## build dictionary that contains cpu time for each duration
+                if not dict_total_cpu[jobclass].has_key(duration):
+                    #empty dictionary
+                    dict_total_cpu[jobclass][duration] = window[2]['cpu']
+                else :
+                    dict_total_cpu[jobclass][duration] += window[2]['cpu']
+            
+    
+# end of for window in now_windows :
+
+
+collective_cpu = 0
+collective_node = 0
+
+## Now we iterate through our legit queue class dictionary and print them out
+
+## I need to make sure ordering is correct. Nancy wanted the normal queue be displayed first
+displayorder = dict_total_node.keys()
+displayorder.sort()
+
+for legit_class in displayorder :
+    opportunity = 1
+    
+    if legit_class in set_legit_cpu_class :
+        # need to print CPU info too
+        print legit_class
+        if len(dict_total_cpu[legit_class]) > 0 :
+            for dur in reverse_sort_dict(dict_total_cpu[legit_class]):
+                hour = math.floor(dur/3600)
+                minute = ((dur - (hour * 3600) )/60.0)
+                
+                minute=str(math.floor(minute))[0:-2]
+                
+                collective_cpu += dict_total_cpu[legit_class][dur]
+                print "  Opportunity # %s: %s CPUs for %2.0f:%s hours " \
+                % (opportunity, collective_cpu, hour,string.zfill(minute,2))
+                opportunity +=1
+                
+                # if not the last entry in the dict
+                if not dur == reverse_sort_dict(dict_total_cpu[legit_class])[-1] :
+                    print "  or"
+                    
+            #end of for
+        else :
+            print "  No opportunity available at this time. Please try again later"
+        #end of if
+    else :
+        # no need to print CPU info
+        print legit_class
+        if len(dict_total_time[legit_class]) > 0 :
+            for dur in reverse_sort_dict(dict_total_time[legit_class]) :
+                hour = math.floor(dur/3600)
+                minute = ((dur - (hour * 3600))/60.0)
+                
+                #convert the floor of the minute float, convert to string,
+                #strip the last 2 character(=.0) from minute
+                minute=str(math.floor(minute))[0:-2]
+                
+                collective_node += dict_total_time[legit_class][dur]
+                print "  Opportunity # %s: %s nodes for %2.0f:%s hours " \
+                % (opportunity, collective_node,hour,string.zfill(minute,2))
+                opportunity+=1
+                
+                # if not the last entry in the dict
+                if not dur == reverse_sort_dict(dict_total_time[legit_class])[-1] :
+                    print "  or"
+            #end of for
+        else :
+            print "  No opportunity available at this time. Please try again later"
+        #end of if
+    #end of big if
+       
+# end of for loop
+
+
+Catalina.close_ro_db(resources_db_handle)
+Catalina.close_ro_db(reservations_db_handle)
+@
+
+
+1.16
+log
+@new updated verseion
+according to Nancy's spec
+mmargo
+@
+text
+@d222 1
+a222 1
+                    dict_total_cpu[jobclass] += window[2]['cpu']
+@
+
+
+1.15
+log
+@Previously known as show_free
+more user friendly way to show window of backfill opportunity
+machine/cluster specific because of queue name and nature
+mmargo
+@
+text
+@d154 3
+a156 3
+dict_total_node={'normal':0,'normal32':0}
+dict_total_time={'normal':{},'normal32':{}}
+dict_total_cpu={'normal':{},'normal32':{}}
+a174 7
+    duration= window[1]  - Catalina.Now_float - Catalina.FUDGE_FACTOR
+    
+    #if duration is greater than 18 hours, set it to 18 hours. that's
+    #the max time available
+    if duration > max_time :
+        duration = max_time
+    
+d177 4
+a180 1
+        
+a185 11
+        #DEPRECATED
+        # some p655 has double legit set class normal and normalM
+        # clean out the normal one if we see normalM
+        #if ('normalM' in intersection) :
+        #    # we must have an intersection 
+        #    intersection=set(['normalM'])
+
+
+        
+        # if this node is a part of legit class, add it to our dictionary
+        if (len(intersection)) == 1 :
+d187 3
+a189 3
+        # increment total number of nodes found for this specified class
+        
+            dict_total_node[list(intersection)[0]] += 1
+d194 1
+a194 1
+                if not dict_total_time[list(intersection)[0]].has_key(duration):
+d196 1
+a196 1
+                    dict_total_time[list(intersection)[0]][duration] = 1
+d199 4
+a202 6
+                    dict_total_time[list(intersection)[0]][duration] += 1
+                    
+                    
+                if (len(intersection)) > 1 :
+                    print "Error! %s has more than 1 queue class. Not supported." % (window[2]['nodename'])
+    
+d204 5
+a208 1
+    
+d212 2
+a213 1
+        if(len(intersection)) == 1 :
+d218 1
+a218 1
+                if not dict_total_cpu[list(intersection)[0]].has_key(duration):
+d220 1
+a220 1
+                    dict_total_cpu[list(intersection)[0]][duration] = window[2]['cpu']
+d222 1
+a222 1
+                    dict_total_cpu[list(intersection)[0]][duration] += window[2]['cpu']
+d232 6
+a237 1
+for legit_class in dict_total_node.keys() :
+d240 1
+a240 1
+    if legit_class == 'normal32' :
+d247 3
+d251 2
+a252 2
+                print "  Opportunity # %s: %s CPUs for %2.0f:%2.0f " \
+                % (opportunity, collective_cpu, hour,minute)
+d270 5
+d276 2
+a277 2
+                print "  Opportunity # %s: %s nodes for %2.0f:%2.0f " \
+                % (opportunity, collective_node,hour,minute)
+@
+
+
+1.14
+log
+@Changes by Krishna
+kmuriki@@sdsc.edu
+refined outputs, more user friendly output
+shows number of opportunity window and mask the node/hostname from the users
+mmargo
+@
+text
+@d2 2
+a3 1
+# ./showbf [--user=<username>] [--account=<account>] [--group=<group>] [--class=<job class>] [--QOS=<QOS>] [--duration=<wallclocklimit>]
+d17 1
+a26 5
+def file_to_string(filename) :
+    input = open(filename, 'r')
+    filestring = input.read()
+    input.close()
+    return filestring
+d28 19
+d49 1
+a49 1
+Usage: show_bf [--user=<username>]
+d52 2
+a53 12
+               [--account=<account>]
+               [--group=<group>]
+               [--class=<job class>]
+               [--qos=<QOS>]
+               [--duration=<wallclocklimit>]
+               [--runID=<job name>]
+               [--Requirements=<job requirements>]
+               [--Adapter=<job adapter requirement>]
+               [--initiatormap=<job task map>]
+               [--debug]"""
+
+options = [ 'user=',
+d55 1
+a55 11
+            'help',
+            'debug',
+            'runID=',
+            'account=',
+            'group=',
+            'class=',
+            'Requirements=',
+            'Adapter=',
+            'initiatormap=',
+            'qos=',
+            'duration='
+d57 1
+d73 1
+a73 1
+JOBS_DB = 'jobs'
+d76 1
+a76 1
+jobs_db_handle = Catalina.open_ro_db(JOBS_DB, 'read')
+d80 2
+a81 4
+if argdict.has_key('--runID') :
+    job_name = argdict['--runID']
+else :
+    job_name = None
+d83 12
+a94 40
+if argdict.has_key('--user') :
+    fake_job['user'] = argdict['--user']
+else :
+    fake_job['user'] = getpass.getuser()
+if argdict.has_key('--account') :
+    fake_job['account'] = argdict['--account']
+else :
+    fake_job['account'] = None
+if argdict.has_key('--group') :
+    fake_job['group'] = argdict['--group']
+else :
+    fake_job['group'] = None
+if argdict.has_key('--class') :
+    fake_job['job_class'] = argdict['--class']
+else :
+    print "Defaulting job class to '%s'" % Catalina.DEFAULT_JOB_CLASS
+    fake_job['job_class'] = Catalina.DEFAULT_JOB_CLASS
+if argdict.has_key('--qos') :
+    fake_job['QOS'] = argdict['--qos']
+else :
+    fake_job['QOS'] = '0'
+if argdict.has_key('--Requirements') :
+    fake_job['requirements'] = argdict['--Requirements']
+else :
+    fake_job['requirements'] = ''
+if argdict.has_key('--Adapter') :
+    fake_job['adapter'] = argdict['--Adapter']
+else :
+    fake_job['adapter'] = ''
+if argdict.has_key('--initiatormap') :
+    fake_job['initiatormap'] = argdict['--initiatormap']
+else :
+    fake_job['initiatormap'] = '1'
+if argdict.has_key('--duration') :
+    fake_job['wall_clock_limit'] = string.atof(argdict['--duration'])
+else :
+    print "Defaulting job duration to 3600"
+    fake_job['wall_clock_limit'] = 3600.0
+if argdict.has_key('--debug') :
+    Catalina.DEBUG = 'TRUE'
+d105 2
+a106 4
+#nonjob_reservations = filter( lambda reservation : reservation['purpose_type_string'] != 'job', existing_reservations )
+#existing_reservations = nonjob_reservations
+# Find blocking reservations, based on each reservation's
+# job_restriction attribute
+d108 2
+d112 1
+a112 2
+    result = Catalina.apply_policy_code(reservation['job_restriction'],
+      input_tuple)
+a113 3
+        #if Catalina.DEBUG != None :
+        #    print "adding blocking reservation (%s) type (%s)" % \
+        #      (reservation['name'], reservation['purpose_type_string'])
+d115 3
+a117 9
+    #else :
+    #    if Catalina.DEBUG != None :
+    #        print "Not adding reservation (%s) type (%s) result(%s)" % \
+    #          (reservation['name'], reservation['purpose_type_string'], result)
+
+# Generate lookahead reservation, earliest start now, no resource amount, no duration
+# This won't work.  create_reservation requires a duration.
+# May be able to use get_open_windows_list...
+# get accepted nodes
+d119 2
+a120 6
+#if Catalina.DEBUG != None :
+#    print "len(accepted_nodes) is %s" % len(accepted_nodes)
+# get open_windows list, need to feed it a new_res with end_limit duration...
+# this doesn't work with large duration, with the standard nonconflicting conflict_policy
+# may need to write one that does not depend on duration...
+#resource_list = Catalina.get_resource_list(fake_job, resources_db_handle)
+d123 1
+a123 5
+#if Catalina.DEBUG != None :
+#    print "len(resource_list) is (%s)" % len(resource_list)
+#screened_resource_name_list = Catalina.get_resource_name_list(resource_list)
+#if Catalina.DEBUG != None :
+#    print "len(screened_resource_name_list) is (%s)" % len(screened_resource_name_list)
+d128 1
+a128 2
+#if Catalina.DEBUG != None :
+#    print "len(screened_nodes_list) is (%s)" % len(screened_nodes_list)
+d130 1
+a130 3
+#if Catalina.DEBUG != None :
+#    print "len(open_windows_list) is %s" % len(open_windows_list)
+# filter for open_windows starting now
+d133 1
+a133 1
+#if len(now_windows) == 0 :
+d139 4
+a142 1
+    #print "0 nodes available"
+d145 2
+a147 3
+# report number of now open_windows for each end_time
+#window_dict = {}
+#old_end_time = 0
+a149 53
+#print "CPU Backfill window:"
+#for window in now_windows :
+#    if not window[2].has_key('cpu') :
+#        continue
+#    if window[1] != old_end_time :
+#        if old_end_time != 0 :
+#            duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#            print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+#        window_count = window[2]['cpu']
+#        old_end_time = window[1]
+#    else :
+#        window_count = window_count + window[2]['cpu']
+#    print "    node: %s" % window[2]
+#    #if Catalina.DEBUG != None :
+#    #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
+#if window_count > 0 :
+#    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#    print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+#
+#old_end_time = 0
+#window_count = 0
+#
+#print "Memory Backfill window:"
+#for window in now_windows :
+#    if not window[2].has_key('memory') :
+#        continue
+#    if window[1] != old_end_time :
+#        if old_end_time != 0 :
+#            duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#            print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+#        window_count = window[2]['memory']
+#        old_end_time = window[1]
+#    else :
+#        window_count = window_count + window[2]['memory']
+#    print "    node: %s" % window[2]
+#    #if Catalina.DEBUG != None :
+#    #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
+#if window_count > 0 :
+#    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#    print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+
+old_end_time = 0
+window_count = 0
+
+## Just a counter for # of window opportunities
+opp_count    = 0
+
+## oh by the way, we discard any window smaller than 3 minutes.
+## Catalina wud take some time to see the job
+## so show less time to the user so that he wudn't
+## end up asking for more time than really wud available
+## so reduce 3 mins (180 secs) in the duration
+catalina_update_time = 180 
+d151 6
+a156 2
+## and we set the max duration to 18 hours = 64800
+max_time = 64800
+a157 4
+## print a header to show simplified output
+print
+print "Node Backfill opportunities on this machine:"
+print
+d159 2
+a160 21
+for window in now_windows :
+    if not window[2].has_key('node') :
+        continue
+    if window[1] != old_end_time :
+        if old_end_time != 0 :
+            duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+
+        ## Reduce the catalina delay and check for more than 18 hrs
+        duration = duration - catalina_update_time
+        if duration > max_time :
+             duration = max_time
+
+        opp_count = opp_count + 1
+        print "     Opportunity #%s : %s node(s) available for approximately %.0f minutes" % ( opp_count, window_count, duration/60 )
+        window_count = 1
+        old_end_time = window[1]
+    else :
+        window_count = window_count + 1
+    #print "    node: %s properties: %s" % (window[2]['nodename'], resources_db_handle[0][window[2]['nodename']]['properties_list'])
+    #if Catalina.DEBUG != None :
+    #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
+d162 2
+a163 2
+if window_count > 0 :
+    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+d165 2
+a166 4
+    ## Reduce the catalina delay and check for more than 18 hrs
+    duration = duration - catalina_update_time
+    if duration > max_time :
+         duration = max_time
+d168 3
+a170 2
+    opp_count = opp_count + 1
+    print "     Opportunity #%s : %s node(s) available for approximately %.0f minutes" % ( opp_count, window_count, duration/60 )
+d172 1
+a172 2
+## Just for output formatting
+print
+d174 115
+a288 8
+if opp_count > 1 :
+    print "Note : Nodes in each opportunity are exclusive."
+    print "Users can also submit a job to run on all the nodes in all the"
+    print "opportunities shown above but with the least available time shown."
+else :
+    if opp_count == 0 :
+        print "      NO back fill windows available at this instant"
+        print "      Please try again later."
+a289 2
+## Just for output formatting
+print
+a290 1
+# release lock, close the file
+a292 1
+Catalina.close_ro_db(jobs_db_handle)
+@
+
+
+1.13
+log
+@print out properties_list for available nodes
+@
+text
+@d186 2
+a187 1
+if len(now_windows) == 0 :
+d193 1
+a193 1
+    print "0 nodes available"
+d196 1
+d198 45
+a242 1
+window_dict = {}
+a244 18
+print "CPU Backfill window:"
+for window in now_windows :
+    if not window[2].has_key('cpu') :
+        continue
+    if window[1] != old_end_time :
+        if old_end_time != 0 :
+            duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+            print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+        window_count = window[2]['cpu']
+        old_end_time = window[1]
+    else :
+        window_count = window_count + window[2]['cpu']
+    print "    node: %s" % window[2]
+    #if Catalina.DEBUG != None :
+    #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
+if window_count > 0 :
+    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+    print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+d246 17
+a262 20
+old_end_time = 0
+window_count = 0
+print "Memory Backfill window:"
+for window in now_windows :
+    if not window[2].has_key('memory') :
+        continue
+    if window[1] != old_end_time :
+        if old_end_time != 0 :
+            duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+            print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+        window_count = window[2]['memory']
+        old_end_time = window[1]
+    else :
+        window_count = window_count + window[2]['memory']
+    print "    node: %s" % window[2]
+    #if Catalina.DEBUG != None :
+    #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
+if window_count > 0 :
+    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+    print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+a263 3
+old_end_time = 0
+window_count = 0
+print "Node Backfill window:"
+d270 8
+a277 1
+            print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
+d282 1
+a282 1
+    print "    node: %s properties: %s" % (window[2]['nodename'], resources_db_handle[0][window[2]['nodename']]['properties_list'])
+d285 1
+d288 23
+a310 1
+    print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
+@
+
+
+1.12
+log
+@use get_resource_dict_list instead of get_resource_list
+@
+text
+@d253 1
+a253 1
+    print "    node: %s" % window[2]['nodename']
+@
+
+
+1.11
+log
+@changed check for 0 cpu, memory, node
+@
+text
+@d167 3
+a169 1
+resource_list = Catalina.get_resource_list(fake_job, resources_db_handle)
+d172 1
+a172 1
+screened_resource_name_list = Catalina.get_resource_name_list(resource_list)
+@
+
+
+1.10
+log
+@give separate backfill windows for cpu, memory and nodes
+@
+text
+@d212 1
+a212 1
+if len(now_windows) != 0 :
+d233 1
+a233 1
+if len(now_windows) != 0 :
+d254 1
+a254 1
+if len(now_windows) != 0 :
+@
+
+
+1.9
+log
+@smp
+@
+text
+@d197 1
+a197 1
+print "Backfill window:"
+d199 44
+d251 1
+a251 1
+    print "    node: %s" % window[2]
+@
+
+
+1.8
+log
+@removed FCNTL
+@
+text
+@d179 1
+a179 1
+open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res, blocking_reservations_list)
+@
+
+
+1.7
+log
+@consistent opts
+@
+text
+@d11 1
+a11 1
+import fcntl, FCNTL
+@
+
+
+1.6
+log
+@subtract FUDGE_FACTOR from backfill duration
+@
+text
+@d2 1
+a2 1
+# ./showbf [--username=<username>] [--account=<account>] [--group=<group>] [--class=<job class>] [--QOS=<QOS>] [--duration=<wallclocklimit>]
+d33 1
+a33 1
+Usage: show_bf [--username=<username>]
+d47 1
+a47 1
+options = [ 'username=',
+d88 2
+a89 2
+if argdict.has_key('--username') :
+    fake_job['user'] = argdict['--username']
+@
+
+
+1.5
+log
+@append HOMEDIR
+@
+text
+@d201 1
+a201 1
+            duration = old_end_time - Catalina.Now_float
+d211 1
+a211 1
+    duration = old_end_time - Catalina.Now_float
+@
+
+
+1.4
+log
+@changed filter for now_windows to
+window[0] <= Catalina.Now_float <= window[1]
+@
+text
+@d9 1
+@
+
+
+1.3
+log
+@use Catalina.NODERESTCODE instead of node_restriction_file
+@
+text
+@d182 1
+a182 1
+now_windows = filter( lambda window : window[0] <= Catalina.Now_float + 600.0, open_windows_list )
+@
+
+
+1.2
+log
+@added usage string
+@
+text
+@d70 1
+a70 1
+node_restriction_code = file_to_string('___HOMEDIR_PLACEHOLDER___/node_restriction_file')
+d102 2
+a103 2
+    print "Defaulting job class to 'normal'"
+    fake_job['job_class'] = 'normal'
+d196 1
+a196 1
+print "Backfill window with a fudge factor of 600 seconds:"
+d201 1
+a201 1
+            print "%s nodes available for %.0f seconds" % ( window_count, duration )
+d211 1
+a211 1
+    print "%s nodes available for %.0f seconds" % ( window_count, duration )
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d30 16
+a45 1
+# ./showbf [--username=<username>] [--account=<account>] [--group=<group>] [--class=<job class>] [--QOS=<QOS>] [--duration=<wallclocklimit>]
+d47 2
+d57 1
+a57 1
+            'QOS=',
+d66 4
+a70 1
+#conflict_policy = file_to_string('___HOMEDIR_PLACEHOLDER___/samples/nonconflicting')
+d104 2
+a105 2
+if argdict.has_key('--QOS') :
+    fake_job['QOS'] = argdict['--QOS']
+@

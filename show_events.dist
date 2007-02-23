@@ -1,0 +1,200 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# LOCK_SH for read, LOCK_EX for write, LOCK_UN to release
+
+import sys
+import getopt
+import string
+sys.path.append('/gpfs/mmargo/catalina/test-20050610/bin')
+import Catalina
+import time
+import os
+import cPickle
+import string
+import copy
+
+def by_youngest(first, second) :
+    if first > second :
+        return -1
+    if first == second :
+        return 0
+    if first < second :
+        return 1
+
+options = [
+  'archive=',
+  'archivedir=',
+  'start=',
+  'end=',
+  'userres',
+  'names=',
+  'help',
+  '?'
+  ]
+usage_string = \
+"""
+Usage: show_events [--userres  [--start=<HH:MM_mm/dd/yyyy>
+                               --end=<HH:MM_mm/dd/yyyy>
+                               --archivedir=<archive dir>]
+                   ] | 
+                   [ [--archive=<archive file>]
+                     [--names=<event names>]
+                   ]
+"""
+                                    
+args = sys.argv[1:]
+argdict = {}
+try : 
+    optlist, lineargs = getopt.getopt(args, '', options)
+except getopt.GetoptError : 
+    print usage_string
+    sys.exit(1)
+
+
+
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+   
+
+if argdict.has_key('--help') or argdict.has_key('-h') : 
+    print usage_string
+    sys.exit(0)
+
+
+if argdict.has_key('--userres') :
+    if argdict.has_key('--start') :
+        start_string = argdict['--start']
+        start_tuple = time.strptime(start_string, "%H:%M_%m/%d/%Y")
+        start_epoch = time.mktime(start_tuple)
+    else :
+        start_epoch = Catalina.Now_float - (24*3600)
+    if argdict.has_key('--end') :
+        end_string = argdict['--end']
+        end_tuple = time.strptime(end_string, "%H:%M_%m/%d/%Y")
+        end_epoch = time.mktime(end_tuple)
+    else :
+        end_epoch = Catalina.Now_float
+    if argdict.has_key('--archivedir') :
+        archivedir = argdict['--archivedir']
+        print "using archivedir (%s)" % archivedir
+    else :
+        archivedir = Catalina.ARCHIVE_DIR
+    # creat events_dict using all appropriate events db files
+    # this will be in the archive dir and Catalina.DBDIR
+    db_handle = Catalina.open_ro_db(Catalina.EVENTS_DB, 'read')
+    events_dict = db_handle[0]
+    relevant_events_dict = {}
+    for event in events_dict.keys() :
+        if not events_dict[event]['name'] in ['user_set_res','user_cancel_res'] :
+            continue
+        if not start_epoch <= float(event) <= end_epoch :
+            continue
+        relevant_events_dict[event] = copy.deepcopy(events_dict[event])
+    rawfiles = os.listdir(archivedir)
+    for filename in rawfiles :
+        logtype, epoch_string = string.split(filename, '.')
+        if logtype != 'events' :
+            continue
+        epoch = int(epoch_string)
+        if epoch < start_epoch :
+            continue
+        #print "opening (%s)" % filename
+        try :
+            FO = open(archivedir + '/' + filename, 'r')
+            events_dict = cPickle.load(FO)
+            FO.close()
+        except :
+            print "Failed to read (%s)!" % (archivedir + '/' + filename,)
+            continue
+        for event in events_dict.keys() :
+            #print "doing key (%s)" % key
+            if not start_epoch <= float(event) <= end_epoch :
+                #print "continuing key (%s) outside begin_epoch (%s) end_epoch (%s)" % (key,begin_epoch,end_epoch)
+                continue
+            if not events_dict[event]['name'] in ['user_set_res','user_cancel_res'] :
+                continue
+            relevant_events_dict[event] = copy.deepcopy(events_dict[event])
+    events_dict = relevant_events_dict
+
+elif argdict.has_key('--archive') :
+    #( archive_dir, archive_file ) = os.path.split(argdict['--archive'])
+    #Catalina.HOMEDIR = archive_dir
+    #EVENTS_DB = archive_file
+    FO = open(argdict['--archive'], 'r')
+    events_dict = cPickle.load(FO)
+    FO.close
+else :
+    # open the reservations file for read, set exclusive lock
+    db_handle = Catalina.open_ro_db(Catalina.EVENTS_DB, 'read')
+    # read in events
+    events_dict = db_handle[0]
+
+if argdict.has_key('--names') :
+    names_list = string.split(argdict['--names'], ",")
+else :
+    names_list = ['run_jobs', 'cancel_job', 'user_set_res', 'user_cancel_res']
+
+if argdict.has_key('--userres') :
+    res_dict = {}
+    cancel_dict = {}
+    for event in events_dict.keys() :
+        type_name = events_dict[event]['name']
+        res = copy.deepcopy(events_dict[event]['res'])
+        if type_name == 'user_set_res' :
+            res['request_time_float'] = float(event)
+            res['cancel_time_float'] = None
+            res_dict[events_dict[event]['res']['name']] = res
+        elif type_name == 'user_cancel_res' :
+            res['cancel_time_float'] = float(event)
+            cancel_dict[events_dict[event]['res']['name']] = res
+        else :
+            raise UnexpectedEventType
+    for res in res_dict.keys() :
+        if cancel_dict.has_key(res) :
+            res_dict[res]['cancel_time_float'] = cancel_dict[res]['cancel_time_float']
+    for reservationid in res_dict.keys() :
+        # format: reservationid,cpus,date requested,start,end,account,username,nodes,
+        res = res_dict[reservationid]
+        allocated_dict_list = res['allocated_dict_list']
+        cpus = 0
+        node_list = []
+        for allocated_dict in allocated_dict_list :
+            if allocated_dict['type'] == 'node_exclusive' :
+                if allocated_dict['cpu'] == 0 and allocated_dict.has_key('pcpus') and allocated_dict['pcpus'] > 0 :
+                    added_cpus = allocated_dict['pcpus']
+                else :
+                    added_cpus = allocated_dict['cpu']
+                if allocated_dict['memory'] == 0 and allocated_dict.has_key('pmemory') and allocated_dict['pmemory'] > 0 :
+                    added_memory = allocated_dict['pmemory']
+                else :
+                    added_memory = allocated_dict['memory']
+            else :
+                added_cpus = allocated_dict['cpu']
+                added_memory = allocated_dict['memory']
+            #cpus = cpus + allocated_dict['cpu']
+            cpus = cpus + added_cpus
+            node_list.append(allocated_dict['nodename'])
+        node_string = string.join(node_list,'+')
+        node_count = len(node_list)
+        date_requested = float(reservationid)
+        res_start_epoch = res['start_time_float']
+        res_end_epoch = res['end_time_float']
+        res_cancel_epoch = res['cancel_time_float']
+        res_account = res['account_string']
+        res_username = res['creator_string']
+        res_nodes = len(node_list)
+        print "reservation_id=%s,procs=%s,date_requested=%s,start=%s,end=%s,account=%s,username=%s,nodes=%s,node_list=%s,cancel_time=%s" % (reservationid,cpus,date_requested,res_start_epoch,res_end_epoch,res_account,res_username,node_count,node_string,res_cancel_epoch)
+else :
+    print_list = []
+    event_keys_list = events_dict.keys()
+    event_keys_list.sort(by_youngest)
+    for timestamp in event_keys_list :
+        if events_dict[timestamp].has_key('name') and not events_dict[timestamp]['name'] in names_list :
+            if not 'ALL' in names_list :
+                continue
+        print 80 * '-'
+        print "%s" % time.asctime(time.localtime(string.atof(timestamp)))
+        for name in events_dict[timestamp].keys() :
+            print "%s : %s" % (name, events_dict[timestamp][name])
+
+if not argdict.has_key('--archive') :
+    Catalina.close_ro_db(db_handle)

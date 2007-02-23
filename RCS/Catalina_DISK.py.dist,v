@@ -1,0 +1,903 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.01.08.19.22.16;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@Disk reservation module
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@# SP-specific Catalina names
+# get node info with llstatus -l
+# get job info with llq -l
+# get initiatormap from queryjob2 (Data Access API)
+# job info needed to match jobs to nodes:
+# - Requirements expression (from queryjob2)
+# - Adapter Requirement (from llq -l)
+# - initiator map (from queryjob2)
+# - job class (queryjob2)
+# - user
+# - group
+# - account
+# Don't see how to get Adapter Requirement from API...
+
+import os
+import re
+import string
+import time
+# Importing Catalina in order to use the insert_new_job function
+# in update_job_priorities and Now_float
+import Catalina
+
+import sys
+
+JOBSUFFIX='.0'
+SUBMIT_OUTPUT_PATTERN=r'llsubmit: The job "(?P<job_id>.*)" has been submitted.'
+JOB_UPDATE_ATTRIBUTE_list = [
+  'state',
+  'Dispatch_Time',
+  'allocated_hosts',
+  'completion_time',
+  'cat_requirements_string'
+  ]
+
+start_job_returncode_reo = re.compile("^rc from ll_start_job is >(?P<code>\d+)<$", re.MULTILINE)
+
+def initialize_resource(resource_name) :
+    new_resource = {}
+    new_resource['name'] =  resource_name
+    new_resource['Disk'] = None
+    new_resource['Feature'] = None
+    new_resource['Machine'] = None
+    new_resource['Arch'] = None
+    new_resource['OpSys'] = None
+    new_resource['Pool'] = None
+    new_resource['ConfiguredClasses_list'] = None
+    new_resource['AvailableClasses'] = None
+    new_resource['Adapter'] = None
+    new_resource['Feature'] = ''
+    new_resource['Max_Starters'] = None
+    new_resource['Memory'] = None
+    new_resource['Cpus'] = None
+    new_resource['State'] = None
+    new_resource['State_Change_Time'] = Catalina.Now_float
+    return new_resource
+
+def initialize_job_step(job_step_name) :
+    new_job_step = {}
+    new_job_step['name'] = job_step_name
+    new_job_step['QOS'] = '0'
+    new_job_step['user'] = None
+    new_job_step['state'] = None
+    new_job_step['job_class'] = None
+    new_job_step['wall_clock_limit'] = None
+    new_job_step['comment'] = None
+    new_job_step['account'] = None
+    new_job_step['group'] = None
+    new_job_step['adapter'] = None
+    new_job_step['requirements'] = None
+    new_job_step['system_queue_time'] = None
+    new_job_step['submittime'] = None
+    new_job_step['dispatchtime'] = None
+    new_job_step['completiontime'] = None
+    new_job_step['system_priority_int'] = None
+    new_job_step['system_priority_mark_string'] = None
+    new_job_step['ineligible_reason'] = None
+    new_job_step['reservation_binding'] = []
+    return new_job_step
+
+def get_runjob_dict() :
+    finished_reo = re.compile("^qj FINISHED$")
+    finished_found = 0
+    runjob_dict = {}
+    stepid_reo = re.compile(r"^stepid:(?P<stepid>(?P<fromhost>.*)\.(?P<cluster>\d+)\.(?P<proc>\d+))$")
+    if Catalina.SERVERMODE == 'SIM' and Catalina.QJ_SIM != None :
+        cmd = Catalina.HOMEDIR + '/' + Catalina.QJ_SIM
+    else :
+        cmd = Catalina.HOMEDIR + '/___QJ_PLACEHOLDER___'
+    for rawline in os.popen(cmd).readlines() :
+        finished_mo = finished_reo.match(rawline)
+        if finished_mo != None :
+            finished_found = 1
+            continue
+        step_dict = {}
+        line = string.strip(rawline)
+        elements = string.split(line,'#cat_delim#')
+        for element in elements :
+            name_value_list = string.split(element, ':')
+            if len(name_value_list) == 1 :
+                name_value_list.append('')
+            if name_value_list[0] == 'stepid' :
+                stepid = name_value_list[1]
+                stepid_mo = stepid_reo.match(element)
+                if stepid_mo != None :
+                    step_dict['fromhost'] = stepid_mo.group('fromhost')
+                    step_dict['cluster'] = stepid_mo.group('cluster')
+                    step_dict['proc'] = stepid_mo.group('proc')
+                    stepid = stepid_mo.group('stepid')
+            step_dict[name_value_list[0]] = name_value_list[1]
+        if not step_dict.has_key('fromhost') or \
+           not step_dict.has_key('cluster') or \
+           not step_dict.has_key('proc') or \
+           not step_dict.has_key('initiatormap') :
+            print "Did not find all runjob info!"
+        else :
+            runjob_dict[stepid] = step_dict
+    if finished_found != 1 :
+        raise 'IncompleteQJ'
+    return runjob_dict
+
+def cancel_job(job_step, events_db_handle) :
+    cmd_string = Catalina.CANCELCMD + ' ' + job_step['name']
+    output = 'llcancel: Cancel command has been sent to the central manager.'
+    if Catalina.SERVERMODE == 'NORMAL' :
+        return_string = os.popen(cmd_string).read()
+        mo = re.match(output, return_string)
+        if mo == None :
+            raise 'CancelJobFailure', job_step
+    else :
+        print cmd_string
+        return_string = ''
+    event = {
+      'name' : 'cancel_job',
+      'cmd' : cmd_string,
+      'return_string' : return_string
+      }
+    Catalina.log_event(event, events_db_handle)
+
+def cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle) :
+    jobs_dict = jobs_db_handle[0]
+    jobs_list = jobs_dict.values()
+    resources_dict = resources_db_handle[0]
+    resources_list = resources_dict.values()
+    for job in jobs_list :
+        if job['state'] == 'Starting' :
+            if Catalina.Now_float - job['Dispatch_Time'] > \
+              Catalina.JOB_START_TIME_LIMIT :
+                event = {
+                  'name' : 'bad_job',
+                  'type' : 'JOB_START_TIME_LIMIT violation',
+                  'job' : job['name'],
+                  'now' : Catalina.Now_float,
+                  'Dispatch_Time' : job['Dispatch_Time']
+                  }
+                Catalina.log_event(event, events_db_handle)
+                print "canceling %s in state %s" % (job['name'], job['state'])
+                try :
+                    cancel_job(job, events_db_handle)
+                except :
+                    continue
+                message = """
+%s
+job (%s) (user %s), in state Starting for %s seconds,
+has exceeded JOB_START_TIME_LIMIT (%s).  This job will
+be canceled.  Please investigate the cause of job start
+failure.""" % \
+(time.asctime(time.gmtime(Catalina.Now_float)), job['name'],
+  job['user'], Catalina.Now_float - job['Dispatch_Time'], Catalina.JOB_START_TIME_LIMIT)
+                subject = "Job exceeded JOB_START_TIME_LIMIT, %s, %s" % \
+                  (job['name'], job['user'])
+                recipient = Catalina.MAIL_RECIPIENT + ' ' + job['user']
+                Catalina.warn(message, subject, recipient)
+        if job['state'] in ['Starting', 'Running'] :
+            down_hosts_list = []
+            for host in job['allocated_hosts'] :
+                if resources_dict.has_key(host) and \
+                   resources_dict[host]['State'] == 'Down' and \
+                  Catalina.Now_float - resources_dict[host]['State_Change_Time'] \
+                  > Catalina.RESOURCE_DOWN_TIME_LIMIT :
+                    event = {
+                      'name' : 'bad_job',
+                      'type' : 'RESOURCE_DOWN_TIME_LIMIT violation',
+                      'job' : job['name'],
+                      'host' : host,
+                      'State' : resources_dict[host]['State'],
+                      'now' : Catalina.Now_float,
+                      'State_Change_Time' : job['Dispatch_Time']
+                      }
+                    Catalina.log_event(event, events_db_handle)
+                    down_hosts_list.append(host)
+            if len(down_hosts_list) > 0 :
+                event = {
+                  'name' : 'bad_job',
+                  'type' : 'RESOURCE_DOWN_TIME_LIMIT violation',
+                  'job' : job['name'],
+                  'now' : Catalina.Now_float,
+                  'State_Change_Time' : job['Dispatch_Time']
+                  }
+                Catalina.log_event(event, events_db_handle)
+                print "Down node allocated for job %s in state %s with down nodes %s" % \
+                  (job['name'], job['state'], down_hosts_list)
+                message = """
+%s
+job (%s) (user %s), in state %s has LoadL down nodes:
+Please check to see if this job actually has Down nodes.
+If it does have Down nodes, check to see if the job is in state
+Remove Pending (RP in llq).  If so, the job may be stuck waiting
+for a response from the down nodes.  It may be necessary to issue:
+""" % \
+(time.asctime(time.gmtime(Catalina.Now_float)), job['name'],
+  job['user'], job['state'], )
+                for host in down_hosts_list :
+                    purge_line = "\n/usr/lpp/LoadL/full/bin/llctl -h %s purge %s" % \
+                      (jobs_dict[job['name']]['fromhost'], host)
+                    message = message + purge_line
+                subject = "Job has LoadLeveler Down Nodes %s, %s" % \
+                  (job['name'], job['user'])
+                recipient = Catalina.MAIL_RECIPIENT
+                Catalina.warn(message, subject, recipient)
+                
+def get_job_step_state(job_step) :
+    LoadL_state = job_step['state']
+    if LoadL_state == 'Starting' :
+        return 'STARTING'
+    if LoadL_state == 'Running' :
+        return 'RUNNING'
+    elif LoadL_state == 'Idle' :
+        return 'IDLE'
+    elif LoadL_state == 'Completed' :
+        return 'COMPLETED'
+    elif LoadL_state == 'Removed' :
+        return 'REMOVED'
+    else :
+        return 'OTHER'
+
+def get_job_steps_dict() :
+    runjob_dict = get_runjob_dict()
+    if Catalina.SERVERMODE == 'SIM' :
+        LLQ = Catalina.HOMEDIR + '/' + 'llq_sim'
+    else :
+        LLQ = '/usr/lpp/LoadL/full/bin/llq -l | /usr/bin/grep -e "Job Step Id" -e Specify -e "Adapter Requirement"'
+    job_steps = {}
+    new_job_step_id = None
+    found_start = 0
+    job_string = ''
+    matchstr = re.compile( r"""(^\s*Job\ Step\ Id:\ (?P<job_step_id>\S+))
+             (.*)
+             (^\s*Adapter\ Requirement:\ ?(?P<adapter>\S*)$)"""
+        ,re.MULTILINE | re.DOTALL | re.VERBOSE)
+    for line in os.popen(LLQ).readlines() :
+        job_string = job_string + line
+        line_so = None
+        line_so = re.search(r"^llq: Specify -x option in addition to -l option to obtain Task Instance information.", line)
+        if line_so != None :
+            # parse the job_string, setting values in new_job_step
+            match_object = matchstr.search(job_string)
+            if match_object == None :
+                print "Job llq match failed!"
+                message = "llq match failure for (%s)" % first_string
+                subject = "llq match failure for %s"
+                recipient = Catalina.MAIL_RECIPIENT
+                Catalina.warn(message, subject, recipient)
+            elif not runjob_dict.has_key(match_object.group('job_step_id')) :
+                print "runjob_dict does not have (%s)" % match_object.group('job_step_id')
+            else :
+                llq_job_step_name = match_object.group('job_step_id')
+                llq_job_step_adapter = match_object.group('adapter')
+                if runjob_dict.has_key(match_object.group('job_step_id')) :
+                    required_keys_tuple = (
+                      'user',
+                      'class',
+                      'wall_clock_limit',
+                      'account',
+                      'group',
+                      'requirementsmap',
+                      'state',
+                      'initiatormap',
+                      'fromhost',
+                      'cluster',
+                      'comment',
+                      'proc',
+                      'submittime'
+                      )
+                    job_step_id = match_object.group('job_step_id')
+                    present_keys_list = runjob_dict[job_step_id].keys()
+                    for required_key in required_keys_tuple :
+                        if required_key not in present_keys_list :
+                            print "required key (%s) not found" % required_key
+                            job_string = ''
+                            continue
+                    new_job_step = initialize_job_step(job_step_id)
+                    new_job_step['user'] = runjob_dict[job_step_id]['user']
+                    if Catalina.RM_TO_CAT_JOB_dict.has_key(runjob_dict[job_step_id]['state']) :
+                        new_job_step['state'] = Catalina.RM_TO_CAT_JOB_dict[runjob_dict[job_step_id]['state']]
+                    else :
+                        new_job_step['state'] = 'Unknown'
+                    new_job_step['job_class'] = runjob_dict[job_step_id]['class']
+                    new_job_step['wall_clock_limit'] = string.atof(runjob_dict[job_step_id]['wall_clock_limit'])
+                    new_job_step['account'] = runjob_dict[job_step_id]['account']
+                    new_job_step['group'] = runjob_dict[job_step_id]['group']
+                    requirements_map = runjob_dict[job_step_id]['requirementsmap']
+                    single_requirements_list = string.split(requirements_map, '+')
+                    new_job_step['requirements'] = single_requirements_list[0]
+                    new_job_step['adapter'] = llq_job_step_adapter
+                    new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step['requirements'])
+                    new_job_step['fromhost'] = runjob_dict[job_step_id]['fromhost']
+                    new_job_step['cluster'] = runjob_dict[job_step_id]['cluster']
+                    new_job_step['proc'] = runjob_dict[job_step_id]['proc']
+                    new_job_step['SubmitTime'] = string.atof(runjob_dict[job_step_id]['submittime'])
+                    if runjob_dict[job_step_id].has_key('dispatchtime') :
+                        new_job_step['Dispatch_Time'] = string.atof(runjob_dict[job_step_id]['dispatchtime'])
+                    if runjob_dict[job_step_id].has_key('completiontime') :
+                        new_job_step['completion_time'] = string.atof(runjob_dict[job_step_id]['completiontime'])
+                    if new_job_step['state'] == 'Running' or new_job_step['state'] == 'Starting' :
+                        if runjob_dict[job_step_id].has_key('machinemap') :
+                            allocated_hosts = string.split(runjob_dict[job_step_id]['machinemap'], '+')
+                            new_job_step['allocated_hosts'] = allocated_hosts
+                        else :
+                            print "allocated_hosts not found for Running/Starting job"
+                            job_string = ''
+                            continue
+                        if runjob_dict[job_step_id].has_key('dispatchtime') :
+                            new_job_step['Dispatch_Time'] = string.atof(runjob_dict[job_step_id]['dispatchtime'])
+                        else :
+                            print "dispatchtime not found for Running/Starting job"
+                            job_string = ''
+                            continue
+                    if runjob_dict[job_step_id].has_key('comment') :
+                        new_job_step['comment'] = runjob_dict[job_step_id]['comment']
+                        elements = string.split(runjob_dict[job_step_id]['comment'], ';')
+                        for element in elements :
+                            string.strip(element)
+                            fields = string.split(element, '=')
+                            if string.strip(fields[0]) == 'Catalina_res_bind' :
+                                res_ids_list = []
+                                raw_res_ids = string.split(fields[1], ':')
+                                for id in raw_res_ids :
+                                    res_ids_list.append(string.strip(id))
+                                new_job_step['reservation_binding'] =  res_ids_list
+                            elif string.strip(fields[0]) == 'QOS' :
+                                QOS = string.strip(fields[1])
+                                new_job_step['QOS'] =  QOS
+                            elif string.strip(fields[0]) == 'Catalina_local_admin_priority' :
+                                local_admin_priority_string = string.strip(fields[1])
+                                new_job_step['local_admin_priority_string'] = local_admin_priority_string
+                            elif string.strip(fields[0]) == 'Catalina_local_user_priority' :
+                                local_user_priority_string = string.strip(fields[1])
+                                new_job_step['local_user_priority_string'] = local_user_priority_string
+                    new_job_step['initiatormap'] = runjob_dict[job_step_id]['initiatormap']
+                    resourcemap_list = string.split(new_job_step['initiatormap'], '+')
+                    new_job_step['resource_amount_int'] = len(resourcemap_list)
+                else :
+                    print "job_step_id (%s) not found in runjob_dict!" % \
+                    match_object.group('job_step_id')
+                # clear the old job_string, store the old new_job_step
+                job_steps[new_job_step['name']] = new_job_step
+            job_string = ''
+    return job_steps
+            
+def get_resources_list() :
+    if Catalina.SERVERMODE == 'SIM' and Catalina.QM_SIM != None :
+        QUERYMACHINES = Catalina.HOMEDIR + '/' + Catalina.QM_SIM
+    else :
+        QUERYMACHINES = Catalina.HOMEDIR + '/___QM_PLACEHOLDER___'
+    machine_lines_list = os.popen(QUERYMACHINES).readlines()
+    resources_dict = {}
+    finished_reo = re.compile("^qm FINISHED$")
+    finished_found = 0
+    for line in machine_lines_list :
+        try :
+            finished_mo = finished_reo.match(line)
+            if finished_mo != None :
+                finished_found = 1
+                raise 'Continue'
+            elements_list = string.split(line, '#cat_delim#')
+            dict = {}
+            for element in elements_list :
+                if element != '' :
+                    name_value_list = string.split(element, ':')
+                    if len(name_value_list) == 1 :
+                        name_value_list.append('')
+                    dict[name_value_list[0]] = string.strip(name_value_list[1])
+            # Should check entire line, but for now, check for Machine
+            if not dict.has_key('Machine') :
+                raise 'Continue'
+            resource_name = dict['Machine']
+            new_resource = initialize_resource(resource_name)
+            new_resource['Machine'] = dict['Machine']
+            new_resource['Arch'] =  dict['Arch']
+            new_resource['OpSys'] =  dict['OpSys']
+            new_resource['Disk'] =  string.atoi(dict['Disk'])
+            new_resource['Pool'] =  string.atoi(dict['Pool'])
+            class_instance_list = string.split(dict['ConfiguredClasses'], '+')
+            new_resource['ConfiguredClasses_list'] = map(string.strip, class_instance_list)
+            new_resource['AvailableClasses'] =  dict['AvailableClasses']
+            class_instance_list = string.split(dict['AvailableClasses'], '+')
+            available_classes_string = ''
+            old_instance = class_instance_list[0]
+            instance_counter = 1
+            irange = range(len(class_instance_list))
+            for i in irange :
+                instance = class_instance_list[i]
+                if instance != old_instance :
+                    available_classes_string = available_classes_string + ("%s(%s)" % (old_instance, instance_counter - 1))
+                    instance_counter = 1
+                    old_instance = instance
+                elif i == irange[-1] :
+                    available_classes_string = available_classes_string + ("%s(%s)" % (old_instance, instance_counter))
+                instance_counter = instance_counter + 1
+            new_resource['AvailableClasses'] =  available_classes_string
+            new_resource['Feature'] =  dict['Feature']
+            new_resource['Max_Starters'] =  string.atoi(dict['Max_Starters'])
+            new_resource['Memory'] =  string.atoi(dict['Memory'])
+            new_resource['Cpus'] =  string.atoi(dict['Cpus'])
+            new_resource['State'] =  Catalina.RM_TO_CAT_RESOURCE_dict[dict['State']]
+            new_resource['State_Change_Time'] = Catalina.Now_float
+            resources_dict[new_resource['Machine']] = new_resource
+        except :
+            continue
+    
+    if Catalina.SERVERMODE == 'SIM' :
+        LLSTATUS = Catalina.HOMEDIR + '/' + 'llstatus_sim'
+    else :
+        LLSTATUS = '/usr/lpp/LoadL/full/bin/llstatus -l'
+    resources = []
+    found_start = 0
+    resource_string = ''
+    resource_reo = re.compile( r"""(^\s*Name\s*=\ (?P<Name>\S+)$)
+            ((.|\n)*)
+            (^\s*Adapter\s*=\ (?P<Adapter>.*?)$)
+            ((.|\n)*)"""
+        ,re.MULTILINE | re.VERBOSE)
+    delimit_reo = re.compile(r"^===============================================================================$")
+    for line in  os.popen(LLSTATUS).readlines() :
+        resource_string = resource_string + line
+        line_mo = None
+        line_mo = delimit_reo.match(line)
+        if line_mo != None :
+            if found_start == 1 :
+                # parse the resource_string
+                resource_mo = resource_reo.search(resource_string)
+                if resource_mo == None :
+                    print "resource_mo is None"
+                    print "resource_string is (%s)" % resource_string
+                else :
+                    resource_name =  resource_mo.group('Name')
+                    # in case bogus info was returned from qm_LL,
+                    # bail out if resources_dict doesn't have
+                    # resource_name in it
+                    if not resources_dict.has_key(resource_name) :
+                        resource_string = ''
+                        continue
+                    resources_dict[resource_name]['Adapter'] =  resource_mo.group('Adapter')
+                # clear the old resource_string
+                resource_string = ''
+            found_start = 1
+    resources = resources_dict.values()
+    if finished_found != 1 :
+        raise 'IncompleteQM'
+    return resources
+
+def get_requirements_string(old_requirements_string) :
+    # requirements line from getinitmap:
+    # (Memory >= 4086) && (Machine == {"tf226i.sdsc.edu" "tf227i.sdsc.edu" "tf228i.sdsc.edu" }) && (Feature == "SDSC") && (Arch == "R6000") && (OpSys == "AIX43")
+    # An expression could be constructed from this.  Substitute
+    # "nodedict['Memory']" for Memory, substitute (nodedict['Name'] == "tf226i.sdsc.edu" or nodedict['Name'] == "tf227i.sdsc.edu" or nodedict['Name'] == "tf228i.sdsc.edu", etc.
+    # Disk, Pool, Adapter not supported currently
+    # check requirements
+    # check adapter
+    # check class
+    # This is not bulletproof regex matching.  an os called 'MemoryOS' would
+    # break the regex sub, for example...
+    # should substitute Machine statement for standard boolean.
+    # Machine == { "tf226i" "tf227i" "tf228i" } substituted to
+    # (resource.get_Machine() == "tf226i.sdsc.edu") ||  
+    # (resource.get_Machine() == "tf227i.sdsc.edu") ||
+    # (resource.get_Machine() == "tf228i.sdsc.edu")
+    # should substitute re.search(feature,resource.get_Feature())
+    # Feature == "SDSC" substituted to
+    # re.search(" SDSC ",resource.get_Feature())
+    Memory_reo = re.compile(r"Memory")
+    new_requirements_string = Memory_reo.sub(r"resource['Memory']", old_requirements_string)
+    old_requirements_string = new_requirements_string
+    # for requirements like Machine == { "tf225i" "tf226i" "tf227i" }
+    # need to handle separately
+    Machine_list_reo = re.compile(r'Machine\s*(\S+)\s*\{(.*)\}')
+    Machine_list_fo_list = Machine_list_reo.findall(old_requirements_string)
+    if Machine_list_fo_list :
+        for matched_tuple in Machine_list_fo_list :
+            machine_list = string.split(string.strip(matched_tuple[1]))
+            machine_expression = '( '
+            comparison = matched_tuple[0]
+            for name in machine_list :
+                machine_expression = machine_expression + "(resource['Machine'] %s %s) ||" % (comparison, name)
+            machine_expression = machine_expression[:-2]
+            machine_expression = machine_expression + ' )'
+            new_requirements_string = Machine_list_reo.sub(machine_expression, old_requirements_string)
+            old_requirements_string = new_requirements_string
+    Machine_equate_reo = re.compile(r"Machine == \"")
+    new_requirements_string = Machine_equate_reo.sub('resource[\'Machine\'] == "', old_requirements_string)
+    old_requirements_string = new_requirements_string
+    # for feature requirements, need to handle separately
+    Feature_reo = re.compile(r'Feature\s*==\s*"\s*(.*?)\s*"')
+    #feature_expression = r"re.search(' \1 ',resource['Feature'])"
+    feature_expression = r"re.search('\1',resource['Feature'])"
+    new_requirements_string = Feature_reo.sub(feature_expression, old_requirements_string)
+    old_requirements_string = new_requirements_string
+    Arch_reo = re.compile(r"Arch")
+    new_requirements_string = Arch_reo.sub(r"resource['Arch']", old_requirements_string)
+    old_requirements_string = new_requirements_string
+    OpSys_reo = re.compile(r"OpSys")
+    new_requirements_string = OpSys_reo.sub(r"resource['OpSys']", old_requirements_string)
+    old_requirements_string = new_requirements_string
+    Disk_reo = re.compile(r"Disk")
+    new_requirements_string = Disk_reo.sub(r"resource['Disk']", old_requirements_string)
+    old_requirements_string = new_requirements_string
+    Pool_reo = re.compile(r"Pool")
+    new_requirements_string = Pool_reo.sub(r"resource['Pool']", old_requirements_string)
+    old_requirements_string = new_requirements_string
+    Tee_reo = re.compile(r"\(T\)")
+    new_requirements_string = Tee_reo.sub(r"(1)", old_requirements_string)
+    old_requirements_string = new_requirements_string
+    and_reo = re.compile(r"&&")
+    new_requirements_string = and_reo.sub(r'and', old_requirements_string)
+    old_requirements_string = new_requirements_string
+    or_reo = re.compile(r"\|\|")
+    new_requirements_string = or_reo.sub(r'or', old_requirements_string)
+    old_requirements_string = new_requirements_string
+    return new_requirements_string
+    
+def get_resource_list(job_step, resources_db_handle) :
+    # returns list of resource objects that match job_step
+    screened_resource_list = []
+    job_adapter_requirement = job_step['adapter']
+    job_adapter_reo = re.compile(r"\((?P<interface>[\w\d]+),([\w\d]+),(?P<sharing>[\w\d]+),(?P<USorIP>[\w\d]+)\)")
+    job_adapter_mo = job_adapter_reo.match(job_adapter_requirement)
+    if job_adapter_requirement == '' :
+        ready_adapter_match_string = ''
+    else :
+        ready_adapter_match_string = job_adapter_mo.group('interface') + \
+          r'\(?\S+,(READY|)\)'
+    # The following depends on ConfiguredClasses being in the form of
+    # llstatus -l ConfiguredClasses:
+    # ConfiguredClasses   = Diag9(8) Diag0(8) standby(8) low(8) normal(16) high(8)
+    # rewrite for Data Access API where class names are repeated for each
+    # instance of class
+    job_class_requirement = job_step['job_class']
+    #job_class_search_string = r"%s\((?P<class_amount>\d+)\)" % job_class_requirement
+    #job_class_reo = re.compile(job_class_search_string)
+    # Find the number of initiators per node, assuming a rectangular
+    # geometry.  Take the largest in the map.
+    step_initiatormap = job_step['initiatormap']
+    initiators_list = string.split(step_initiatormap, '+')
+    job_initiator_per_node_int = 0
+    for initiator in initiators_list :
+        if string.atoi(initiator) > job_initiator_per_node_int :
+            job_initiator_per_node_int = string.atoi(initiator)
+    resources_shelf = resources_db_handle[0]
+    # slow point
+    if job_step.has_key('cat_requirements_string') :
+        new_requirements_string = job_step['cat_requirements_string']
+    else :
+        new_requirements_string = get_requirements_string(job_step['requirements'])
+    if new_requirements_string == '' :
+        compiled_nrq = compile('1', '<string>', 'eval')
+    else :
+        compiled_nrq = compile(new_requirements_string, '<string>', 'eval')
+    if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
+        print "new_requirements_string (%s)" % new_requirements_string
+    for key in resources_shelf.keys() :
+        to_be_continued = 0
+        resource = resources_shelf[key]
+        if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
+            print "resource['Feature'] (%s)" % resource['Feature']
+        try :
+            if not eval(compiled_nrq) :
+                if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
+                    print "%s does not match" % key
+                to_be_continued = 1
+            else :
+                if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
+                    print "%s matches" % key
+        except NameError :
+            print "Bad requirements string(%s) for job (%s)!" % (job_step['requirements'], job_step['name'])
+            break
+        if to_be_continued == 1 :
+            continue
+        # Right here, need to check for number of ConfiguredClasses
+        # This may also be the place to implement mult-job per node
+        # by reserving Class initiators...
+        if not resource.has_key('ConfiguredClasses_list') or resource['ConfiguredClasses_list'] == None :
+            continue
+        matched_classes_list = filter(lambda x, job_class_requirement=job_class_requirement : \
+          job_class_requirement == x, resource['ConfiguredClasses_list'])
+        if len(matched_classes_list) == 0 :
+            # resource does not have this class at all
+            continue
+        elif len(matched_classes_list) < job_initiator_per_node_int :
+            # The resource has the class, but fewer initiators for that
+            # class than the job needs.
+            continue
+        if resource['Adapter'] == None or not re.search(ready_adapter_match_string, resource['Adapter']) :
+            continue
+        screened_resource_list.append(resource)
+    return screened_resource_list
+
+def get_resource_name_list(resource_list) :
+    names = []
+    for resource in resource_list :
+        names.append(resource['name'])
+    return names
+
+def get_QOS_priority(QOS) :
+    if string.atoi(QOS) < len(Catalina.QOS_PRIORITY_dict.keys()) :
+        return Catalina.QOS_PRIORITY_dict[QOS]
+    else :
+        return 0
+
+def get_QOS_target_expansion_factor(QOS) :
+    # This returns the target expansion factor for
+    # the different QOSs.
+    if string.atoi(QOS) < len(Catalina.QOS_TARGETXF_dict.keys()) :
+        return Catalina.QOS_TARGETXF_dict[QOS]
+    else :
+        return None
+
+def get_QOS_target_queue_wait_time(QOS) :
+    # This function returns a target queue wait time
+    # for a given QOS.
+    if string.atoi(QOS) < len(Catalina.QOS_TARGETQT_dict.keys()) :
+        return Catalina.QOS_TARGETQT_dict[QOS]
+    else :
+        return None
+
+def update_job_priorities (jobs_db_handle) :
+    # priority calculation:
+    # resource_number * Resource_Weight
+    # expansion factor * Expansion_Factor_Weight
+    # system queue time * System_Queue_Time_Weight
+    # submit time * Submit_Time_Weight
+    # QOS_priority * QOS_Priority_Weight
+    # QOS_target_expansion_factor * QOS_Target_Expansion_Factor_Weight
+    # QOS_target_queue_wait_time * QOS_Target_Queue_Wait_Time_Weight
+    # Adjust these weights to emphasize different elements of the
+    # priority calculation
+    #Resource_Weight = 1100.0
+    #Expansion_Factor_Weight = 10.0
+    #System_Queue_Time_Weight = 0.1
+    #Submit_Time_Weight = 0.0
+    #QOS_Priority_Weight = 6000.0
+    #QOS_Target_Expansion_Factor_Weight = 1
+    #QOS_Target_Queue_Wait_Time_Weight = 1
+    Resource_Weight = Catalina.RESOURCE_WEIGHT
+    if Catalina.__dict__.has_key('LOCAL_ADMIN_WEIGHT') :
+        Local_Admin_Weight = Catalina.LOCAL_ADMIN_WEIGHT
+    else :
+        Local_Admin_Weight = 0.0
+    if Catalina.__dict__.has_key('LOCAL_USER_WEIGHT') :
+        Local_User_Weight = Catalina.LOCAL_USER_WEIGHT
+    else :
+        Local_User_Weight = 0.0
+    Expansion_Factor_Weight = Catalina.EXPANSION_FACTOR_WEIGHT
+    System_Queue_Time_Weight = Catalina.SYSTEM_QUEUE_TIME_WEIGHT
+    Submit_Time_Weight = Catalina.SUBMIT_TIME_WEIGHT
+    Wall_Time_Weight = Catalina.WALL_TIME_WEIGHT
+    QOS_Priority_Weight = Catalina.QOS_PRIORITY_WEIGHT
+    QOS_Target_Expansion_Factor_Weight = Catalina.QOS_TARGET_EXPANSION_FACTOR_WEIGHT
+    QOS_Target_Queue_Wait_Time_Weight = Catalina.QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT
+    jobs_shelf = jobs_db_handle[0]
+    for key in jobs_shelf.keys() :
+        # Set up a dict to store priority calculation terms for later reports
+        priority_element_dict = {
+          'Resource_Weight'                    : Resource_Weight,
+          'Local_Admin_Weight'                 : Local_Admin_Weight,
+          'Local_User_Weight'                  : Local_User_Weight,
+          'Expansion_Factor_Weight'            : Expansion_Factor_Weight,
+          'System_Queue_Time_Weight'           : System_Queue_Time_Weight,
+          'Submit_Time_Weight'                 : Submit_Time_Weight,
+          'Wall_Time_Weight'                   : Wall_Time_Weight,
+          'QOS_Priority_Weight'                : QOS_Priority_Weight,
+          'QOS_Target_Expansion_Factor_Weight' : QOS_Target_Expansion_Factor_Weight,
+          'QOS_Target_Queue_Wait_Time_Weight'  : QOS_Target_Queue_Wait_Time_Weight
+        }
+
+        temp_job = jobs_shelf[key]
+
+        # Get number of resources from initiatormap
+        resourcemap_list = string.split(jobs_shelf[key]['initiatormap'], '+')
+        resource_number = float(len(resourcemap_list))
+
+        # Get local priority from local_priority_string
+        if temp_job.has_key('local_admin_priority_string') and \
+          temp_job['local_admin_priority_string'] != None :
+            try :
+                local_admin_float = float(temp_job['local_admin_priority_string'])
+            except :
+                local_admin_float = 0.0
+        else :
+            local_admin_float = 0.0
+        if temp_job.has_key('local_user_priority_string') and \
+          temp_job['local_user_priority_string'] != None :
+            try :
+                local_user_float = float(temp_job['local_user_priority_string'])
+                if local_user_float > 0.0 :
+                    local_user_float = 0.0
+            except :
+                local_user_float = 0.0
+        else :
+            local_user_float = 0.0
+
+        # Calculate expansion factor
+        expansion_factor = \
+          ( ( Catalina.Now_float -
+              float(temp_job['speculative_system_queue_time']) + \
+            float(temp_job['wall_clock_limit']) ) / \
+          float(temp_job['wall_clock_limit']) )
+
+        # Calculate queue wait time
+        queue_wait_time = Catalina.Now_float - float(temp_job['speculative_system_queue_time'])
+
+        # Calculate submit wait time
+        submit_wait_time = Catalina.Now_float - float(temp_job['SubmitTime'])
+
+        # Get wall clock time
+        wall_clock_time = temp_job['wall_clock_limit']
+
+        # Get QOS priority
+        QOS_priority = float(get_QOS_priority(temp_job['QOS']))
+
+        # Get QOS target expansion factor
+        QOS_target_expansion_factor = get_QOS_target_expansion_factor(temp_job['QOS'])
+        if QOS_target_expansion_factor == None :
+            QOS_target_xf_value = 0
+        else :
+            if expansion_factor >= QOS_target_expansion_factor :
+                QOS_target_xf_value = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+            else :
+                QOS_target_xf_value = 1 / (QOS_target_expansion_factor - expansion_factor)
+            if QOS_target_xf_value > float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']]) :
+                QOS_target_xf_value = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+        # Get QOS target queue time
+        QOS_target_queue_wait_time = get_QOS_target_queue_wait_time(temp_job['QOS'])
+        if QOS_target_queue_wait_time == None :
+            QOS_target_qwt_value = 0
+        else :
+            if queue_wait_time >= QOS_target_queue_wait_time :
+                QOS_target_qwt_value = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+            else :
+                QOS_target_qwt_value = 1 / (QOS_target_queue_wait_time - queue_wait_time)
+            if QOS_target_qwt_value > float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']]) :
+                QOS_target_qwt_value = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+
+        priority_element_dict['resource_number'] = resource_number
+        priority_element_dict['local_admin_float'] = local_admin_float
+        priority_element_dict['local_user_float'] = local_user_float
+        priority_element_dict['expansion_factor'] = expansion_factor
+        priority_element_dict['queue_wait_time'] = queue_wait_time
+        priority_element_dict['submit_wait_time'] = submit_wait_time
+        priority_element_dict['wall_clock_time'] = wall_clock_time
+        priority_element_dict['QOS_priority'] = QOS_priority
+        priority_element_dict['QOS_target_xf_value'] = QOS_target_xf_value
+        priority_element_dict['QOS_target_qwt_value'] = QOS_target_qwt_value
+
+        if temp_job['system_priority_int'] != None :
+            priority = float( Catalina.MAXPRIORITY + \
+              temp_job['system_priority_int'] )
+        else :
+            priority = \
+                resource_number * Resource_Weight + \
+                local_admin_float * Local_Admin_Weight + \
+                local_user_float * Local_User_Weight + \
+                expansion_factor * Expansion_Factor_Weight + \
+                queue_wait_time * System_Queue_Time_Weight + \
+                submit_wait_time * Submit_Time_Weight + \
+                wall_clock_time * Wall_Time_Weight + \
+                QOS_priority * QOS_Priority_Weight + \
+                QOS_target_xf_value * QOS_Target_Expansion_Factor_Weight + \
+                QOS_target_qwt_value * QOS_Target_Queue_Wait_Time_Weight
+            if Catalina.QOS_MAX_PRIORITY_dict.has_key(temp_job['QOS']) :
+                max_pri = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+            else :
+                max_pri = Catalina.MAXPRIORITY
+            if priority > max_pri - max_pri * 0.1 :
+                priority =  (priority * max_pri)/(priority + max_pri * 0.1)
+	Catalina.update_object_attribute('priority', priority, temp_job, jobs_db_handle)
+	Catalina.update_object_attribute('priority_element_dict', priority_element_dict, temp_job, jobs_db_handle)
+
+def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle) :
+    #start_job_returncode_reo = start_job_returncode_reo
+    RUNJOB='___RUNJOB_PLACEHOLDER___'
+    print "in run_jobs"
+    RUNJOB = Catalina.HOMEDIR + '/' + RUNJOB
+    # all dbs can be read
+    jobs_dict = jobs_db_handle[0]
+    resources_dict = resources_db_handle[0]
+    reservations_dict = reservations_db_handle[0]
+    jobs_to_run = {}
+    for reservation in reservations_dict.values() :
+        if reservation['purpose_type_string'] != 'job' :
+            continue
+        start_time_float = reservation['start_time_float']
+        if (Catalina.Now_float + 1) >= start_time_float and (Catalina.Now_float - start_time_float) <= Catalina.FUDGE_FACTOR/2 :
+            if reservation.has_key('start_count_int') and \
+              reservation['start_count_int'] >= 1 :
+                continue
+            job_stepid = reservation['job_runID']
+            if jobs_dict[job_stepid]['state'] != 'Idle' :
+                continue
+            node_list = reservation['node_list']
+            fromhost = jobs_dict[job_stepid]['fromhost']
+            cluster = jobs_dict[job_stepid]['cluster']
+            proc = jobs_dict[job_stepid]['proc']
+            initiatormap = jobs_dict[job_stepid]['initiatormap']
+            resourcemap_list = string.split(initiatormap,'+')
+            resourcemap_string = ''
+            resourcemap_list.reverse()
+            for i in range(len(resourcemap_list)) :
+                for j in range(string.atoi(resourcemap_list[i])) :
+                    resourcemap_string = resourcemap_string + ' ' + \
+                        node_list[i]
+            runstring = ' ' + fromhost + ' ' + cluster + ' ' + proc + \
+                ' ' + resourcemap_string
+            jobs_to_run[job_stepid] = (runstring, reservation)
+    print "len(jobs_to_run.keys()) is (%s)" % len(jobs_to_run.keys())
+    for job in jobs_to_run.keys() :
+        run_string = jobs_to_run[job][0]
+        reservation = jobs_to_run[job][1]
+        return_string = None
+        cmd = RUNJOB + ' ' + run_string
+        if Catalina.SERVERMODE == 'NORMAL' :
+            print "really running job..."
+            return_string = os.popen(cmd).readlines()
+            print return_string
+        else :
+            return_string = \
+              [
+              'adding to nodelist (tf183i)\012',
+              'adding to nodelist (tf183i)\012',
+              'adding to nodelist (tf184i)\012',
+              'adding to nodelist (tf184i)\012',
+              'rc from ll_start_job is >0<\012'
+              ]
+            print "%s" % cmd
+        if return_string != None :
+            joined_return_string = string.join(return_string,'\n')
+            start_job_returncode_mo = start_job_returncode_reo.search(joined_return_string)
+        if start_job_returncode_mo != None :
+            if start_job_returncode_mo.groupdict().has_key('code') :
+                return_code_int = string.atoi(start_job_returncode_mo.group('code'))
+                print "return_code_int is (%s)" % return_code_int
+                if return_code_int == 0 :
+                    Catalina.update_object_attribute(
+                      'start_count_int',
+                      1,
+                      reservation,
+                      reservations_db_handle)
+                    print "setting start_count_int to (%s) for (%s)" % \
+                      (1, reservation['job_runID'])
+            else :
+                print "no 'code' group found"
+        else :
+            print "start_job_returncode_mo == None"
+        event = {
+          'name' : 'run_jobs',
+          'cmd' : cmd,
+          'return_string' : return_string
+          }
+        Catalina.log_event(event, events_db_handle)
+            
+
+def get_configured_resources_list(resources_db_handle) :
+    def strip_newline(line) :
+        stripped_line = line[:-1]
+        return stripped_line
+    cmd_string = '___CAT_PLACEHOLDER___ ' + Catalina.LOADL_ADMIN_FILE + " | ___GREP_PLACEHOLDER___ 'type = machine' | ___GREP_PLACEHOLDER___ -v default | ___GREP_PLACEHOLDER___ -v ^# | ___AWK_PLACEHOLDER___ -F: '{print $1}'"
+    lines = os.popen(cmd_string).readlines()
+    stripped_lines = map(strip_newline, lines)
+    configured_resources_list = map( initialize_resource, stripped_lines)
+    return configured_resources_list
+@

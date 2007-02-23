@@ -1,0 +1,21 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+
+import Catalina
+import time
+import sys
+import os
+
+CONFIGURATION_DB = Catalina.CONFIGURATION_DB
+
+configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+
+Catalina.delete_object('server_hosts_pidslist_dict',
+  configuration_db_handle)
+
+Catalina.insert_new_object_with_key('server_hosts_pidslist_dict',
+  {}, configuration_db_handle)
+
+Catalina.close_db(configuration_db_handle)
+
+result = 0
+sys.exit(0)

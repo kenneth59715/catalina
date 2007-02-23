@@ -1,0 +1,290 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update the resource database
+
+import Catalina
+import time
+import sys
+import os
+import getopt
+import socket
+import traceback
+import string
+import types
+
+RESOURCES_DB = 'resource'
+JOBS_DB = 'jobs'
+RESERVATIONS_DB = 'reservations'
+OLD_JOBS_DB = 'old_jobs'
+OLD_RESERVATIONS_DB = 'old_reservations'
+STANDING_RESERVATIONS_DB = 'standing_reservations'
+CONFIGURED_RESOURCES_DB = 'configured_resources'
+CONFIGURATION_DB = 'configuration'
+EVENTS_DB = 'events'
+
+options = [
+  'debugjob=',
+  'iterate',
+  'startcount=',
+  'endcount='
+]
+
+def instance_remove(configuration_db_handle) :
+    if configuration_dict.has_key('server_hosts_pidslist_dict') :
+        temp_dict = Catalina.get_object('server_hosts_pidslist_dict',
+          configuration_db_handle)
+        Catalina.delete_object('server_hosts_pidslist_dict',
+          configuration_db_handle)
+    else :
+        temp_dict = {}
+    my_hostname = socket.gethostname()
+    my_pid = os.getpid()
+    if temp_dict.has_key(my_hostname) :
+        temp_pidslist = filter(lambda pid, my_pid=my_pid : pid != my_pid,
+          temp_dict[my_hostname])
+        if len(temp_pidslist) > 0 :
+            temp_dict[my_hostname] = temp_pidslist
+        else :
+            del temp_dict[my_hostname]
+        print "temp_pidslist (%s)" % temp_pidslist
+    Catalina.insert_new_object_with_key('server_hosts_pidslist_dict',
+      temp_dict, configuration_db_handle)
+    update_object = { 'name' : 'last_schedule_update', 'timestamp' : Catalina.Now_float }
+    Catalina.insert_new_object(update_object, configuration_db_handle)
+    Catalina.close_db(configuration_db_handle)
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+if argdict.has_key('--startcount') :
+    startcount = string.atoi(argdict['--startcount'])
+else :
+    startcount = 0
+if argdict.has_key('--endcount') :
+    endcount = string.atoi(argdict['--endcount'])
+elif not argdict.has_key('--iterate') :
+    endcount = startcount
+if argdict.has_key('--debugjob') :
+    Catalina.DEBUGJOB = argdict['--debugjob']
+
+start_time = time.clock()
+state = 'running'
+count = startcount
+failed_count = 0
+log_warn_count = 0
+while ( (state == 'running' or state == 'suspended') and
+  (argdict.has_key('--iterate') or count <= endcount) ) :
+    cfg_resources_db_handle = None
+    events_db_handle = None
+    jobs_db_handle = None
+    old_jobs_db_handle = None
+    old_reservations_db_handle = None
+    reservations_db_handle = None
+    resources_db_handle = None
+    standing_reservations_db_handle = None
+    try :
+        #if Catalina.SERVERMODE == 'SIM' :
+        #    Catalina.Now_float = float(os.system(Catalina.TIME_SIM))
+        #else :
+        #    Catalina.Now_float = time.time()
+        Catalina.Now_float = Catalina.get_scheduler_time()
+        print "iteration (%s)" % count
+        print "Catalina.Now_float (%s)" % time.asctime(time.localtime(Catalina.Now_float))
+        print "%s" % time.clock()
+        configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+        configuration_dict = configuration_db_handle[0]
+        if configuration_dict.has_key('state') :
+            if configuration_dict['state'] == 'stopped' :
+                print "Scheduler has state 'stopped'.  Exiting..."
+                instance_remove(configuration_db_handle)
+                state = 'stopped'
+                raise 'SchedulerStopped'
+            elif configuration_dict['state'] == 'suspended' :
+                print "Scheduler has state 'suspended'.  Sleeping..."
+                time.sleep(30)
+                Catalina.close_db(configuration_db_handle)
+                state = 'suspended'
+                raise 'SchedulerSuspended'
+            elif configuration_dict['state'] == 'running' :
+                state = 'running'
+                if configuration_dict.has_key('server_hosts_pidslist_dict') :
+                    temp_dict = Catalina.get_object(
+                      'server_hosts_pidslist_dict', configuration_db_handle)
+                    Catalina.delete_object('server_hosts_pidslist_dict',
+                      configuration_db_handle)
+                else :
+                    temp_dict = {}
+                my_hostname = socket.gethostname()
+                my_pid = os.getpid()
+                if temp_dict.has_key(my_hostname) :
+                    temp_dict[my_hostname].append(my_pid)
+                else :
+                    temp_dict[my_hostname] = [my_pid,]
+                print "temp_dict[my_hostname] (%s)" % temp_dict[my_hostname]
+                Catalina.insert_new_object_with_key('server_hosts_pidslist_dict', temp_dict, configuration_db_handle)
+            else :
+                print "Scheduler has unknown state. Exiting..."
+                instance_remove(configuration_db_handle)
+                state = 'stopped'
+                sys.exit(1)
+        Catalina.close_db(configuration_db_handle)
+        cfg_resources_db_handle = Catalina.open_db(CONFIGURED_RESOURCES_DB,'write')
+        events_db_handle = Catalina.open_db(EVENTS_DB,'write')
+        jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+        old_jobs_db_handle = Catalina.open_db(OLD_JOBS_DB,'write')
+        old_reservations_db_handle = Catalina.open_db(OLD_RESERVATIONS_DB,'write')
+        reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+        resources_db_handle = Catalina.open_db(RESOURCES_DB,'write')
+        standing_reservations_db_handle = Catalina.open_db(STANDING_RESERVATIONS_DB,'read')
+        #print "updating standing reservations"
+        #Catalina.update_standing_reservations(
+        #  events_db_handle=events_db_handle,
+        #  jobs_db_handle=jobs_db_handle,
+        #  resources_db_handle=resources_db_handle,
+        #  reservations_db_handle=reservations_db_handle,
+        #  standing_reservations_db_handle=standing_reservations_db_handle)
+        if count % 10 == 0 :
+            #print "reloading job resource lists"
+            #Catalina.reload_job_resource_lists(events_db_handle, jobs_db_handle, resources_db_handle)
+            print "moving old jobs"
+            Catalina.move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle)
+            print "moving old reservations"
+            Catalina.move_old_reservations(events_db_handle, reservations_db_handle, old_reservations_db_handle)
+            print "refreshing node dictionary"
+            Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
+            print "rolling logs"
+            try :
+                Catalina.roll_logs(events_db_handle, old_jobs_db_handle, old_reservations_db_handle)
+            except :
+                info_tuple = sys.exc_info()
+                print "(%s) (%s) (%s)" % info_tuple
+                info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+                traceback.print_tb(info_tuple[2])
+                tb_list = traceback.format_tb(info_tuple[2])
+                info_list = info_list + tb_list
+                tb_text = string.join(info_list)
+                message = tb_text
+                subject = 'Catalina warning'
+                recipient = Catalina.MAIL_RECIPIENT
+                print "message (%s)" % message
+                print "subject (%s)" % subject
+                print "recipient (%s)" % recipient
+                log_warn_count = log_warn_count + 1
+                if log_warn_count == 1 :
+                    Catalina.warn(message, subject, recipient)
+            else :
+                log_warn_count = 0
+        
+        # feature 669
+        if count % Catalina.MACHINE_REFRESH_INTERVAL == 0 :
+            print "refreshing node dictionary after %s intervals" %(Catalina.MACHINE_REFRESH_INTERVAL)
+            Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
+            
+        Catalina.schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle, cfg_resources_db_handle, standing_reservations_db_handle )
+        failed_count = 0
+        count = count + 1
+        print "elapsed (%s)" % (time.time() - Catalina.Now_float,)
+        time.sleep(1)
+    except 'SchedulerSuspended' :
+        print "Scheduler suspended"
+    except 'SchedulerStopped' :
+        print "Scheduler stopped"
+    except ('IncompleteQJ','IncompleteQM') :
+        try :
+            info_tuple = sys.exc_info()
+            print "(%s) (%s) (%s)" % info_tuple
+            info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+            traceback.print_tb(info_tuple[2])
+            tb_list = traceback.format_tb(info_tuple[2])
+            info_list = info_list + tb_list
+            tb_text = string.join(info_list)
+            ## bug 557. More descriptive mail output ##
+            message = 'Admins, Catalina iteration has failed and it has stopped scheduling. Please immediately take corrective actions. No new jobs will be scheduled until the error has been corrected. \n\n'
+            message = message + tb_text
+            subject = 'Catalina failure. Catalina is no longer running because QM/QJ has failed. '
+            recipient = Catalina.MAIL_RECIPIENT
+            print "message (%s)" % message
+            print "subject (%s)" % subject
+            print "recipient (%s)" % recipient
+            
+            ## bug 557 fix: Catalina failed to warn the admins in case of qj_LL 
+            ## failure. This could be fatal. I think the reason is because of
+            ## bad logic in failed_count. You cannot double dip on exception. 
+            
+            ## since the exception IncompleteQJ has a handler, python will always
+            ## use it, but the code to increment failed_count is in the failsafe.
+                    
+            ## I still have to maintain 1 email / failure so I don't spam mailserver
+            failed_count+=1
+            
+            if failed_count == 1 :
+                Catalina.warn(message, subject, recipient)
+        except :
+            print "print of sys.exc_info() failed"
+    except 'CatalinaDBError', detail :
+        configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+        instance_remove(configuration_db_handle)
+        print "Unrecoverable DB Error (%s)!  Exiting..." % detail
+        try :
+            info_tuple = sys.exc_info()
+            print "(%s) (%s) (%s)" % info_tuple
+            info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+            traceback.print_tb(info_tuple[2])
+            tb_list = traceback.format_tb(info_tuple[2])
+            info_list = info_list + tb_list
+            tb_text = string.join(info_list)
+            message = tb_text
+            subject = 'Catalina failure and exit'
+            recipient = Catalina.MAIL_RECIPIENT
+            print "message (%s)" % message
+            print "subject (%s)" % subject
+            print "recipient (%s)" % recipient
+            if failed_count == 1 :
+                Catalina.warn(message, subject, recipient)
+        except :
+            print "print of sys.exc_info() failed"
+        sys.exit(1)
+    except :
+        failed_count = failed_count + 1
+        try :
+            info_tuple = sys.exc_info()
+            print "(%s) (%s) (%s)" % info_tuple
+            info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+            traceback.print_tb(info_tuple[2])
+            tb_list = traceback.format_tb(info_tuple[2])
+            info_list = info_list + tb_list
+            tb_text = string.join(info_list)
+            message = tb_text + '\n' + "outermost except, Exiting..."
+            subject = 'Catalina failure and Exit!'
+            recipient = Catalina.MAIL_RECIPIENT
+            print "message (%s)" % message
+            print "subject (%s)" % subject
+            print "recipient (%s)" % recipient
+            if failed_count == 1 :
+                Catalina.warn(message, subject, recipient)
+        except :
+            print "print of sys.exc_info() failed"
+        print "iteration %s failed" % count
+        sys.exit(1)
+    else :
+        configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+        instance_remove(configuration_db_handle)
+        Catalina.DB_WARN_COUNT = 0
+
+    if standing_reservations_db_handle != None :
+        Catalina.close_db(standing_reservations_db_handle)
+    if resources_db_handle != None :
+        Catalina.close_db(resources_db_handle)
+    if reservations_db_handle != None :
+        Catalina.close_db(reservations_db_handle)
+    if old_reservations_db_handle != None :
+        Catalina.close_db(old_reservations_db_handle)
+    if old_jobs_db_handle != None :
+        Catalina.close_db(old_jobs_db_handle)
+    if jobs_db_handle != None :
+        Catalina.close_db(jobs_db_handle)
+    if events_db_handle != None :
+        Catalina.close_db(events_db_handle)
+    if cfg_resources_db_handle != None :
+        Catalina.close_db(cfg_resources_db_handle)

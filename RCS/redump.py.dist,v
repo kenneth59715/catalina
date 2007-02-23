@@ -1,0 +1,73 @@
+head	1.1;
+access;
+symbols;
+locks
+	mmargo:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2006.08.11.22.22.53;	author mmargo;	state Exp;
+branches;
+next	;
+
+
+desc
+@utility to convert old style db to new style db
+mmargo
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+
+## copy and redump database
+## this script reads the entire databse and redump it as cpicklefast(binary)
+## then I will compare the performance with the original show_q
+
+## step 1.
+## open the original database
+
+import sys
+import cPickle
+
+## the arguments is in sys.argv
+## usage: redump.py /target_dir /path/to/database/ db_name
+if len(sys.argv) != 4 :
+    print "Usage : redump.py new_database_dir old_database_dir db_name"
+    sys.exit(2)
+ 
+target_dir = sys.argv[1]
+db_path = sys.argv[2]
+db_name = sys.argv[3]
+
+db_tuple = (None, db_name, 'read')
+readthis = db_path + '/' + db_name
+readfile = None
+try :
+     readfile = open(readthis,'r')
+     dict = cPickle.load(readfile)
+     readfile.close()
+except:
+     raise "dberror"
+
+db_handle = (dict,db_tuple)
+
+targetfile = target_dir + '/' + db_name
+FO = open(targetfile,'wb')
+
+## fast and binary cpickle
+myPickle = cPickle.Pickler(FO, 1)
+myPickle.fast = 1
+
+myPickle.dump(dict)
+FO.flush()
+FO.close()
+
+
+
+@

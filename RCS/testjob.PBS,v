@@ -1,0 +1,47 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2001.12.10.22.11.20;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.22.54.49;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@testjob for PBS
+@
+
+
+1.2
+log
+@added local_admin_priority, local_user_priority, res_bind
+not tested
+@
+text
+@#PBS -l nodes=2,walltime=630,mem=320kb
+#PBS -A sys200
+#PBS -v QOS=2,Catalina_local_admin_priority=92091,Catalina_local_user_priority=-100,Catalina_res_bind=testholder
+/bin/hostname
+cat $PBS_NODEFILE
+sleep 120
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d3 1
+a3 1
+#PBS -v QOS=2
+@

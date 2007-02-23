@@ -1,0 +1,25 @@
+head	1.1;
+access;
+symbols;
+locks
+	mmargo:1.1; strict;
+comment	@# @;
+
+
+1.1
+date	2006.07.26.20.55.58;	author mmargo;	state Exp;
+branches;
+next	;
+
+
+desc
+@@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@20060717
+@

@@ -1,0 +1,12 @@
+#!___KSH_PATH_PLACEHOLDER___
+cd ___HOMEDIR_PLACEHOLDER___
+umask 002
+./set_config --key_value=state:running
+___NOHUP_PLACEHOLDER___ ./catalina_schedule_jobs --iterate >/dev/null 2>&1 &
+count=`___PS_PLACEHOLDER___ ___PSOPTIONS_PLACEHOLDER___ | ___GREP_PLACEHOLDER___ 'catalina_schedule_jobs' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'`
+while [[ $count < 1 ]]
+do
+___SLEEP_PLACEHOLDER___ 5
+echo "waiting for start"
+count=`___PS_PLACEHOLDER___ ___PSOPTIONS_PLACEHOLDER___ | ___GREP_PLACEHOLDER___ 'catalina_schedule_jobs' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'`
+done

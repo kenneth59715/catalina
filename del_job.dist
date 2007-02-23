@@ -1,0 +1,39 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+
+import sys
+import getopt
+import Catalina
+import time
+import os
+
+JOBS_DB = Catalina.JOBS_DB
+
+options = [
+  '?',
+  'help',
+  'job='
+  ]
+usage_string = \
+"""Usage: del_job --job=<job step id>
+               [--?]
+               [--help]
+"""
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') or \
+  not argdict.has_key('--job') :
+    print usage_string
+    sys.exit(0)
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+Catalina.delete_object(argdict['--job'], jobs_db_handle)
+    
+Catalina.close_db(jobs_db_handle)
+
+result = 0
+sys.exit(0)

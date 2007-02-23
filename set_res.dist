@@ -1,0 +1,309 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+#set_res --user_list=testdemo,diegella --start=00:00_09/25/2001 --end=01:00_09/25/2001 --resource_amount=32
+
+import sys
+import getopt
+import string
+import os
+import re
+import copy
+import Catalina
+import time
+import copy
+import pwd
+
+RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+JOBS_DB = Catalina.JOBS_DB
+RESOURCE_DB = Catalina.RESOURCE_DB
+
+if os.environ.has_key('TZ') :
+    print "TZ (%s)" % os.environ['TZ']
+else :
+    print "No TZ found"
+
+options = [
+  '?',
+  'help',
+  'ignore_list=',
+  'start=',
+  'end=',
+  'resource_amount=',
+  'node_list=',
+  'ppn=',
+  'mpn=',
+  'node_restriction=',
+  'user_list=',
+  'feature_list=',
+  'nodestate_list=',
+  'group_list=',
+  'account_list=',
+  'affinity_calculation=',
+  'mode='
+  ]
+usage_string = \
+"""Usage: set_res --start=<HH:MM_mm/dd/yyyy>
+               --end=<HH:MM_mm/dd/yyyy>
+               --resource_amount=<number of nodes> 
+               [--ppn=<integer>]
+               [--mpn=<integer>]
+               [--mode=lookahead|real]
+               [--?]
+               [--help]
+               [--ignore_list=<comma-delimited res ids> | --ignore=ALL]
+               [--user_list=<comma-delimited user names>]
+               [--node_restriction=<Python code>] | [--node_list=<comma-delimited node names>] | [--nodestate_list=<comma-delimited node states> --feature_list=<comma-delimited features>]
+               [--group_list=<comma-delimited group names>]
+               [--account_list=<comma-delimited account names>]
+               [--affinity_calculation=<Python code>]"""
+args = sys.argv[1:]
+argdict = {}
+try :
+    optlist, lineargs = getopt.getopt(args, '', options)
+except :
+    print usage_string
+    sys.exit(0)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+events_db_handle = Catalina.open_db(Catalina.EVENTS_DB,'write');
+jobs_db_handle = Catalina.open_db(JOBS_DB,'read');
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write');
+resources_db_handle = Catalina.open_db(RESOURCE_DB,'read');
+    
+if argdict.has_key('--start') :
+    start_string = argdict['--start']
+else :
+    print "--start=<HH:MM_mm/dd/yyyy> must be provided!"
+    sys.exit(1)
+if argdict.has_key('--end') :
+    end_string = argdict['--end']
+else :
+    print "--end=<HH:MM_mm/dd/yyyy> must be provided!"
+    sys.exit(1)
+if argdict.has_key('--nodestate_list') :
+    nodestate_string = argdict['--nodestate_list']
+else :
+    nodestate_string = ''
+if argdict.has_key('--feature_list') :
+    feature_string = argdict['--feature_list']
+else :
+    feature_string = ''
+if argdict.has_key('--node_list') :
+    nodes_string = argdict['--node_list']
+else :
+    nodes_string = ''
+if argdict.has_key('--user_list') :
+    users_string = argdict['--user_list']
+else :
+    users_string = ''
+if argdict.has_key('--group_list') :
+    groups_string = argdict['--group_list']
+else :
+    groups_string = ''
+if argdict.has_key('--account_list') :
+    accounts_string = argdict['--account_list']
+else :
+    accounts_string = ''
+if argdict.has_key('--resource_amount') :
+    resource_amount = string.atoi(argdict['--resource_amount'])
+else :
+    resource_amount = None
+if argdict.has_key('--node_restriction') :
+    node_restriction = argdict['--node_restriction']
+else :
+    # By default, only use nodes with a Configured Class matching
+    # 'normal'
+    #node_restriction = "normal_reo = re.compile(r'.*normal.*') ; if normal_reo.match(resource['ConfiguredClasses']) : result = 0"
+    node_restriction = Catalina.NODERESTCODE
+if argdict.has_key('--affinity_calculation') :
+    affinity_calculation = argdict['--affinity_calculation']
+else :
+    # By default, run in reservation
+    affinity_calculation = 'result = 1'
+if argdict.has_key('--mode') :
+    mode = argdict['--mode']
+else :
+    mode = 'lookahead'
+if argdict.has_key('--ignore_list') :
+    ignore_string = argdict['--ignore_list']
+else :
+    ignore_string = ''
+if argdict.has_key('--ppn') :
+    ppn_int = string.atoi(argdict['--ppn'])
+else :
+    ppn_int = None
+if argdict.has_key('--mpn') :
+    mpn_int = string.atoi(argdict['--mpn'])
+else :
+    mpn_int = None
+if ppn_int == None and mpn_int == None :
+    # Assume 'node_exclusive'
+    share_type = 'node_exclusive'
+else :
+    share_type = 'node_shared'
+
+feature_list_keys = filter(lambda x: x in ['--feature_list','nodestate_list'], argdict.keys())
+noderest_keys = filter(lambda x: x in ['--node_list','--node_restriction'], argdict.keys())
+noderest_keys = noderest_keys + feature_list_keys
+
+#if argdict.has_key('--node_list') and argdict.has_key('--node_restriction') :
+if len(noderest_keys) > 1 :
+    print "--node_list, --node_restriction, (--feature_list --nodestate_list)"
+    print "are mutually exclusive!"
+    print usage_string
+    Catalina.close_db(resources_db_handle)
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+if len(feature_list_keys) > 0 :
+    feature_rest_string = ''
+    nodestate_rest_string = ''
+    if feature_string != '' :
+        feature_string = "['" + feature_string + "']"
+        feature_string = re.sub(",", "','", feature_string)
+        feature_rest_string = "input_tuple[0].has_key('properties_list') and input_tuple[0]['properties_list'] != None and len(filter(lambda x: x in " + feature_string + ", input_tuple[0]['properties_list'])) == len(" + feature_string + ") "
+        # for a feature list of _or_ rather than _and_, use:
+        #feature_rest_string = "input_tuple[0].has_key('properties_list') and input_tuple[0]['properties_list'] != None and len(filter(lambda x: x in " + feature_string + ", input_tuple[0]['properties_list'])) > 0) "
+        if nodestate_string != '' :
+            feature_rest_string = feature_rest_string + " and "
+    if nodestate_string != '' :
+        nodestate_string = "['" + nodestate_string + "']"
+        nodestate_string = re.sub(",", "','", nodestate_string)
+        nodestate_rest_string = "input_tuple[0].has_key('State') and input_tuple[0]['State'] != None and input_tuple[0]['State'] in " + nodestate_string
+    node_restriction = "if " + feature_rest_string + nodestate_rest_string + " : result = 0"
+    print "node_restriction (%s)" % node_restriction
+
+if ignore_string == 'ALL' :
+    existing_reservations = Catalina.get_object_list(reservations_db_handle)
+    ignore_list = Catalina.get_object_names_list(existing_reservations)
+else :
+    ignore_list = string.split(ignore_string, ",")
+input = open(Catalina.NODE_SORT_POLICY_CODE_FILE, 'r')
+node_sort_policy = input.read()
+input.close()
+start_tuple = time.strptime(start_string, "%H:%M_%m/%d/%Y")
+start_list = list(start_tuple)
+start_list[8] = -1
+start_tuple = tuple(start_list)
+start_epoch = time.mktime(start_tuple)
+end_tuple = time.strptime(end_string, "%H:%M_%m/%d/%Y")
+end_list = list(end_tuple)
+end_list[8] = -1
+end_tuple = tuple(end_list)
+end_epoch = time.mktime(end_tuple)
+duration_float = end_epoch - start_epoch
+if users_string != '' :
+    users_string = "['" + users_string + "']"
+    # Boy, this is ugly!  Replace the separating commas with 
+    # single ticks and a comma
+    users_string = re.sub(",", "','", users_string)
+else :
+    users_string = '[]'
+if groups_string != '' :
+    groups_string = "['" + groups_string + "']"
+    groups_string = re.sub(",", "','", groups_string)
+else :
+    groups_string = '[]'
+if accounts_string != '' :
+    accounts_string = "['" + accounts_string + "']"
+    accounts_string = re.sub(",", "','", accounts_string)
+else :
+    accounts_string = '[]'
+if nodes_string != '' :
+    nodes_string = "['" + nodes_string + "']"
+    nodes_string = re.sub(",", "','", nodes_string)
+    node_restriction = "if input_tuple[0]['name'] in " + nodes_string + " : result = 0 "
+
+job_restriction = "if input_tuple[0]['user'] in " + users_string + " or input_tuple[0]['group'] in " + groups_string + " or input_tuple[0]['account'] in " + accounts_string + " : result = 0 "
+
+if ppn_int == None and mpn_int == None :
+    node_usage = 'node_exclusive'
+    req_dict_dict = { 'type' : share_type,
+                      'req_list' : []
+                    }
+else :
+    node_usage = 'node_shared'
+if ppn_int == None and mpn_int != None :
+    req_dict_dict = { 'type' : share_type,
+                      'req_list' : [{'memory' : mpn_int}]
+                    }
+if ppn_int != None and mpn_int == None :
+    req_dict_dict = { 'type' : share_type,
+                      'req_list' : [{'cpu' : ppn_int}]
+                    }
+if ppn_int != None and mpn_int != None :
+    req_dict_dict = { 'type' : share_type,
+                      'req_list' : [{'cpu' : ppn_int, 'memory' : mpn_int}]
+                    }
+requested_resource_list = []
+for node in range(resource_amount) :
+    requested_resource_list.append(req_dict_dict)
+
+try :
+    new_res = Catalina.create_reservation(
+      resources_db_handle=resources_db_handle,
+      reservations_db_handle=reservations_db_handle,
+      jobs_db_handle=jobs_db_handle,
+      earliest_start_float=start_epoch,
+      latest_end_float=end_epoch,
+      duration_float=duration_float,
+      node_sort_policy=node_sort_policy,
+      node_usage=node_usage,
+      job_restriction=job_restriction,
+      node_restriction=node_restriction,
+      ignore_reservations_list=ignore_list,
+      resource_amount_int=resource_amount,
+      requested_resource_list=requested_resource_list,
+      affinity_calculation=affinity_calculation,
+      mode=mode
+    )
+except 'InsufficientNodes', new_res :
+    print "Insufficient nodes found! "
+    Catalina.close_db(reservations_db_handle)
+    Catalina.close_db(resources_db_handle)
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+if mode == 'lookahead' :
+    print "reservation possible on %s nodes with start_time %s for duration %s" % \
+      ( new_res['resource_amount_int'],
+        time.asctime(time.localtime(new_res['start_time_float'])),
+        new_res['duration_float'] )
+else :
+    print "reservation %s created on %s nodes with start_time %s for duration %s" % \
+      ( new_res['name'],
+        new_res['resource_amount_int'],
+        time.asctime(time.localtime(new_res['start_time_float'])),
+        new_res['duration_float'] )
+    message = """reservation (%s) created with %d nodes at %s (%s epoch)
+for user (%s) with duration seconds (%s)""" % (
+      new_res['name'], new_res['resource_amount_int'],
+      time.asctime(time.localtime(new_res['start_time_float'])),
+      new_res['start_time_float'], pwd.getpwuid(os.getuid())[0],
+      duration_float )
+    subject = "Reservation created by %s" % pwd.getpwuid(os.getuid())[0]
+    if Catalina.__dict__.has_key('USER_SET_RECIPIENT') :
+        recipient = Catalina.USER_SET_RECIPIENT
+    else :
+        recipient = Catalina.MAIL_RECIPIENT
+    Catalina.warn(message, subject, recipient)
+
+    event = {
+      'name' : 'set_res',
+      'res' : copy.deepcopy(new_res),
+    }
+    Catalina.log_event(event, events_db_handle)
+
+Catalina.close_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)
+
+result = 0
+sys.exit(0)
+

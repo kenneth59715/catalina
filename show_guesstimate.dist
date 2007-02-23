@@ -1,0 +1,249 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# ./show_guesstimate [--username=<username>] [--account=<account>] [--group=<group>] [--class=<job class> | --multiclass=<job class list>] [--qos=<QOS>] [--duration=<wallclocklimit>] [--initiatormap=<mapstring>] [--submittime=<submittime>] [--local_admin=<local admin priority>] [--nodes=<nodes>]
+# create a fake job with the requested characteristics
+# create ignore list for reservations in which the job can run
+# using the ignore list, create a reservation with earliest_start now, no resource amount specified,
+# if start_time_float is Now, report the number of resources found, else report none available now
+
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import getopt
+import os
+import re
+import string
+import Catalina
+import time
+import getpass
+
+def by_end_time(first, second) :
+    if first[1] < second[1] :
+        return -1
+    if first[1] == second[1] :
+        return 0
+    if first[1] > second[1] :
+        return 1
+
+def file_to_string(filename) :
+    input = open(filename, 'r')
+    filestring = input.read()
+    input.close()
+    return filestring
+
+# From the Python book:
+# Only one pipe, child out to parent in
+def forksleep (prog, args, timeout) :
+    pipe1 = os.pipe()
+    pid = os.fork()
+    if pid :
+        os.close(pipe1[1])
+        os.dup2(pipe1[0], 0)
+        iterations = 0
+        while iterations < timeout :
+            return_tuple = os.waitpid( pid, os.WNOHANG )
+            if return_tuple[0] == pid :
+                return_out = sys.stdin.read()
+                exit_number = return_tuple[1]
+                exit_status = exit_number >> 8
+                return_data = (return_out, exit_status)
+                break
+            else :
+                time.sleep(1)
+        return (return_data)
+    else :
+        os.close(pipe1[0])
+        os.dup2(pipe1[1], 1)
+        print "child running (%s) with args (%s)" % (prog, args)
+        childargs = (prog,) + args
+        os.execv(prog, childargs)
+
+usage_string = \
+"""
+Usage: show_guesstimate --account=<account>
+                  --nodes=nodes | --initiatormap=<job task map>
+                  --qos=<QOS>
+                  [--username=<username>]
+                  [--?]
+                  [--help]
+                  [--group=<group>]
+                  [--class=<job class>] | [--multiclass=<comma-delimited list>]
+                  [--local_admin=<local admin priority>]
+                  [--duration=<wallclocklimit seconds>]
+                  [--submittime=<submittime epoch>]
+                  [--runID=<job name>]
+                  [--Requirements=<job requirements>]
+                  [--Adapter=<job adapter requirement>]
+                  [--debug]"""
+
+options = [ 'username=',
+            '?',
+            'help',
+            'debug',
+            'runID=',
+            'account=',
+            'group=',
+            'class=',
+            'multiclass=',
+            'nodes=',
+            'submittime=',
+            'local_admin=',
+            'Requirements=',
+            'Adapter=',
+            'initiatormap=',
+            'qos=',
+            'duration='
+           ]
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+RESLIST_CMD = Catalina.RESLIST_CMD
+node_restriction_code = Catalina.NODERESTCODE
+conflict_policy = None
+
+if argdict.has_key('--runID') :
+    job_name = argdict['--runID']
+else :
+    job_name = 'FAKEJOB.0'
+fake_job = Catalina.initialize_job_step(job_name)
+if argdict.has_key('--username') :
+    fake_job['user'] = argdict['--username']
+else :
+    fake_job['user'] = getpass.getuser()
+if argdict.has_key('--account') :
+    fake_job['account'] = argdict['--account']
+else :
+    print "--account required"
+    print usage_string
+    sys.exit(1)
+if argdict.has_key('--local_admin') :
+    fake_job['local_admin_priority_string'] = argdict['--local_admin']
+    local_admin_value = argdict['--local_admin']
+else :
+    fake_job['local_admin_priority_string'] = '0'
+    local_admin_value = None
+if argdict.has_key('--group') :
+    fake_job['group'] = argdict['--group']
+else :
+    fake_job['group'] = None
+if argdict.has_key('--class') :
+    if argdict.has_key('--multiclass') :
+        print "--class and --multiclass are mutually exclusive"
+        print usage_string
+        sys.exit(1)
+    else :
+        check_classes_list = [argdict['--class'],]
+        fake_job['job_class'] = argdict['--class']
+elif argdict.has_key('--multiclass') :
+    check_classes_list = string.split(argdict['--multiclass'], ',')
+else :
+    print "Defaulting job class to '%s'" % Catalina.DEFAULT_JOB_CLASS
+    check_classes_list = [Catalina.DEFAULT_JOB_CLASS,]
+    fake_job['job_class'] = Catalina.DEFAULT_JOB_CLASS
+if argdict.has_key('--qos') :
+    fake_job['QOS'] = argdict['--qos']
+else :
+    print "--qos required"
+    print usage_string
+    sys.exit(1)
+if argdict.has_key('--Requirements') :
+    fake_job['requirements'] = argdict['--Requirements']
+else :
+    fake_job['requirements'] = ''
+if argdict.has_key('--Adapter') :
+    fake_job['adapter'] = argdict['--Adapter']
+else :
+    fake_job['adapter'] = ''
+if argdict.has_key('--initiatormap') :
+    fake_job['initiatormap'] = argdict['--initiatormap']
+    resourcemap_list = string.split(fake_job['initiatormap'], '+')
+    fake_job['resource_amount_int'] = len(resourcemap_list)
+elif argdict.has_key('--nodes') :
+    rawtaskmap = '1+' * string.atoi(argdict['--nodes'])
+    taskmap = rawtaskmap[:-1]
+    fake_job['initiatormap'] = taskmap
+    fake_job['resource_amount_int'] = string.atoi(argdict['--nodes'])
+else :
+    print "--initiatormap or --nodes required"
+    print usage_string
+    sys.exit(1)
+if argdict.has_key('--duration') :
+    fake_job['wall_clock_limit'] = string.atof(argdict['--duration'])
+else :
+    print "Defaulting job duration to 3600"
+    fake_job['wall_clock_limit'] = 3600.0
+if argdict.has_key('--submittime') :
+    fake_job['SubmitTime'] = string.atof(string.atof(argdict['--submittime']))
+else :
+    print "Defaulting submittime to %s" % time.asctime(time.localtime(Catalina.Now_float))
+    fake_job['SubmitTime'] = Catalina.Now_float
+if argdict.has_key('--debug') :
+    Catalina.DEBUG = 'TRUE'
+
+fake_job['state'] = 'Idle'
+fake_job['reservation_binding'] = None
+
+if local_admin_value == None :
+    fake_job['local_admin_priority_string'] = '0'
+
+# open the reservations file for read, set exclusive lock
+cfg_resources_db_handle = Catalina.open_ro_db(Catalina.CONFIGURED_RESOURCES_DB, 'read')
+events_db_handle = Catalina.open_ro_db(Catalina.EVENTS_DB, 'read')
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+reservations_db_handle = Catalina.open_ro_db(Catalina.RESERVATIONS_DB, 'read')
+resources_db_handle = Catalina.open_ro_db(Catalina.RESOURCE_DB, 'read')
+standing_reservations_db_handle = Catalina.open_ro_db(Catalina.STANDING_RESERVATIONS_DB, 'read')
+
+Catalina.update_resources(resources_db_handle, cfg_resources_db_handle, jobs_db_handle)
+Catalina.update_job_info(jobs_db_handle)
+Catalina.update_job_resource_lists(jobs_db_handle, resources_db_handle)
+Catalina.update_job_speculative_system_queue_time(jobs_db_handle)
+Catalina.set_resource_usability(resources_db_handle, jobs_db_handle)
+Catalina.update_job_priorities(jobs_db_handle)
+(eligible_jobs, runningstarting_jobs) = \
+  Catalina.get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservations_db_handle)
+Catalina.migrate_shortpools(jobs_db_handle, resources_db_handle, reservations_db_handle)
+Catalina.update_running_reservations(runningstarting_jobs, reservations_db_handle, resources_db_handle, jobs_db_handle, events_db_handle)
+Catalina.update_standing_reservations(
+  events_db_handle=events_db_handle,
+  jobs_db_handle=jobs_db_handle,
+  resources_db_handle=resources_db_handle,
+  reservations_db_handle=reservations_db_handle,
+  standing_reservations_db_handle=standing_reservations_db_handle)
+
+for job_class in check_classes_list :
+    fake_job['job_class'] = job_class
+    jobs_db_handle[0][fake_job['name']] = fake_job
+    Catalina.update_job_resource_lists(jobs_db_handle, resources_db_handle)
+    Catalina.update_job_speculative_system_queue_time(jobs_db_handle)
+    Catalina.set_resource_usability(resources_db_handle, jobs_db_handle)
+    Catalina.update_job_priorities(jobs_db_handle)
+    (eligible_jobs, runningstarting_jobs) = \
+      Catalina.get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservations_db_handle)
+    Catalina.create_job_reservations(eligible_jobs, resources_db_handle,
+      reservations_db_handle, jobs_db_handle, events_db_handle)
+    
+    for res_name in reservations_db_handle[0].keys() :
+        if reservations_db_handle[0][res_name]['job_runID'] == fake_job['name'] :
+            fake_job_res = reservations_db_handle[0][res_name]
+    #fake_job_res = filter(lambda x, fake_job : x['job_runID'] == fake_job['name'], reservations_db_handle[0].values())
+    print "guesstimated start time is (%s) for class (%s)" % (time.asctime(time.localtime(fake_job_res['start_time_float'])), job_class)
+    
+    #print "priority (%s)" % jobs_db_handle[0][fake_job['name']]['priority']
+    #print "priority_element_dict (%s)" % jobs_db_handle[0][fake_job['name']]['priority_element_dict']
+    #print "fake_job['QOS'] (%s)" % fake_job['QOS']
+    del(jobs_db_handle[0][fake_job['name']])
+
+# release lock, close the file
+Catalina.close_ro_db(standing_reservations_db_handle)
+Catalina.close_ro_db(resources_db_handle)
+Catalina.close_ro_db(reservations_db_handle)
+Catalina.close_ro_db(jobs_db_handle)
+Catalina.close_ro_db(events_db_handle)
+Catalina.close_ro_db(cfg_resources_db_handle)
+

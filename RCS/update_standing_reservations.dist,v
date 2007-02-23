@@ -1,0 +1,92 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2001.10.31.23.12.27;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.21.28.41;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@update standing reservation instances
+@
+
+
+1.2
+log
+@changed locking order
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# script to update standing reservation instances
+
+import Catalina
+import getopt
+import sys
+
+EVENTS_DB = Catalina.EVENTS_DB
+STANDING_RESERVATIONS_DB = Catalina.STANDING_RESERVATIONS_DB
+JOBS_DB = Catalina.JOBS_DB
+RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+RESOURCE_DB = Catalina.RESOURCE_DB
+
+options = ['debug']
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--debug') :
+    Catalina.DEBUG = 'usr'
+
+events_db_handle = Catalina.open_db(EVENTS_DB,'write')
+standing_reservations_db_handle = Catalina.open_db(STANDING_RESERVATIONS_DB,'read')
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+resources_db_handle = Catalina.open_db(RESOURCE_DB,'read')
+jobs_db_handle = Catalina.open_db(JOBS_DB,'read')
+
+Catalina.update_standing_reservations(
+  events_db_handle=events_db_handle,
+  jobs_db_handle=jobs_db_handle,
+  resources_db_handle=resources_db_handle,
+  reservations_db_handle=reservations_db_handle,
+  standing_reservations_db_handle=standing_reservations_db_handle
+)
+
+Catalina.close_db(standing_reservations_db_handle)
+Catalina.close_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d8 5
+a12 5
+EVENTS_DB = 'events'
+STANDING_RESERVATIONS_DB = 'standing_reservations'
+JOBS_DB = 'jobs'
+RESERVATIONS_DB = 'reservations'
+RESOURCE_DB = 'resource'
+a37 1
+Catalina.close_db(events_db_handle)
+d39 1
+a40 1
+Catalina.close_db(resources_db_handle)
+d42 1
+@

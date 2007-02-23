@@ -1,0 +1,371 @@
+head	1.15;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.15
+date	2007.01.24.19.54.18;	author kenneth;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2007.01.24.19.24.58;	author kenneth;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2007.01.24.18.03.13;	author kenneth;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2007.01.24.00.09.04;	author kenneth;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2007.01.23.23.48.01;	author kenneth;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2007.01.23.23.34.29;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2006.05.22.19.23.12;	author mmargo;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2006.03.23.19.45.01;	author mmargo;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2003.04.15.16.44.09;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2003.04.15.00.38.29;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2003.04.14.23.24.03;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2003.04.14.23.20.51;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2001.09.12.22.23.55;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2001.09.11.19.44.20;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.11.19.16.53;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@for creating dist.tar
+@
+
+
+1.15
+log
+@exclude Makefile from tar
+@
+text
+@TAR=/bin/tar
+ECHO=/bin/echo
+RM=/bin/rm -f
+LS=/bin/ls
+CAT=/bin/cat
+CP=/bin/cp
+MD5SUM=/usr/bin/md5sum
+DATE=/bin/date
+AWK=/usr/bin/awk
+GZIP=/usr/bin/gzip
+LN=/bin/ln
+MD5SUM=/usr/bin/md5sum
+FTP_SITE_PATH=/misc/ftp/pub/sdsc/system/catalina
+WEB_SITE_PATH=/misc/www/server/catalina
+TIMESTAMP=`$(DATE) +%Y%m%d` 
+CATALINA=catalina
+DISTFILE=dist.tar
+
+all:
+	@@ $(ECHO) "To modify any file:"
+	@@ $(ECHO) "	/usr/local/bin/co -l <filename>"
+	@@ $(ECHO) "	vi <filename>"
+	@@ $(ECHO) "	/usr/local/bin/ci -u <filename>"
+	@@ $(ECHO) "To create a tar distribution:"
+	@@ $(ECHO) "	make dist"
+	@@ $(ECHO) "This will create the file dist.tar"
+	@@ $(ECHO) "To install a test instance:"
+	@@ $(ECHO) "	cd <test directory>"
+	@@ $(ECHO) "	tar xf <path to tar file>"
+	@@ $(ECHO) "	cd catalina"
+	@@ $(ECHO) "Read the README file for install directions"
+
+dist: clean
+	if \
+		test -e $(DISTFILE) ; \
+	then \
+		$(RM) $(DISTFILE) ; \
+	fi
+	if \
+		test -e DATESTAMP ; \
+	then \
+		$(RM) DATESTAMP ; \
+	fi
+	if \
+		test -e MANIFEST ; \
+	then \
+		$(RM) MANIFEST ; \
+	fi
+	if \
+		test -e VERSIONHASH ; \
+	then \
+		$(RM) VERSIONHASH ; \
+	fi
+	$(DATE) +%Y%m%d > DATESTAMP
+	$(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^VERSIONHASH$$ > MANIFEST
+	$(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > VERSIONHASH
+	cd .. ; $(TAR) cf $(CATALINA)/dist.tar --exclude Makefile --exclude RCS --exclude dist.tar $(CATALINA)
+	@@ $(ECHO) "Packing $(DISTFILE) into $(DISTFILE).gz "
+	$(GZIP) $(DISTFILE)
+	@@ $(ECHO) "** Moving $(DISTFILE).gz to FTP server **"
+	@@ $(ECHO) "Removing old symlink catalina.tar.gz"
+	$(RM) $(FTP_SITE_PATH)/catalina.tar.gz
+	@@ $(ECHO) "Copying $(DISTFILE).gz to $(FTP_SITE_PATH)"
+	$(CP) $(DISTFILE).gz $(FTP_SITE_PATH)/
+	@@ $(ECHO) "Copying $(DISTFILE).gz to catalina.`date +%Y%m%d%H%M`.tar.gz"	
+	cd $(FTP_SITE_PATH) ; $(CP) $(DISTFILE).gz catalina.`date +%Y%m%d%H%M`.tar.gz
+	@@ $(ECHO) "Linking Catalina.tar.gz to dist.tar.gz"
+	cd $(FTP_SITE_PATH) ; $(LN) -s $(DISTFILE).gz catalina.tar.gz
+	@@ $(ECHO) "** Moving $(DISTFILE).gz to FTP server **.... done"
+	@@ $(ECHO) "Now, go to $(WEB_SITE_PATH), edit index.html. Add the changes as before."
+	@@ $(ECHO) "The MD5SUM for this build is: `$(MD5SUM) $(DISTFILE).gz`"	
+	@@ $(ECHO) "Completed"
+clean:
+	- $(RM) $(DISTFILE)
+	- $(RM) $(DISTFILE).gz
+@
+
+
+1.14
+log
+@put DATESTAMP back in.
+@
+text
+@d57 1
+a57 1
+	cd .. ; $(TAR) cf $(CATALINA)/dist.tar --exclude RCS --exclude dist.tar $(CATALINA)
+@
+
+
+1.13
+log
+@use Hour and Minute in tar file name
+@
+text
+@d54 1
+a54 1
+	$(DATE) +%Y%m%d > VERSIONHASH
+@
+
+
+1.12
+log
+@*** empty log message ***
+@
+text
+@d65 2
+a66 2
+	@@ $(ECHO) "Copying $(DISTFILE).gz to catalina.`date +%Y%m%d`.tar.gz"	
+	cd $(FTP_SITE_PATH) ; $(CP) $(DISTFILE).gz catalina.`date +%Y%m%d`.tar.gz
+@
+
+
+1.11
+log
+@*** empty log message ***
+@
+text
+@d45 1
+a45 1
+		test -e CHECKSUM ; \
+d47 1
+a47 1
+		$(RM) CHECKSUM ; \
+d49 8
+a56 3
+	$(DATE) +%Y%m%d > DATESTAMP
+	$(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > CHECKSUM
+	#$(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^CHECKSUM$$ > MANIFEST
+@
+
+
+1.10
+log
+@rm DATESTAMP before creating it, in order to avoid permission problems
+@
+text
+@d39 10
+a48 1
+	$(RM) DATESTAMP
+d50 2
+a51 1
+	$(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^CHECKSUM$$ > MANIFEST
+@
+
+
+1.9
+log
+@add lines to automate packaging, migration to  ftp server and symlink manipulations
+mmargo
+@
+text
+@d39 1
+@
+
+
+1.8
+log
+@chmod to 644 , else it won't work
+mmargo
+@
+text
+@d3 1
+a3 1
+RM=/bin/rm
+d6 1
+d10 6
+a40 1
+	$(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > CHECKSUM
+d42 15
+a56 1
+
+d59 1
+@
+
+
+1.7
+log
+@added DATESTAMP
+@
+text
+@d33 1
+a33 1
+	$(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$ | grep -v ^CHECKSUM$$ > MANIFEST
+d35 1
+a35 1
+	cd .. ; $(TAR) cf $(CATALINA)/dist.tar --exclude RCS --exclude Makefile --exclude dist.tar $(CATALINA)
+@
+
+
+1.6
+log
+@put $$ at end of MANIFEST line
+@
+text
+@d7 1
+d32 1
+@
+
+
+1.5
+log
+@changed VERSION to CHECKSUM
+@
+text
+@d31 1
+a31 1
+	$(LS) | grep -v ^MANIFEST$ | grep -v ^dist.tar$ | grep -v ^RCS$ | grep -v ^CHECKSUM$ > MANIFEST
+@
+
+
+1.4
+log
+@added MANIFEST and VERSION (based on md5sum)
+@
+text
+@d31 2
+a32 2
+	$(LS) | grep -v ^MANIFEST$ | grep -v ^dist.tar$ | grep -v ^RCS$ | grep -v ^VERSION$ > MANIFEST
+	$(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > VERSION
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d4 4
+d31 2
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d17 1
+a17 1
+	@@ $(ECHO) "	tar xf <path to pax file>"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d1 3
+a3 7
+TAR=/usr/bin/tar
+PAX=/usr/bin/pax
+FIND=/usr/bin/find
+ECHO=/usr/bin/echo
+CHMOD=/usr/bin/chmod
+RM=/usr/bin/rm
+MV=/usr/bin/mv
+d5 1
+a5 1
+DISTFILE=dist.pax
+d12 1
+a12 1
+	@@ $(ECHO) "To create a pax distribution:"
+d14 1
+a14 1
+	@@ $(ECHO) "This will create the file dist.pax"
+d17 2
+a18 2
+	@@ $(ECHO) "	/usr/bin/pax -rf <path to pax file>"
+	@@ $(ECHO) "	cd resutil"
+d27 1
+a27 5
+	$(CHMOD) 750 Makefile.dist
+	cd .. ; $(PAX) -wdf $(DISTFILE) $(CATALINA)
+	cd .. ; $(FIND) $(CATALINA) -type f -a ! -name Makefile -a ! -name \*,v -exec $(PAX) -waf $(DISTFILE) -s /Makefile.dist/Makefile/ {} \;
+	$(MV) ../$(DISTFILE) .
+	$(CHMOD) 444 Makefile.dist
+@

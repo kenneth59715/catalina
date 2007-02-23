@@ -1,0 +1,80 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2004.08.11.17.48.26;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2002.03.05.17.49.50;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@delete a job from Catalina
+@
+
+
+1.2
+log
+@no TZ
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+
+import sys
+import getopt
+import Catalina
+import time
+import os
+
+JOBS_DB = Catalina.JOBS_DB
+
+options = [
+  '?',
+  'help',
+  'job='
+  ]
+usage_string = \
+"""Usage: del_job --job=<job step id>
+               [--?]
+               [--help]
+"""
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') or \
+  not argdict.has_key('--job') :
+    print usage_string
+    sys.exit(0)
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+Catalina.delete_object(argdict['--job'], jobs_db_handle)
+    
+Catalina.close_db(jobs_db_handle)
+
+result = 0
+sys.exit(0)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 1
+a10 2
+print "TZ (%s)" % time.tzname[0]
+
+@

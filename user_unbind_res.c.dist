@@ -1,0 +1,113 @@
+/*
+ * THIS HAS BEEN WEAKENED (NO PATH,OWNERSHIP,PERMISSIONS CHECKS)
+ * DO NOT USE FOR SUID ROOT STUFF
+ * Since this service is not particularly critical, in the face of any error
+ * at all we just report it and quit rather than try to muddle through.
+ */
+
+#ifdef sun
+int		errno;
+extern void	closelog(), exit();
+#else
+#include <unistd.h>
+#include <stdlib.h>
+#endif
+#include <stdio.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <signal.h>
+#include <errno.h>
+#include <pwd.h>
+#include <string.h>
+#include <syslog.h>
+#include <regex.h>
+
+/*
+ * There are no known security problems with an empty set of
+ * environment variables, but provide a safe PATH variable anyway.
+ * This provides necessary functionality to programs like SunOS
+ * mount(8), which legitimately runs some other program.
+ * Also provide a LOGNAME variable, which is the login name of
+ * whomever invoked this program.
+ */
+static char *env[] = {
+        "LOGNAME=12345678",
+#ifdef sun
+        "PATH=/usr/bin:/usr/etc:/usr/ucb",
+#else
+#if defined(__osf__) || defined(__OSF1__)
+        "PATH=/sbin:/usr/sbin:/usr/bin",
+#else
+#ifdef hpux
+        "PATH=/bin:/usr/bin:/etc:/usr/etc",
+#else
+#ifdef mips
+        "PATH=/usr/sbin:/usr/bsd:/sbin:/usr/bin:/usr/etc",
+#endif /* mips */
+#endif /* hpux */
+#endif /* osf */
+#endif /* sun */
+        (char *)NULL };
+
+
+static char	program[] = "___USER_UNBIND_RES_PLACEHOLDER___";
+static char	arg_pattern[] = "^[-_.,:/a-zA-Z0-9]*$";
+
+#define TOOLONG 100
+/* ARGCOUNT doesn't change the execle args */
+#define ARGCOUNT 3
+
+main(int argc, char *argv[])
+{
+char	*arg0;
+int	status;
+int	re_status;
+int	arg_length;
+int	i;
+regex_t	re;
+
+/* Check for right number of arguments */
+/* 1-reservation id, 2-comma-delimited list of job ids */
+if ( argc != ARGCOUNT ) {
+	printf("Usage: user_unbind_res <res_id> <comma-delimited list of job ids>\n");
+	exit(2);
+}
+
+/* Check for length of each argument */
+for ( i=1; i < ARGCOUNT ; i++ ) {
+	if ( strlen(argv[i]) > TOOLONG ) {
+		printf("argument exceeds limit\n");
+		exit(2);
+	}
+}
+
+/* check that each argument contains only good characters:
+ * '_', '/', ':', a-z, A-Z, 0-9 (no spaces allowed)
+ */
+if (regcomp(&re, arg_pattern, REG_NEWLINE) != 0 ) {
+	printf("argument checking (pattern compile) failed\n");
+	exit(2);
+}
+for ( i=1; i < ARGCOUNT ; i++ ) {
+	if (regexec(&re, argv[i], (size_t) 0, NULL, 0) != 0 ) {
+		printf("argument checking (regexec) failed\n");
+		exit(2);
+	}
+}
+
+arg0 = program;
+/*
+ * Set the umask value and change to the preferred current directory.
+ */
+(void)umask(002);
+if (chdir("/") != 0) {
+	perror("chdir(/)");
+	return 1;
+	}
+/*
+ * Execute the command.  On success execle() does not return.
+ */
+status = execle(program, arg0, argv[1], argv[2], (char *)NULL, env);
+perror("execle");
+return status;
+}

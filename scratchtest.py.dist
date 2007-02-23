@@ -1,0 +1,24 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+
+import os
+import Catalina
+
+HOMEDIR = Catalina.HOMEDIR
+
+# initialize databases
+cmd = HOMEDIR + '/initialize_dbs'
+cmd_string = cmd
+print "# initialize databases"
+returnstring = os.popen(cmd_string).read()
+
+# load configured resources
+cmd = HOMEDIR + '/load_configured_resources'
+cmd_string = cmd
+print "# load configured resources"
+returnstring = os.popen(cmd_string).read()
+
+# run testres9.py
+cmd = HOMEDIR + '/testres9.py'
+cmd_string = cmd
+print "# run testres9.py"
+os.system(cmd_string)

@@ -1,0 +1,120 @@
+head	1.4;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.4
+date	2004.07.16.18.39.11;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2002.06.18.23.25.26;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2002.01.03.00.45.40;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.11.20.36.10;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@run a job
+@
+
+
+1.4
+log
+@use pbs_alterjob to set neednodes to full host list.  avoids TORQUE
+string length bug
+@
+text
+@/* utility for running job */
+/* runjob jobname master-node:other-node:other-node...*/
+#include <pbs_error.h>
+#include <pbs_ifl.h>
+#include <string.h>
+#include <time.h>
+
+main (int argc, char *argv[]) {
+	int pbs_connect_id, rc, argindex;
+	extern char *pbs_server;
+	struct attrl comment_attrib;
+	struct attrl neednodes_attrib;
+        char start_string[50];
+	time_t Now;
+
+	pbs_connect_id = 0;
+	rc = 0;
+	printf("pbs_server (%i)\n", pbs_server);
+	pbs_connect_id = pbs_connect(pbs_server);
+	printf("pbs_connect_id (%i)\n", pbs_connect_id);
+	neednodes_attrib.name = ATTR_l;
+	neednodes_attrib.resource = "neednodes";
+	neednodes_attrib.value = argv[2];
+	neednodes_attrib.next = NULL;
+	rc = pbs_alterjob(pbs_connect_id, argv[1], &neednodes_attrib, "");
+	if ( rc != 0 ) {
+		printf("pbs_alterjob failed argv[1] (%s) argv[2] (%s)\n", argv[1], argv[2]);
+	}
+	/*rc = pbs_asyrunjob(pbs_connect_id, argv[1], argv[2], NULL);*/
+	rc = pbs_asyrunjob(pbs_connect_id, argv[1], NULL, NULL);
+	if ( rc != 0 ) {
+		printf("argv[1] (%s) argv[2] (%s)\n", argv[1], argv[2]);
+	} else {
+		time(&Now);
+		comment_attrib.name = ATTR_comment;
+		comment_attrib.resource = NULL;
+		sprintf(start_string, "Catalina job start time (%d)",  (int) Now);
+		comment_attrib.value = start_string;
+		comment_attrib.next = NULL;
+		pbs_alterjob(pbs_connect_id, argv[1], &comment_attrib, "");
+	}
+	printf("rc from pbs_asyrunjob is >%i<\n", rc);
+	rc = pbs_disconnect(pbs_connect_id);
+	printf("rc (%i)\n", rc);
+}
+@
+
+
+1.3
+log
+@set comment to job start time
+@
+text
+@d12 1
+d21 5
+a25 1
+	rc = pbs_asyrunjob(pbs_connect_id, argv[1], argv[2], NULL);
+d27 5
+@
+
+
+1.2
+log
+@remember started job, print all return codes
+@
+text
+@d6 1
+d11 3
+d23 8
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@a17 1
+		printf("asyrunjob failed, with rc = (%i)\n", rc);
+d20 1
+@

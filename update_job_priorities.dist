@@ -1,0 +1,19 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update reservations for running and starting jobs
+
+import Catalina
+
+RESOURCES_DB = 'resource'
+JOBS_DB = 'jobs'
+RESERVATIONS_DB = 'reservations'
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+resources_db_handle = Catalina.open_db(RESOURCES_DB,'read')
+
+Catalina.update_job_speculative_system_queue_time(jobs_db_handle)
+Catalina.update_job_priorities(jobs_db_handle)
+
+Catalina.close_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(jobs_db_handle)

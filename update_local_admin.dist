@@ -1,0 +1,38 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update local_admin_priority of a job
+
+import Catalina
+import sys
+import getopt
+
+options = ['job_step_id=', 'la_pri=']
+
+args = sys.argv[1:]
+optlist, lineargs = getopt.getopt(args, '', options)
+argdict = {}
+for pair in optlist :
+    argdict[pair[0]] = pair[1]
+    if pair[0] == '--job_step_id' :
+        job_step_id = pair[1]
+    elif pair[0] == '--la_pri' :
+        local_admin_priority_string = pair[1]
+
+if not argdict.has_key('--job_step_id') or \
+  not argdict.has_key('--la_pri') :
+    print """Usage: update_local_admin --job_step_id=<job name> --la_pri=<local admin priority>"""
+    sys.exit(1)
+
+JOBS_DB = 'jobs'
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+try :
+    temp_job = Catalina.get_object(job_step_id, jobs_db_handle)
+except 'KeyNotFound' :
+    print "Job (%s) not found in Catalina DB" % job_step_id
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+Catalina.update_object_attribute( 'local_admin_priority_string', local_admin_priority_string, temp_job, jobs_db_handle )
+
+Catalina.close_db(jobs_db_handle)

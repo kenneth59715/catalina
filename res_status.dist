@@ -1,0 +1,108 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import Catalina
+import getopt
+import string
+
+options = [
+  'res_id=',
+  'notify=',
+  '?',
+  'help'
+  ]
+usage_string = \
+"""
+Usage: res_status [--res_id=<res id>]
+                  [--notify=<notify threshold>]
+                  [--?]
+                  [--help]
+"""
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+    argdict[pair[0]] = pair[1]
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+if argdict.has_key('--res_id') :
+    res_id = argdict['--res_id']
+else:
+    res_id = None
+
+if argdict.has_key('--notify') :
+    reservations_db_handle = Catalina.open_db(Catalina.RESERVATIONS_DB, 'write')
+    try :
+        notify_threshold = string.atoi(argdict['--notify'])
+    except :
+        notify_threshold = 1
+else:
+    reservations_db_handle = Catalina.open_ro_db(Catalina.RESERVATIONS_DB, 'read')
+    notify_threshold = 0
+
+# Open database for read access:
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+resource_db_handle = Catalina.open_ro_db(Catalina.RESOURCE_DB, 'read')
+
+report_tuple = Catalina.get_broken_reservations_tuple(res_id=res_id,
+  jobs_db_handle=jobs_db_handle,
+  reservations_db_handle=reservations_db_handle,
+  resource_db_handle=resource_db_handle)
+
+report_dict = report_tuple[0]
+exit_status = report_tuple[1]
+if exit_status != 0 :
+    print "Broken reservations found!"
+    for reservation_name in report_dict.keys() :
+        reservation_status = 0
+        message = ''
+        subject = "Broken reservation (%s)" % reservation_name
+        if argdict.has_key('--notify') :
+            recipient = Catalina.MAIL_RECIPIENT
+            if report_dict[reservation_name]['reservation'].has_key('notify_string') and \
+              report_dict[reservation_name]['reservation']['notify_string'] != None :
+                if report_dict[reservation_name]['reservation']['notify_string'] == 'NONOTIFY' :
+                    recipient = recipient
+                else :
+                    recipient = recipient + ' ' + report_dict[reservation_name]['reservation']['notify_string']
+        if len(report_dict[reservation_name]['overlap_dict'].keys()) > 0 :
+            reservation_status = 1
+            message = "Reservation (%s) is overlapped by:" % reservation_name
+            for res_name in report_dict[reservation_name]['overlap_dict'].keys() :
+                message = message + ' ' + res_name
+            if argdict.has_key('--notify') :
+                subject = subject + ' overlaps'
+            message = message + '\n'
+        if len(report_dict[reservation_name]['down_nodes_list']) > 0 :
+            reservation_status = 1
+            message =  message + "Reservation (%s) has down nodes:" % reservation_name
+            for node in report_dict[reservation_name]['down_nodes_list'] :
+                message = message + ' ' + node['name']
+            if argdict.has_key('--notify') :
+                subject = subject + ' overlaps'
+        if reservation_status > 0 :
+            print message
+            if argdict.has_key('--notify') :
+                if not report_dict[reservation_name]['reservation'].has_key('notify_count_int') :
+                    notify_count_int = 0
+                    Catalina.update_object_attribute('notify_count_int', notify_count_int, report_dict[reservation_name]['reservation'], reservations_db_handle)
+                else :
+                    notify_count_int = report_dict[reservation_name]['reservation']['notify_count_int']
+                if notify_count_int < notify_threshold :
+                    Catalina.warn(message=message, subject=subject, recipient=recipient)
+                    notify_count_int = notify_count_int + 1
+                    Catalina.update_object_attribute('notify_count_int', notify_count_int, report_dict[reservation_name]['reservation'], reservations_db_handle)
+else :
+    print "No problems found"
+
+# Close the database:
+Catalina.close_ro_db(resource_db_handle)
+Catalina.close_ro_db(jobs_db_handle)
+if argdict.has_key('--notify') :
+    Catalina.close_db(reservations_db_handle)
+else :
+    Catalina.close_ro_db(reservations_db_handle)
+sys.exit(exit_status)

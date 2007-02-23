@@ -1,0 +1,3038 @@
+head	1.43;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.43
+date	2004.08.23.22.14.09;	author kenneth;	state Exp;
+branches;
+next	1.42;
+
+1.42
+date	2004.08.17.15.53.39;	author kenneth;	state Exp;
+branches;
+next	1.41;
+
+1.41
+date	2004.05.24.18.29.21;	author kenneth;	state Exp;
+branches;
+next	1.40;
+
+1.40
+date	2004.05.03.06.14.42;	author kenneth;	state Exp;
+branches;
+next	1.39;
+
+1.39
+date	2004.03.05.01.16.24;	author kenneth;	state Exp;
+branches;
+next	1.38;
+
+1.38
+date	2004.03.01.22.09.33;	author kenneth;	state Exp;
+branches;
+next	1.37;
+
+1.37
+date	2004.02.09.23.22.19;	author kenneth;	state Exp;
+branches;
+next	1.36;
+
+1.36
+date	2004.02.05.17.56.01;	author kenneth;	state Exp;
+branches;
+next	1.35;
+
+1.35
+date	2003.10.28.22.04.01;	author kenneth;	state Exp;
+branches;
+next	1.34;
+
+1.34
+date	2003.08.07.22.12.25;	author kenneth;	state Exp;
+branches;
+next	1.33;
+
+1.33
+date	2003.06.26.18.10.56;	author kenneth;	state Exp;
+branches;
+next	1.32;
+
+1.32
+date	2003.05.06.16.10.44;	author kenneth;	state Exp;
+branches;
+next	1.31;
+
+1.31
+date	2003.04.08.22.59.17;	author kenneth;	state Exp;
+branches;
+next	1.30;
+
+1.30
+date	2003.03.07.23.48.10;	author kenneth;	state Exp;
+branches;
+next	1.29;
+
+1.29
+date	2003.01.25.00.11.33;	author kenneth;	state Exp;
+branches;
+next	1.28;
+
+1.28
+date	2003.01.25.00.08.40;	author kenneth;	state Exp;
+branches;
+next	1.27;
+
+1.27
+date	2002.12.23.17.21.11;	author kenneth;	state Exp;
+branches;
+next	1.26;
+
+1.26
+date	2002.12.21.04.46.11;	author kenneth;	state Exp;
+branches;
+next	1.25;
+
+1.25
+date	2002.12.21.04.39.38;	author kenneth;	state Exp;
+branches;
+next	1.24;
+
+1.24
+date	2002.12.21.04.19.55;	author kenneth;	state Exp;
+branches;
+next	1.23;
+
+1.23
+date	2002.12.20.18.31.35;	author kenneth;	state Exp;
+branches;
+next	1.22;
+
+1.22
+date	2002.12.18.00.23.15;	author kenneth;	state Exp;
+branches;
+next	1.21;
+
+1.21
+date	2002.11.01.19.41.22;	author kenneth;	state Exp;
+branches;
+next	1.20;
+
+1.20
+date	2002.02.22.19.23.29;	author kenneth;	state Exp;
+branches;
+next	1.19;
+
+1.19
+date	2001.12.19.01.59.39;	author kenneth;	state Exp;
+branches;
+next	1.18;
+
+1.18
+date	2001.12.14.18.43.07;	author kenneth;	state Exp;
+branches;
+next	1.17;
+
+1.17
+date	2001.11.01.00.10.26;	author kenneth;	state Exp;
+branches;
+next	1.16;
+
+1.16
+date	2001.10.31.22.46.49;	author kenneth;	state Exp;
+branches;
+next	1.15;
+
+1.15
+date	2001.10.23.16.59.47;	author kenneth;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2001.10.18.18.39.48;	author kenneth;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2001.10.15.18.11.04;	author kenneth;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2001.09.20.16.56.12;	author kenneth;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2001.09.14.21.01.24;	author kenneth;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2001.09.14.20.58.09;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2001.09.14.20.22.34;	author kenneth;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2001.09.14.20.13.35;	author kenneth;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2001.09.14.19.52.55;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2001.09.13.00.48.18;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2001.09.13.00.36.27;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2001.09.12.22.44.56;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2001.09.12.21.42.34;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2001.09.11.22.10.24;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.11.19.46.15;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@test script
+@
+
+
+1.43
+log
+@fix tests for cancel res
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# script to run reservation tests
+# create a user reservation, with earliest start and resource_amount
+# check that the reservation was created, with query_res
+# create a user reservation, with earliest start and no resource_amount
+# check that the reservation was created, with query_res
+# create a user reservation, with no earliest start and resource_amount
+# check that the reservation was created, with query_res
+# submit a job
+# save the jobid
+# update resources
+# update jobs
+# schedule jobs
+# query_res to check for reservation with job_runID
+
+import os
+import string
+import re
+import time
+import sys
+import Catalina
+import pwd
+
+if Catalina.USERNAMESUFFIX != '@@IGNORE' :
+    username_string = pwd.getpwuid(os.getuid())[0] + Catalina.USERNAMESUFFIX
+else :
+    username_string = pwd.getpwuid(os.getuid())[0]
+
+os.environ['TZ'] = 'GMT0'
+
+epoch_now = time.time()
+
+HOMEDIR = Catalina.HOMEDIR
+
+test_res_id_list = []
+test_standing_res_id_list = []
+
+# update resources
+cmd = HOMEDIR + '/update_resources'
+cmd_string = cmd
+print "# update_resources"
+returnstring = os.popen(cmd_string).read()
+
+# check to see if any resources have ConsumableCpus and ConsumableMemory
+# greater than 0.  If so, do the shared tests
+resource_db_handle = Catalina.open_ro_db(Catalina.RESOURCE_DB,'read')
+resource_dict = resource_db_handle[0]
+TESTSHARED = 0
+for resource_name in resource_dict.keys() :
+    resource = resource_dict[resource_name]
+    if resource.has_key('ConsumableCpus') and resource['ConsumableCpus'] > 0 \
+      and resource.has_key('ConsumableMemory') and resource['ConsumableMemory'] > 0 :
+        TESTSHARED = 1
+Catalina.close_ro_db(resource_db_handle)
+
+# update runningstarting reservations
+cmd = HOMEDIR + '/update_runningstarting'
+cmd_string = cmd
+print "# update_runningstarting"
+returnstring = os.popen(cmd_string).read()
+
+# create shortpool
+cmd = HOMEDIR + '/create_standing_res'
+start_spec = "'%s'" % Catalina.TEST_SHORTPOOL_SPEC
+depth = '6'
+duration = "%s" % Catalina.TEST_SHORTPOOL_DURATION
+latency = '900'
+resource_amount = "%s" % Catalina.TEST_SHORTPOOL_AMOUNT
+job_restriction = r"if input_tuple[0]['QOS'] in ['4','6','7'] : result = 0"
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available_running_first"
+comment = 'Express'
+affinity_calculation = "'result = -1'"
+mode = 'real'
+escaped_standing_spec = re.sub(r"\*",r"\*",Catalina.TEST_SHORTPOOL_SPEC)
+output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec %s for duration (?P<duration>.*)""" % escaped_standing_spec
+cmd_string = cmd + ' --latency=' + latency + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation + '  --overlap_running=1'
+returnstring = os.popen(cmd_string).read()
+#print cmd_string
+so = re.search(output, returnstring)
+print "# 8 resource, 12 hour, shortpool reservation, M-F"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    test_standing_res_id_list.append(res_id)
+    shortpool_id = so.group('res_name')
+
+if TESTSHARED > 0 :
+    # create shortpool with --sharedmap=1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2
+    cmd = HOMEDIR + '/create_standing_res'
+    start_spec = "'%s'" % Catalina.TEST_SHORTPOOL_SPEC
+    depth = '6'
+    duration = "%s" % Catalina.TEST_SHORTPOOL_DURATION
+    latency = '900'
+    resource_amount = "%s" % Catalina.TEST_SHORTPOOL_AMOUNT
+    sharedmap = '1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2'
+    job_restriction = r"if input_tuple[0]['QOS'] in ['4','6','7'] : result = 0"
+    node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+    node_sort_policy_file = HOMEDIR + r"/last_available_running_first"
+    comment = 'Shortpool_shared'
+    affinity_calculation = "'result = -1'"
+    mode = 'real'
+    escaped_standing_spec = re.sub(r"\*",r"\*",Catalina.TEST_SHORTPOOL_SPEC)
+    output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec %s for duration (?P<duration>.*)""" % escaped_standing_spec
+    cmd_string = cmd + ' --latency=' + latency + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation + '  --overlap_running=1' + " --sharedmap=%s" % sharedmap
+    returnstring = os.popen(cmd_string).read()
+    #print cmd_string
+    so = re.search(output, returnstring)
+    print "# 8 resource, 12 hour, shortpool reservation, M-F, sharedmap"
+    if so == None :
+        print "not ok shared"
+        print "returnstring is (%s)" % returnstring
+        print cmd_string
+        #continue_var = raw_input('continue? ')
+    else :
+        print "ok shared"
+        #print cmd_string
+        shortsharedres_id = so.group('res_name')
+        test_standing_res_id_list.append(shortsharedres_id)
+        shortshared_id = so.group('res_name')
+
+# create standing reservation
+cmd = HOMEDIR + '/create_standing_res'
+start_spec = "'%s'" % Catalina.TEST_STANDING_SPEC
+depth = '5'
+duration = "%s" % Catalina.TEST_STANDING_DURATION
+resource_amount = "%s" % Catalina.TEST_STANDING_AMOUNT
+#job_restriction = r"'if input_tuple[0][\'job_class\'] == \'interactive\' and input_tuple[0][\'wall_clock_limit\'] <= 1800 : result = 0'"
+job_restriction = r"if input_tuple[0]['job_class'] == '" + Catalina.DEFAULT_JOB_CLASS + r"' and input_tuple[0]['QOS'] in ['2','4','6','7'] : result = 0"
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/first_available"
+comment = 'Interactive'
+affinity_calculation = "'result = -1'"
+mode = 'real'
+output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec (?P<res_time>.*) for duration (?P<duration>.*)"""
+cmd_string = cmd + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation + '  --overlap_running=1'
+returnstring = os.popen(cmd_string).read()
+#print cmd_string
+so = re.search(output, returnstring)
+print "# 8 resource, 12 hour, standing reservation, M-F"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    test_standing_res_id_list.append(res_id)
+    res_start_time = so.group('res_time')
+
+if TESTSHARED > 0 :
+    # create standing reservation, sharedmap=1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2
+    cmd = HOMEDIR + '/create_standing_res'
+    start_spec = "'%s'" % Catalina.TEST_STANDING_SPEC
+    depth = '5'
+    duration = "%s" % Catalina.TEST_STANDING_DURATION
+    resource_amount = "%s" % Catalina.TEST_STANDING_AMOUNT
+    sharedmap = '1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2'
+    #job_restriction = r"'if input_tuple[0][\'job_class\'] == \'interactive\' and input_tuple[0][\'wall_clock_limit\'] <= 1800 : result = 0'"
+    job_restriction = r"if input_tuple[0]['job_class'] == '" + Catalina.DEFAULT_JOB_CLASS + r"' and input_tuple[0]['QOS'] in ['2','4','6','7'] : result = 0"
+    node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+    node_sort_policy_file = HOMEDIR + r"/first_available"
+    comment = 'Interactive'
+    affinity_calculation = "'result = -1'"
+    mode = 'real'
+    output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec (?P<res_time>.*) for duration (?P<duration>.*)"""
+    cmd_string = cmd + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation + '  --overlap_running=1' + " --sharedmap=%s" % sharedmap
+    returnstring = os.popen(cmd_string).read()
+    #print cmd_string
+    so = re.search(output, returnstring)
+    print "# 8 resource, 12 hour, standing reservation, M-F, sharedmap"
+    if so == None :
+        print "not ok shared"
+        print "returnstring is (%s)" % returnstring
+        print cmd_string
+        #continue_var = raw_input('continue? ')
+    else :
+        print "ok shared"
+        standingsharedres_id = so.group('res_name')
+        test_standing_res_id_list.append(standingsharedres_id)
+        standingsharedres_start_time = so.group('res_time')
+
+
+#continue_var = raw_input('continue? ')
+
+# update standing reservation instances
+cmd = HOMEDIR + '/update_standing_reservations'
+cmd_string = cmd
+print "# update_standing_reservations"
+returnstring = os.popen(cmd_string).read()
+
+cmd = HOMEDIR + '/show_res'
+output = r"(?P<res_name>\d+) 12:00:00 00:00:00 \d+"
+cmd_string = cmd + ' --purpose' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ standing_reservation | ___AWK_PLACEHOLDER___ '{print $1,$5,$10,$12}'"
+cmd_string = cmd + ' --purpose' + ' --comment' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ %s | ___AWK_PLACEHOLDER___ '{print $1,$5,$10,$12}'" % res_id
+returnstring = os.popen(cmd_string).read()
+search_list = re.findall(output, returnstring)
+print "# query for 2 resource, 12 hour, standing_reservation instances"
+if len(search_list) < 5 :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+
+if TESTSHARED > 0 :
+    cmd = HOMEDIR + '/show_res'
+    output = r"(?P<res_name>\d+) 12:00:00 00:00:00 \d+"
+    cmd_string = cmd + ' --purpose' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ standing_reservation | ___AWK_PLACEHOLDER___ '{print $1,$5,$10,$12}'"
+    cmd_string = cmd + ' --purpose' + ' --comment' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ %s | ___AWK_PLACEHOLDER___ '{print $1,$5,$10,$12}'" % standingsharedres_id
+    returnstring = os.popen(cmd_string).read()
+    search_list = re.findall(output, returnstring)
+    print "# query for 2 resource, 12 hour, standing_reservation sharedmap instances"
+    if len(search_list) < 5 :
+        print "not ok shared"
+        print output
+        print returnstring
+        print cmd_string
+        #continue_var = raw_input('continue? ')
+    else :
+        print "ok shared"
+
+cmd = HOMEDIR + '/show_res'
+output = r"\d\d:\d\d:\d\d \d\d:00:00 \d+"
+cmd_string = cmd + ' --nodes' + ' --comment' + ' --start' + ' --end' + ' --readable' + " | ___GREP_PLACEHOLDER___ " + shortpool_id  + " | ___AWK_PLACEHOLDER___ '{print $5,$10,$12}'"
+returnstring = os.popen(cmd_string).read()
+search_list = re.findall(output, returnstring)
+print "# query for 8 resource, 12 hour, shortpool instances"
+if len(search_list) < 6 :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+
+if TESTSHARED > 0 :
+    cmd = HOMEDIR + '/show_res'
+    output = r"\d\d:\d\d:\d\d \d\d:00:00 \d+"
+    cmd_string = cmd + ' --nodes' + ' --comment' + ' --start' + ' --end' + ' --readable' + " | ___GREP_PLACEHOLDER___ " + shortshared_id  + " | ___AWK_PLACEHOLDER___ '{print $5,$10,$12}'"
+    returnstring = os.popen(cmd_string).read()
+    search_list = re.findall(output, returnstring)
+    print "# query for 8 resource, 12 hour, shortpool shared instances"
+    if len(search_list) < 6 :
+        print "not ok shared"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok shared"
+
+#continue_var = raw_input('continue? ')
+
+# create reservation, with earliest_start and resource_amount specified
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + Catalina.TEST_USERRES_END)
+duration = '3600'
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+job_restriction = "if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+affinity_calculation = "if input_tuple[0]['user'] == '%s' : result = 10" % username_string
+mode = 'real'
+output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --affinity_calculation=' + '"' + affinity_calculation + '"' + ' --mode=' + mode
+print "# create reservation, with earliest_start and resource_amount specified"
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    # don't add to test_res_id_list.  It gets deleted in the mod test.
+    #test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for 3 resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+
+if TESTSHARED > 0 :
+    # create --sharedmap reservation, with earliest_start and resource_amount specified
+    cmd = HOMEDIR + '/create_res'
+    start_time = "%d" % (epoch_now + 3600)
+    end_time = "%d" % (epoch_now + Catalina.TEST_USERRES_END)
+    duration = '3600'
+    resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+    sharedmap = "1#type:node_shared#cpu:1+memory:1"
+    job_restriction = "if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+    node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+    node_sort_policy_file = HOMEDIR + r"/last_available"
+    conflict_policy_file = HOMEDIR + r"/nonconflicting"
+    affinity_calculation = "if input_tuple[0]['user'] == '%s' : result = 10" % username_string
+    mode = 'real'
+    output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
+    cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --affinity_calculation=' + '"' + affinity_calculation + '"' + ' --mode=' + mode + ' --sharedmap=' + sharedmap
+    print "# create sharedmap reservation, with earliest_start and resource_amount specified"
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr sharedmap"
+    if so == None :
+        print "not ok shared"
+        print "returnstring is (%s)" % returnstring
+        print cmd_string
+    else :
+        print "ok shared"
+        #print cmd_string
+        shared_res_id = so.group('res_name')
+        test_res_id_list.append(shared_res_id)
+        print "shared_res_id: (%s)" % so.group('res_name')
+        shared_res_start_time = so.group('res_time')
+        output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+        cmd = HOMEDIR + '/show_res'
+        cmd_string = cmd + ' --res=' + shared_res_id + ' --start' + ' | /usr/bin/grep ' + shared_res_id
+        returnstring = os.popen(cmd_string).read()
+        so = re.search(output, returnstring)
+        print "# query for sharedmap resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+        if so == None :
+            print "not ok shared"
+            print output
+            print returnstring
+            print cmd_string
+        else :
+            print "ok shared"
+
+
+
+# create user_set reservation
+# (no test for --featurelist...)
+cmd = HOMEDIR + '/user_set_res'
+account = Catalina.TEST_ACCOUNT_STRING
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+duration = '3600'
+start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
+end_time = time.strftime ('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
+email = Catalina.TEST_EMAIL
+output = r"""user reservation \((?P<res_name>\d+)\) created with %s nodes at (?P<readable_time>.*) \((?P<res_time>\S*) epoch\)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' --account=' + account + ' --nodes=' + resource_amount + ' --duration=' + duration + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --email=' + email
+print "# create user reservation"
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# user reservation"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print "output is (%s)" % output
+    print cmd_string
+else :
+    print "ok"
+    ures_id = so.group('res_name')
+    print "ures_id: (%s)" % so.group('res_name')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + ures_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for user reservation"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+        print "canceling user_set reservation"
+        # cancel user_set reservation
+        cmd = HOMEDIR + '/user_cancel_res ' + ures_id
+        returnstring = os.popen(cmd).read()
+        ## check returnstring
+        #output = r"Waiting.*lock\n.*lock\n.*lock\n"
+        #so = re.search(output, returnstring)
+        # check show_res
+        cmd = HOMEDIR + '/show_res'
+        cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+        output = r""
+        so = re.match(output, returnstring)
+        if so != None :
+            print "ok"
+        else :
+            print "not ok"
+            print returnstring
+
+
+# create user_set reservation
+# test for return of user_bind_res and user_unbind_res
+# submit a job for reservation binding
+cmd = Catalina.SUBMITCMD
+job = HOMEDIR + '/' + Catalina.TEST_JOB
+# here, should have Makefile sed in the output pattern...
+output = Catalina.SUBMIT_OUTPUT_PATTERN
+cmd_string = cmd + ' ' + job
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# submit a job"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    bindjob_id = so.group('job_id') + Catalina.JOBSUFFIX
+
+# update job info
+cmd = HOMEDIR + '/update_jobs'
+cmd_string = cmd
+print "# update_jobs"
+returnstring = os.popen(cmd_string).read()
+
+cmd = HOMEDIR + '/user_set_res'
+account = Catalina.TEST_ACCOUNT_STRING
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+duration = '3600'
+start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
+end_time = time.strftime ('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
+email = Catalina.TEST_EMAIL
+output = r"""user reservation \((?P<res_name>\d+)\) created with %s nodes at (?P<readable_time>.*) \((?P<res_time>\S*) epoch\)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' --account=' + account + ' --nodes=' + resource_amount + ' --duration=' + duration + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --email=' + email
+print "# create user reservation"
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# user reservation"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print "output is (%s)" % output
+    print cmd_string
+else :
+    print "ok"
+    bindures_id = so.group('res_name')
+    print "bindures_id: (%s)" % so.group('res_name')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + bindures_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + bindures_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for user reservation"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+        print "user_bind_res"
+        cmd = HOMEDIR + '/user_bind_res ' + bindures_id + ' ' + bindjob_id
+        returnstring = os.popen(cmd).read()
+        # check returnstring
+        output = r"lock\njob_restriction.*\nReleased"
+        so = re.search(output, returnstring)
+        if so != None :
+            print "ok"
+        else :
+            print "not ok"
+            print returnstring
+
+        print "user_bind_job"
+        cmd = HOMEDIR + '/user_bind_job ' + bindjob_id + ' ' + bindures_id
+        returnstring = os.popen(cmd).read()
+        # check returnstring
+        output = r"lock\nReceived.*\nReleased"
+        so = re.search(output, returnstring)
+        if so != None :
+            print "ok"
+        else :
+            print "not ok"
+            print returnstring
+
+        print "user_unbind_job"
+        cmd = HOMEDIR + '/user_unbind_job ' + bindjob_id + ' ' + bindures_id
+        returnstring = os.popen(cmd).read()
+        # check returnstring
+        output = r"lock\nReceived.*\nReleased"
+        so = re.search(output, returnstring)
+        if so != None :
+            print "ok"
+        else :
+            print "not ok"
+            print returnstring
+
+        print "user_unbind_res"
+        cmd = HOMEDIR + '/user_unbind_res ' + bindures_id + ' ' + bindjob_id
+        returnstring = os.popen(cmd).read()
+        # check returnstring
+        output = r"lock\njob_restriction.*\nReleased"
+        so = re.search(output, returnstring)
+        if so != None :
+            print "ok"
+        else :
+            print "not ok"
+            print returnstring
+
+        print "canceling user_set reservation"
+        # cancel user_set reservation
+        cmd = HOMEDIR + '/user_cancel_res ' + bindures_id
+        returnstring = os.popen(cmd).read()
+        ## check returnstring
+        #output = r"Waiting.*lock\n.*lock\n.*lock\n"
+        #so = re.search(output, returnstring)
+        # check show_res
+        cmd = HOMEDIR + '/show_res'
+        cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + bindures_id
+        returnstring = os.popen(cmd_string).read()
+        output = r""
+        so = re.match(output, returnstring)
+        if so != None :
+            print "ok"
+        else :
+            print "not ok"
+            print returnstring
+# cancel the bound job
+print "# cancel %s" % bindjob_id
+cmd = Catalina.CANCELCMD
+cmd_string = cmd + ' ' + bindjob_id
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+print returnstring
+
+
+# test --featurelist need simulator for this test
+#cmd = HOMEDIR + '/user_set_res'
+#account = Catalina.TEST_ACCOUNT_STRING
+#resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+#duration = '3600'
+#start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
+#end_time = time.strftime ('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
+#email = Catalina.TEST_EMAIL
+#output = r"""user reservation \((?P<res_name>\d+)\) created with %s nodes at (?P<readable_time>.*) \((?P<res_time>\S*) epoch\)""" % Catalina.TEST_USERRES_AMOUNT
+#cmd_string = cmd + ' --account=' + account + ' --nodes=' + resource_amount + ' --duration=' + duration + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --email=' + email
+#print "# create user reservation"
+#returnstring = os.popen(cmd_string).read()
+#so = re.search(output, returnstring)
+#print "# user reservation"
+#if so == None :
+#    print "not ok"
+#    print "returnstring is (%s)" % returnstring
+#    print "output is (%s)" % output
+#    print cmd_string
+#else :
+#    print "ok"
+#    ures_id = so.group('res_name')
+#    print "ures_id: (%s)" % so.group('res_name')
+#    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+#    cmd = HOMEDIR + '/show_res'
+#    cmd_string = cmd + ' --res=' + ures_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+#    returnstring = os.popen(cmd_string).read()
+#    so = re.search(output, returnstring)
+#    print "# query for user reservation"
+#    if so == None :
+#        print "not ok"
+#        print output
+#        print returnstring
+#        print cmd_string
+#    else :
+#        print "ok"
+#        print "canceling user_set reservation"
+#        # cancel user_set reservation
+#        cmd = HOMEDIR + '/user_cancel_res ' + ures_id
+#        returnstring = os.popen(cmd).read()
+#        # check returnstring
+#        output = r"Waiting.*lock\n.*lock\n.*lock\n"
+#        so = re.search(output, returnstring)
+#        if so != None :
+#            print "ok"
+#        else :
+#            print "not ok"
+#            print returnstring
+
+if TESTSHARED > 0 :
+    # create user_set reservation with sharedmap
+    cmd = HOMEDIR + '/user_set_res'
+    account = Catalina.TEST_ACCOUNT_STRING
+    resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+    sharedmap = '1#type:node_shared#cpu:1+memory:1'
+    duration = '3600'
+    start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
+    end_time = time.strftime ('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
+    email = Catalina.TEST_EMAIL
+    output = r"""user reservation \((?P<res_name>\d+)\) created with %s nodes at (?P<readable_time>.*) \((?P<res_time>\S*) epoch\)""" % Catalina.TEST_USERRES_AMOUNT
+    cmd_string = cmd + ' --account=' + account + ' --nodes=' + resource_amount + ' --duration=' + duration + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --email=' + email + ' --sharedmap=' + sharedmap
+    print "# create user reservation with sharedmap"
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# user reservation with sharedmap"
+    if so == None :
+        print "not ok shared"
+        print "returnstring is (%s)" % returnstring
+        print "output is (%s)" % output
+        print cmd_string
+    else :
+        print "ok shared"
+        ures_id = so.group('res_name')
+        print "ures_id: (%s)" % so.group('res_name')
+        output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+        cmd = HOMEDIR + '/show_res'
+        cmd_string = cmd + ' --res=' + ures_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+        returnstring = os.popen(cmd_string).read()
+        so = re.search(output, returnstring)
+        print "# query for user reservation with sharedmap"
+        if so == None :
+            print "not ok shared"
+            print output
+            print returnstring
+            print cmd_string
+        else :
+            print "ok shared"
+            print "canceling user_set reservation"
+            # cancel user_set reservation
+            cmd = HOMEDIR + '/user_cancel_res ' + ures_id
+            returnstring = os.popen(cmd).read()
+            ## check returnstring
+            #output = r"Waiting.*lock\n.*lock\n.*lock\n"
+            #so = re.search(output, returnstring)
+            # check show_res
+            cmd = HOMEDIR + '/show_res'
+            cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+            returnstring = os.popen(cmd).read()
+            output = r""
+            so = re.match(output, returnstring)
+            if so != None :
+                print "ok shared"
+            else :
+                print "not ok shared"
+                print returnstring
+
+# create reservation, with earliest_start and resource_amount specified,
+# --ignore=ALL
+cmd = HOMEDIR + '/set_res'
+start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
+end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600 + 3600))
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+mode = 'real'
+output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' --start=' + start_time + ' --end=' + end_time + ' --resource_amount=' + resource_amount + ' --ignore=ALL' + ' --mode=' + mode
+print "# create reservation, with --ignore=ALL specified"
+firstreturnstring = os.popen(cmd_string).read()
+firstigso = re.search(output, firstreturnstring)
+if firstigso == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+    continue_var = raw_input('continue? ')
+firstigres_id = firstigso.group('res_name')
+returnstring = os.popen(cmd_string).read()
+igso = re.search(output, returnstring)
+print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr, --ignore=ALL"
+if igso == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    igres_id = igso.group('res_name')
+    print "igres_id: (%s)" % igso.group('res_name')
+    igres_start_time = igso.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + igres_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + igres_id
+    resreturnstring = os.popen(cmd_string).read()
+    resso = re.search(output, returnstring)
+    print "# show_res query for --ignore=ALL"
+    if resso == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+        cmd = HOMEDIR + '/cancel_res'
+        cmd_string = cmd + ' --res=' + igres_id + ',' + firstigres_id
+        returnstring = os.popen(cmd_string).read()
+        output = r""
+        cmd = HOMEDIR + '/show_res'
+        cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + ' -e '+ igres_id + ' -e ' + firstigres_id
+        returnstring = os.popen(cmd_string).read()
+        so = re.match(output, returnstring, re.MULTILINE)
+        print "# cancel two reservations"
+        if returnstring == None :
+            print "not ok"
+            print output
+            print returnstring
+            print cmd_string
+        else :
+            print "ok"
+
+if TESTSHARED > 0 :
+    # create reservation, with earliest_start and resource_amount specified,
+    # --ppn (procs per node), --mpn (MB per node)
+    cmd = HOMEDIR + '/set_res'
+    start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400))
+    end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400 + 3600))
+    resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+    mode = 'real'
+    output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
+    cmd_string = cmd + ' --start=' + start_time + ' --end=' + end_time + ' --resource_amount=' + resource_amount + ' --ppn=1 --mpn=1' + ' --mode=' + mode
+    print "# create --ppn --mpn reservation"
+    firstreturnstring = os.popen(cmd_string).read()
+    ppnso = re.search(output, firstreturnstring)
+    print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr, --ppn=1 --mpn=1"
+    if ppnso == None :
+        print "not ok shared"
+        print "returnstring is (%s)" % returnstring
+        print cmd_string
+        #continue_var = raw_input('continue? ')
+    else :
+        print "ok shared"
+        ppnres_id = ppnso.group('res_name')
+        test_res_id_list.append(ppnres_id)
+        print "ppnres_id: (%s)" % ppnso.group('res_name')
+        ppnres_start_time = ppnso.group('res_time')
+
+# modify the previous reservation, increasing resource_amount
+cmd = HOMEDIR + '/create_res --mode=real --del_res_id=' + res_id + ' --copy_res_id=' + res_id
+cmd_string = cmd + " --resource_amount=%s" % Catalina.TEST_USERRES_MOD_AMOUNT
+output = r"""reservation (?P<res_name>.+) created on %s nodes with start_time (?P<res_time>.+) for duration (?P<duration>.+)""" % Catalina.TEST_USERRES_MOD_AMOUNT
+print "# modify reservation, with earliest_start and resource_amount specified"
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# modified 4 resource, 1 hour, earliest_start +1hr, latest_end +24hr"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for modified 4 resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+
+# create reservation, with earliest_start and resource_amount specified
+# for use with the binding test later on.
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 1814400)
+end_time = "%d" % (epoch_now + 1900800)
+duration = '14400'
+resource_amount = "%s" % Catalina.TEST_BINDING_AMOUNT
+job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+mode = 'real'
+output = r"""reservation (?P<res_name>.+) created on \d+ nodes with start_time (?P<res_time>.+) for duration (?P<duration>.+)"""
+cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# for bind test, 2 resource, 4 hour, earliest_start +21days, latest_end +22days"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+    sys.exit(1)
+else :
+    print "ok"
+    #print cmd_string
+    #continue_var = raw_input('continue? ')
+    res_id = so.group('res_name')
+    test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    bind_res_id = res_id
+    res_start_time = so.group('res_time')
+    bind_res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for 3 resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+
+# create reservation with earliest_start and no resource_amount
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + 77760000)
+duration = '3600'
+job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+mode = 'real'
+output = r"""reservation (?P<res_name>.+) created on \d+ nodes with start_time (?P<res_time>\d+)"""
+cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+
+#continue_var = raw_input('continue? ')
+
+if TESTSHARED > 0 :
+    # create sharedmap reservation with earliest_start and no resource_amount
+    cmd = HOMEDIR + '/create_res'
+    start_time = "%d" % (epoch_now + 3600)
+    end_time = "%d" % (epoch_now + 77760000)
+    duration = '3600'
+    job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+    node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+    node_sort_policy_file = HOMEDIR + r"/last_available"
+    conflict_policy_file = HOMEDIR + r"/nonconflicting"
+    mode = 'real'
+    sharedmap = "1#type:node_shared#cpu:1+memory:1"
+    output = r"""reservation (?P<res_name>.+) created on \d+ nodes with start_time (?P<res_time>\d+)"""
+    cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode + ' --sharedmap=' + sharedmap
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr, sharedmap"
+    if so == None :
+        print "not ok shared"
+        print "returnstring is (%s)" % returnstring
+        print cmd_string
+    else :
+        print "ok shared"
+        res_id = so.group('res_name')
+        test_res_id_list.append(res_id)
+        print "res_id: (%s)" % so.group('res_name')
+        res_start_time = so.group('res_time')
+        output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+        cmd = HOMEDIR + '/show_res'
+        cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+        returnstring = os.popen(cmd_string).read()
+        so = re.search(output, returnstring)
+        print "# query for Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr sharedmap"
+        if so == None :
+            print "not ok shared"
+            print output
+            print returnstring
+            print cmd_string
+        else :
+            print "ok shared"
+
+# create lookahead reservation with earliest_start and no resource_amount
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + 77760000)
+duration = '3600'
+job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+mode = 'lookahead'
+output = r"""reservation possible on \d+ nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)"""
+cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode
+returnstring = os.popen(cmd_string).read()
+print "# Lookahead unlimited resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+so = re.search(output, returnstring)
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+    continue_var = raw_input('continue? ')
+else :
+    print "ok"
+    res_start_time = so.group('res_time')
+
+# create reservation with no earliest_start and resource_amount
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + 1209600)
+resource_amount = "%s" % Catalina.TEST_NOEARLIEST_AMOUNT
+duration = '3600'
+job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+mode = 'real'
+output = r"""reservation (?P<res_name>.+) created on \d+ nodes with start_time (?P<res_time>.+) for duration (?P<duration>.+)"""
+cmd_string = cmd + ' --resource_amount=' + resource_amount + ' --latest_end=' + end_time + ' --duration=' + duration + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# 3 resource, 1 hour, No earliest_start, latest_end +24hr"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for 3 resource, 1 hour, No earliest_start, latest_end +3hr"
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+        res_start_time = so.group('res_time')
+
+# create a system reservation for 30 days from now, duration 8 hours
+offset = 30 * 24 * 3600
+duration = 8 * 3600
+output = r"""reservation (?P<res_name>.+) created on \d+ nodes with start_time (?P<res_time>.+) for duration (?P<duration>.+)"""
+cmd_string = HOMEDIR + '/create_system_res' + " --offset=%d --duration=%d" %\
+  (offset, duration)
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# All resource, 30-day offset, 8-hour duration system res"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_id = so.group('res_name')
+    test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# query for All resource, 30 day offset, 8 hour duration, system res "
+    if so == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+        res_start_time = so.group('res_time')
+
+# submit a job for reservation binding
+cmd = Catalina.SUBMITCMD
+job = HOMEDIR + '/' + Catalina.TEST_JOB
+# here, should have Makefile sed in the output pattern...
+output = Catalina.SUBMIT_OUTPUT_PATTERN
+cmd_string = cmd + ' ' + job
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# submit a job"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    job_id = so.group('job_id') + Catalina.JOBSUFFIX
+
+# submit a job for test without reservation binding
+cmd = Catalina.SUBMITCMD
+job = HOMEDIR + '/' + Catalina.TEST_JOB
+output = Catalina.SUBMIT_OUTPUT_PATTERN
+cmd_string = cmd + ' ' + job
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# submit a job"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    unbound_job_id = so.group('job_id') + Catalina.JOBSUFFIX
+
+# submit a job for run_at_risk test
+cmd = Catalina.SUBMITCMD
+job = HOMEDIR + '/' + Catalina.TEST_JOB_RUN_AT_RISK
+output = Catalina.SUBMIT_OUTPUT_PATTERN
+cmd_string = cmd + ' ' + job
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# submit a run_at_risk job"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    run_at_risk_job_id = so.group('job_id') + Catalina.JOBSUFFIX
+
+# move old stuff
+cmd = HOMEDIR + '/move_old_stuff'
+cmd_string = cmd
+print "# move_old_stuff"
+returnstring = os.popen(cmd_string).read()
+
+# update job info
+cmd = HOMEDIR + '/update_jobs'
+cmd_string = cmd
+print "# update_jobs"
+returnstring = os.popen(cmd_string).read()
+
+# set system priority
+print "set system priority"
+cmd = HOMEDIR + '/update_system_priority'
+cmd_string = cmd + ' --job=' + job_id + ' --system_priority=92093'
+syspri_jobid = job_id
+returnstring = os.popen(cmd_string).read()
+
+# update job priorities
+cmd = HOMEDIR + '/update_job_priorities'
+cmd_string = cmd
+print "# update_job_priorities"
+returnstring = os.popen(cmd_string).read()
+
+# bind a job to a reservation
+job_step_name = job_id
+cmd = HOMEDIR + '/bind_job_to_res'
+cmd_string = cmd + ' --res=' + bind_res_id + ' --job=' + job_step_name
+print "# bind_job_to_res"
+returnstring = os.popen(cmd_string).read()
+
+# check for QOS from comment
+#cmd = HOMEDIR + '/query_jobs'
+cmd = HOMEDIR + '/show_q --full'
+cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+returnstring = os.popen(cmd_string).read()
+output = r"\s+2\s+"
+mo = re.search(output, returnstring)
+print "# check for QOS from comment"
+if mo == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+
+# set QOS to 8
+cmd = HOMEDIR + '/update_qos'
+cmd_string = cmd + ' --job=' + job_step_name + ' --QOS=8'
+returnstring = os.popen(cmd_string).read()
+
+# check for QOS from update_qos
+cmd = HOMEDIR + '/show_q'
+cmd_string = cmd + ' --full --qos' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+returnstring = os.popen(cmd_string).read()
+output = r"\s+8\s+"
+mo = re.search(output, returnstring)
+print "# check for QOS from update_qos"
+if mo == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+
+# check for local_admin_priority_string from comment 92091
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+job_la = Catalina.get_object(job_step_name, jobs_db_handle)
+print "# check for local_admin_priority_string from comment"
+if job_la['local_admin_priority_string'] != '92091' :
+    print "not ok"
+    print job_la['local_admin_priority_string']
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+# set local_admin_priority_string to 92094
+cmd = HOMEDIR + '/update_local_admin'
+cmd_string = cmd + ' --job_step_id=' + job_step_name + ' --la_pri=92094'
+returnstring = os.popen(cmd_string).read()
+
+# check for local_admin_priority_string from update_local_admin
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+job_la = Catalina.get_object(job_step_name, jobs_db_handle)
+print "# check for local_admin_priority_string from update_local_admin"
+if job_la['local_admin_priority_string'] != '92094' :
+    print "not ok"
+    print job_la['local_admin_priority_string']
+    print cmd_string
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+# check for local_user_priority_string from comment -100
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+job_la = Catalina.get_object(job_step_name, jobs_db_handle)
+print "# check for local_user_priority_string from comment"
+if job_la['local_user_priority_string'] != '-100' :
+    print "not ok"
+    print job_la['local_user_priority_string']
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+# unbind jobs from testholder comment reservation
+cmd = HOMEDIR + '/unbind_job_from_res'
+cmd_string = cmd + ' --res=testholder' + ' --job=' + job_step_name
+returnstring = os.popen(cmd_string).read()
+cmd_string = cmd + ' --res=testholder' + ' --job=' + unbound_job_id
+returnstring = os.popen(cmd_string).read()
+cmd_string = cmd + ' --res=testholder' + ' --job=' + run_at_risk_job_id
+returnstring = os.popen(cmd_string).read()
+
+# schedule jobs
+#print "# " + HOMEDIR + "/schedule_jobs"
+#cmd = HOMEDIR + '/schedule_jobs'
+#cmd_string = cmd
+#sj_returnstring = os.popen(cmd_string).read()
+
+#continue_var = raw_input('continue? ')
+
+print "# " + HOMEDIR + "/start.ksh"
+cmd = HOMEDIR + '/start.ksh'
+cmd_string = cmd
+sj_returnstring = os.popen(cmd_string).read()
+time.sleep(15)
+print "# " + HOMEDIR + "/stop.py"
+cmd = HOMEDIR + '/stop.py'
+cmd_string = cmd
+returnstring = os.popen(cmd_string).read()
+
+# check show_bf command
+returnstring = os.popen(HOMEDIR + '/show_bf | ___GREP_PLACEHOLDER___ available').read()
+print "# check show_bf command"
+if returnstring != '' :
+    print "ok"
+else :
+    print "not ok"
+    print returnstring
+
+# check show_guesstimate command
+cmd = HOMEDIR + '/show_guesstimate --account=' + Catalina.TEST_ACCOUNT_STRING + ' --nodes=' + `Catalina.TEST_USERRES_AMOUNT` + ' --local_admin=100000000 --qos=2 | ___GREP_PLACEHOLDER___ guesstimated'
+returnstring = os.popen(cmd).read()
+print "# check show_guesstimate command"
+if returnstring != '' :
+    print "ok"
+else :
+    print "not ok"
+    print returnstring
+
+# check system priority
+returnstring = os.popen(HOMEDIR + '/query_priority | ___GREP_PLACEHOLDER___ "* " | ___GREP_PLACEHOLDER___ ' + syspri_jobid).read()
+print "# check system priority"
+if returnstring != '' :
+    print "ok"
+else :
+    print "not ok"
+    os.system(HOMEDIR + '/show_q')
+    print returnstring
+
+# check for local_admin_float from update_local_admin
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+job_la = Catalina.get_object(job_step_name, jobs_db_handle)
+print "# check for local_admin_float from update_local_admin"
+if job_la['priority_element_dict']['local_admin_float'] != 92094.0 :
+    print "not ok"
+    print job_la['priority_element_dict']['local_admin_float']
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+# check for local_user_float from comment
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+job_la = Catalina.get_object(job_step_name, jobs_db_handle)
+print "# check for local_user_float from comment"
+if job_la['priority_element_dict']['local_user_float'] != -100.0 :
+    print "not ok"
+    print job_la['priority_element_dict']['local_user_float']
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+output = r"\S+\s+(?P<runID>.*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --job' + ' | ___GREP_PLACEHOLDER___ ' + job_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# check reservation creation for bound job (%s)" % job_id
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+    sj_out = open('sj_out', 'w')
+    sj_out.write(sj_returnstring)
+else :
+    print "ok"
+    runID = so.group('runID')
+
+output = r"\S+\s+(?P<runID>.*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --job' + ' | ___GREP_PLACEHOLDER___ ' + unbound_job_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# check reservation creation for unbound job (%s)" % unbound_job_id
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+    unbound_sj_out = open(HOMEDIR + '/unbound_sj_out', 'w')
+    unbound_sj_out.write(sj_returnstring)
+else :
+    print "ok"
+    runID = so.group('runID')
+
+output = r"\S+\s+(?P<runID>.*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --job' + ' | ___GREP_PLACEHOLDER___ ' + run_at_risk_job_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# check reservation creation for run_at_risk job (%s)" % run_at_risk_job_id
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+    run_at_risk_sj_out = open(HOMEDIR + '/run_at_risk_sj_out', 'w')
+    run_at_risk_sj_out.write(sj_returnstring)
+    continue_var = raw_input('continue? ')
+else :
+    print "ok"
+    run_at_risk_runID = so.group('runID')
+
+# query priority
+returnstring = os.popen(HOMEDIR + '/query_priority').read()
+if returnstring != '' :
+    print "ok"
+else :
+    print "not ok"
+
+# check for reservation_binding in job
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+jobs_dict = jobs_db_handle[0]
+print "# reservation_binding (%s) in job (%s)" % (bind_res_id, job_step_name)
+if not bind_res_id in jobs_dict[job_step_name]['reservation_binding'] :
+    print "not ok"
+    print "(%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+# check for same start_time for bound reservation and job
+output = r"\S+\s+(?P<res_time>\S+)\s+(?P<runID>.*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --full --job' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# start_time (%s) check for reservation_binding (%s) in job (%s)" % ( bind_res_start_time, bind_res_id, job_step_name)
+if so == None or so.group('res_time') != bind_res_start_time :
+    print "not ok"
+    print output
+    print returnstring
+    print bind_res_start_time
+    print cmd_string
+    continue_var = raw_input('continue? ')
+else :
+    print "ok"
+
+# unbind job from reservation
+cmd = HOMEDIR + '/unbind_job_from_res'
+cmd_string = cmd + ' --res=' + bind_res_id + ' --job=' + job_step_name
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+
+# check for absent reservation_binding in job
+jobs_db_handle = Catalina.open_ro_db(Catalina.JOBS_DB, 'read')
+jobs_dict = jobs_db_handle[0]
+print "# reservation_binding (%s) in job (%s)" % (bind_res_id, job_step_name)
+if bind_res_id in jobs_dict[job_step_name]['reservation_binding'] :
+    print "not ok"
+    print "(%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+Catalina.close_ro_db(jobs_db_handle)
+
+# cancel the bound job
+print "# cancel %s" % job_step_name
+cmd = Catalina.CANCELCMD
+cmd_string = cmd + ' ' + job_step_name
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+print returnstring
+
+# cancel the unbound job
+print "# cancel %s" % unbound_job_id
+cmd = Catalina.CANCELCMD
+cmd_string = cmd + ' ' + unbound_job_id
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+print returnstring
+
+# cancel the run_at_risk job
+print "# cancel %s" % run_at_risk_job_id
+cmd = Catalina.CANCELCMD
+cmd_string = cmd + ' ' + run_at_risk_job_id
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+print returnstring
+
+# ./cancel_standing_res the test standing reservations
+for res_id in test_standing_res_id_list :
+    raw_res_ids = os.popen(HOMEDIR + '/show_res --full --comment | ___GREP_PLACEHOLDER___ standing | ___GREP_PLACEHOLDER___ ' + res_id + " | ___AWK_PLACEHOLDER___ '{print $1}'").read()
+    #print "raw_res_ids (%s)" % (raw_res_ids,)
+    stripped_res_ids = string.strip(raw_res_ids)
+    #print "stripped_res_ids (%s)" % (stripped_res_ids,)
+    res_ids = string.split(stripped_res_ids, '\n')
+    #print "res_ids (%s)" % (res_ids,)
+    for id in res_ids :
+        if id != '' :
+            print "# cancel_res --res=%s" % id
+            cmd = HOMEDIR + '/cancel_res'
+            cmd_string = cmd + ' --res=' + id
+            returnstring = os.popen(cmd_string).read()
+    print "# cancel_standing_res --res=%s" % res_id
+    cmd = './cancel_standing_res'
+    cmd_string = cmd + " --res=%s" % res_id
+    returnstring = os.popen(cmd_string).read()
+
+# update standing reservation instances
+cmd = HOMEDIR + '/update_standing_reservations'
+cmd_string = cmd
+print "# update_standing_reservations"
+returnstring = os.popen(cmd_string).read()
+
+# ./cancel_res the test reservations
+for res_id in test_res_id_list :
+    print "# cancel_res --res=%s" % res_id
+    cmd = './cancel_res'
+    cmd_string = cmd + " --res=%s" % res_id
+    returnstring = os.popen(cmd_string).read()
+
+# check for excess overlapping reservations
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --overlap | ___GREP_PLACEHOLDER___ res_id' + " | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+raw_returnstring = os.popen(cmd_string).read()
+string.strip(raw_returnstring)
+returnstring = raw_returnstring[:-1]
+print "# Excess overlapping reservations"
+if string.atoi(returnstring) > 8 :
+    print "not ok"
+    print "(%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+@
+
+
+1.42
+log
+@test for user_bind_res, user_bind_job, user_unbind_job, user_unbind_res
+@
+text
+@d390 8
+a397 3
+        # check returnstring
+        output = r"Waiting.*lock\n.*lock\n.*lock\n"
+        so = re.search(output, returnstring)
+d517 9
+a525 3
+        # check returnstring
+        output = r"Waiting.*lock\n.*lock\n.*lock\n"
+        so = re.search(output, returnstring)
+d631 9
+a639 3
+            # check returnstring
+            output = r"Waiting.*lock\n.*lock\n.*lock\n"
+            so = re.search(output, returnstring)
+d692 1
+a692 1
+        output = r"\s*"
+d694 1
+a694 1
+        cmd_string = cmd + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ' -e '+ igres_id + ' -e ' + firstigres_id
+d696 1
+a696 1
+        so = re.search(output, returnstring)
+@
+
+
+1.41
+log
+@changed node_restriction_file.LL to node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___
+@
+text
+@d347 2
+d399 179
+@
+
+
+1.40
+log
+@remove extra reservatioin
+@
+text
+@d311 1
+a311 1
+    node_restriction_file = HOMEDIR + r"/node_restriction_file.LL"
+@
+
+
+1.39
+log
+@change times for some tests, so they run okay on a single smp node
+@
+text
+@d530 1
+@
+
+
+1.38
+log
+@TESTSHARED only if ConsumableCpus and ConsumableMemory are nonzero
+@
+text
+@d284 2
+d348 1
+d357 1
+a357 1
+cmd_string = cmd + ' ' + account + ' ' + resource_amount + ' ' + duration + ' ' + start_time + ' ' + end_time + ' ' + email
+d408 1
+a408 1
+    cmd_string = cmd + ' ' + account + ' ' + resource_amount + ' ' + duration + ' ' + start_time + ' ' + end_time + ' ' + email + ' ' + sharedmap
+d452 1
+a452 1
+end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
+d460 5
+d491 16
+a506 16
+    cmd = HOMEDIR + '/cancel_res'
+    cmd_string = cmd + ' --res=' + igres_id + ',' + firstigres_id
+    returnstring = os.popen(cmd_string).read()
+    output = r"\s*"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ' -e '+ igres_id + ' -e ' + firstigres_id
+    returnstring = os.popen(cmd_string).read()
+    so = re.search(output, returnstring)
+    print "# cancel two reservations"
+    if returnstring == None :
+        print "not ok"
+        print output
+        print returnstring
+        print cmd_string
+    else :
+        print "ok"
+d512 2
+a513 2
+    start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END - 7200))
+    end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END - 3600))
+d614 1
+a614 1
+end_time = "%d" % (epoch_now + 2419200)
+d656 1
+a656 1
+    end_time = "%d" % (epoch_now + 1209600)
+d696 1
+a696 1
+end_time = "%d" % (epoch_now + 1209600)
+d1073 1
+a1073 1
+    #continue_var = raw_input('continue? ')
+@
+
+
+1.37
+log
+@*** empty log message ***
+@
+text
+@d44 12
+d92 19
+a110 28
+# create shortpool with --sharedmap=1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2
+cmd = HOMEDIR + '/create_standing_res'
+start_spec = "'%s'" % Catalina.TEST_SHORTPOOL_SPEC
+depth = '6'
+duration = "%s" % Catalina.TEST_SHORTPOOL_DURATION
+latency = '900'
+resource_amount = "%s" % Catalina.TEST_SHORTPOOL_AMOUNT
+sharedmap = '1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2'
+job_restriction = r"if input_tuple[0]['QOS'] in ['4','6','7'] : result = 0"
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available_running_first"
+comment = 'Shortpool_shared'
+affinity_calculation = "'result = -1'"
+mode = 'real'
+escaped_standing_spec = re.sub(r"\*",r"\*",Catalina.TEST_SHORTPOOL_SPEC)
+output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec %s for duration (?P<duration>.*)""" % escaped_standing_spec
+cmd_string = cmd + ' --latency=' + latency + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation + '  --overlap_running=1' + " --sharedmap=%s" % sharedmap
+returnstring = os.popen(cmd_string).read()
+#print cmd_string
+so = re.search(output, returnstring)
+print "# 8 resource, 12 hour, shortpool reservation, M-F, sharedmap"
+if so == None :
+    print "not ok shared"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+    #continue_var = raw_input('continue? ')
+else :
+    print "ok shared"
+d112 13
+a124 3
+    shortsharedres_id = so.group('res_name')
+    test_standing_res_id_list.append(shortsharedres_id)
+    shortshared_id = so.group('res_name')
+d155 31
+a185 30
+# create standing reservation, sharedmap=1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2
+cmd = HOMEDIR + '/create_standing_res'
+start_spec = "'%s'" % Catalina.TEST_STANDING_SPEC
+depth = '5'
+duration = "%s" % Catalina.TEST_STANDING_DURATION
+resource_amount = "%s" % Catalina.TEST_STANDING_AMOUNT
+sharedmap = '1#type:node_shared#cpu:1+memory:1@@1#type:node_shared#cpu:1+memory:2'
+#job_restriction = r"'if input_tuple[0][\'job_class\'] == \'interactive\' and input_tuple[0][\'wall_clock_limit\'] <= 1800 : result = 0'"
+job_restriction = r"if input_tuple[0]['job_class'] == '" + Catalina.DEFAULT_JOB_CLASS + r"' and input_tuple[0]['QOS'] in ['2','4','6','7'] : result = 0"
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/first_available"
+comment = 'Interactive'
+affinity_calculation = "'result = -1'"
+mode = 'real'
+output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec (?P<res_time>.*) for duration (?P<duration>.*)"""
+cmd_string = cmd + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation + '  --overlap_running=1' + " --sharedmap=%s" % sharedmap
+returnstring = os.popen(cmd_string).read()
+#print cmd_string
+so = re.search(output, returnstring)
+print "# 8 resource, 12 hour, standing reservation, M-F, sharedmap"
+if so == None :
+    print "not ok shared"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+    #continue_var = raw_input('continue? ')
+else :
+    print "ok shared"
+    standingsharedres_id = so.group('res_name')
+    test_standing_res_id_list.append(standingsharedres_id)
+    standingsharedres_start_time = so.group('res_time')
+d211 16
+a226 15
+cmd = HOMEDIR + '/show_res'
+output = r"(?P<res_name>\d+) 12:00:00 00:00:00 \d+"
+cmd_string = cmd + ' --purpose' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ standing_reservation | ___AWK_PLACEHOLDER___ '{print $1,$5,$10,$12}'"
+cmd_string = cmd + ' --purpose' + ' --comment' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ %s | ___AWK_PLACEHOLDER___ '{print $1,$5,$10,$12}'" % standingsharedres_id
+returnstring = os.popen(cmd_string).read()
+search_list = re.findall(output, returnstring)
+print "# query for 2 resource, 12 hour, standing_reservation sharedmap instances"
+if len(search_list) < 5 :
+    print "not ok shared"
+    print output
+    print returnstring
+    print cmd_string
+    #continue_var = raw_input('continue? ')
+else :
+    print "ok shared"
+d242 14
+a255 13
+cmd = HOMEDIR + '/show_res'
+output = r"\d\d:\d\d:\d\d \d\d:00:00 \d+"
+cmd_string = cmd + ' --nodes' + ' --comment' + ' --start' + ' --end' + ' --readable' + " | ___GREP_PLACEHOLDER___ " + shortshared_id  + " | ___AWK_PLACEHOLDER___ '{print $5,$10,$12}'"
+returnstring = os.popen(cmd_string).read()
+search_list = re.findall(output, returnstring)
+print "# query for 8 resource, 12 hour, shortpool shared instances"
+if len(search_list) < 6 :
+    print "not ok shared"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok shared"
+d300 17
+a316 33
+# create --sharedmap reservation, with earliest_start and resource_amount specified
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + Catalina.TEST_USERRES_END)
+duration = '3600'
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+sharedmap = "1#type:node_shared#cpu:1+memory:1"
+job_restriction = "if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.LL"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+affinity_calculation = "if input_tuple[0]['user'] == '%s' : result = 10" % username_string
+mode = 'real'
+output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --affinity_calculation=' + '"' + affinity_calculation + '"' + ' --mode=' + mode + ' --sharedmap=' + sharedmap
+print "# create sharedmap reservation, with earliest_start and resource_amount specified"
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr sharedmap"
+if so == None :
+    print "not ok shared"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok shared"
+    #print cmd_string
+    shared_res_id = so.group('res_name')
+    test_res_id_list.append(shared_res_id)
+    print "shared_res_id: (%s)" % so.group('res_name')
+    shared_res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + shared_res_id + ' --start' + ' | /usr/bin/grep ' + shared_res_id
+d319 1
+a319 1
+    print "# query for sharedmap resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+d322 1
+a322 2
+        print output
+        print returnstring
+d326 18
+d394 13
+a406 27
+# create user_set reservation with sharedmap
+cmd = HOMEDIR + '/user_set_res'
+account = Catalina.TEST_ACCOUNT_STRING
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+sharedmap = '1#type:node_shared#cpu:1+memory:1'
+duration = '3600'
+start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
+end_time = time.strftime ('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
+email = Catalina.TEST_EMAIL
+output = r"""user reservation \((?P<res_name>\d+)\) created with %s nodes at (?P<readable_time>.*) \((?P<res_time>\S*) epoch\)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' ' + account + ' ' + resource_amount + ' ' + duration + ' ' + start_time + ' ' + end_time + ' ' + email + ' ' + sharedmap
+print "# create user reservation with sharedmap"
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# user reservation with sharedmap"
+if so == None :
+    print "not ok shared"
+    print "returnstring is (%s)" % returnstring
+    print "output is (%s)" % output
+    print cmd_string
+else :
+    print "ok shared"
+    ures_id = so.group('res_name')
+    print "ures_id: (%s)" % so.group('res_name')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + ures_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+d409 1
+a409 1
+    print "# query for user reservation with sharedmap"
+d412 2
+a413 2
+        print output
+        print returnstring
+d417 6
+a422 6
+        print "canceling user_set reservation"
+        # cancel user_set reservation
+        cmd = HOMEDIR + '/user_cancel_res ' + ures_id
+        returnstring = os.popen(cmd).read()
+        # check returnstring
+        output = r"Waiting.*lock\n.*lock\n.*lock\n"
+d424 2
+a425 3
+        if so != None :
+            print "ok shared"
+        else :
+d427 1
+d429 15
+d500 24
+a523 23
+# create reservation, with earliest_start and resource_amount specified,
+# --ppn (procs per node), --mpn (MB per node)
+cmd = HOMEDIR + '/set_res'
+start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END - 7200))
+end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END - 3600))
+resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
+mode = 'real'
+output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
+cmd_string = cmd + ' --start=' + start_time + ' --end=' + end_time + ' --resource_amount=' + resource_amount + ' --ppn=1 --mpn=1' + ' --mode=' + mode
+print "# create --ppn --mpn reservation"
+firstreturnstring = os.popen(cmd_string).read()
+ppnso = re.search(output, firstreturnstring)
+print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr, --ppn=1 --mpn=1"
+if ppnso == None :
+    print "not ok shared"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+    #continue_var = raw_input('continue? ')
+else :
+    print "ok shared"
+    ppnres_id = ppnso.group('res_name')
+    print "ppnres_id: (%s)" % ppnso.group('res_name')
+    ppnres_start_time = ppnso.group('res_time')
+d644 14
+a657 29
+# create sharedmap reservation with earliest_start and no resource_amount
+cmd = HOMEDIR + '/create_res'
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + 1209600)
+duration = '3600'
+job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
+node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"
+node_sort_policy_file = HOMEDIR + r"/last_available"
+conflict_policy_file = HOMEDIR + r"/nonconflicting"
+mode = 'real'
+sharedmap = "1#type:node_shared#cpu:1+memory:1"
+output = r"""reservation (?P<res_name>.+) created on \d+ nodes with start_time (?P<res_time>\d+)"""
+cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode + ' --sharedmap=' + sharedmap
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr, sharedmap"
+if so == None :
+    print "not ok shared"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok shared"
+    res_id = so.group('res_name')
+    test_res_id_list.append(res_id)
+    print "res_id: (%s)" % so.group('res_name')
+    res_start_time = so.group('res_time')
+    output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+    cmd = HOMEDIR + '/show_res'
+    cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d660 1
+a660 1
+    print "# query for Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr sharedmap"
+d663 1
+a663 2
+        print output
+        print returnstring
+d667 17
+@
+
+
+1.36
+log
+@smp
+@
+text
+@d173 3
+d241 2
+d309 1
+a309 1
+    print cmd_string
+d587 1
+a587 1
+end_time = "%d" % (epoch_now + 1209600)
+d623 2
+d684 1
+@
+
+
+1.35
+log
+@changed update_qos --job_step_id to --job
+@
+text
+@d80 33
+d142 31
+d178 1
+d182 1
+d195 16
+d224 14
+d265 30
+a294 3
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d297 1
+a297 1
+print "# query for 3 resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+d299 2
+a300 3
+    print "not ok"
+    print output
+    print returnstring
+d303 19
+a321 1
+    print "ok"
+d346 38
+a383 3
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + ures_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ures_id
+d386 1
+a386 1
+print "# query for user reservation"
+d388 3
+a390 3
+    print "not ok"
+    print output
+    print returnstring
+d393 7
+a399 7
+    print "ok"
+    print "canceling user_set reservation"
+    # cancel user_set reservation
+    cmd = HOMEDIR + '/user_cancel_res ' + ures_id
+    returnstring = os.popen(cmd).read()
+    # check returnstring
+    output = r"Waiting.*lock\n.*lock\n.*lock\n"
+d401 6
+a406 2
+    if so != None :
+        print "ok"
+d408 13
+a420 2
+        print "not ok"
+        print returnstring
+d447 46
+a492 26
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + igres_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + igres_id
+resreturnstring = os.popen(cmd_string).read()
+resso = re.search(output, returnstring)
+print "# show_res query for --ignore=ALL"
+if resso == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+cmd = HOMEDIR + '/cancel_res'
+cmd_string = cmd + ' --res=' + igres_id + ',' + firstigres_id
+returnstring = os.popen(cmd_string).read()
+output = r"\s*"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + ' -e '+ igres_id + ' -e ' + firstigres_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# cancel two reservations"
+if returnstring == None :
+    print "not ok"
+    print output
+    print returnstring
+d494 1
+d496 4
+a499 1
+    print "ok"
+d519 13
+a531 13
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# query for modified 4 resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+d557 2
+d565 13
+a577 13
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# query for 3 resource, 1 hour, earliest_start +1hr, latest_end +3hr"
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+d604 27
+a630 3
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d633 1
+a633 1
+print "# query for Unlimited resource, 1 hour, earliest_start +1hr, latest_end +24hr"
+d635 2
+a636 3
+    print "not ok"
+    print output
+    print returnstring
+d639 18
+a656 1
+    print "ok"
+d707 14
+a720 15
+
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# query for 3 resource, 1 hour, No earliest_start, latest_end +3hr"
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_start_time = so.group('res_time')
+d741 14
+a754 14
+output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --res=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# query for All resource, 30 day offset, 8 hour duration, system res "
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+else :
+    print "ok"
+    res_start_time = so.group('res_time')
+d811 6
+a823 6
+# update job info
+cmd = HOMEDIR + '/update_jobs'
+cmd_string = cmd
+print "# update_jobs"
+returnstring = os.popen(cmd_string).read()
+
+d927 2
+d933 1
+a933 1
+time.sleep(5)
+d949 2
+a950 1
+returnstring = os.popen(HOMEDIR + '/show_guesstimate --account=' + Catalina.TEST_ACCOUNT_STRING + ' --nodes=2 --local_admin=100000 --qos=2 | ___GREP_PLACEHOLDER___ guesstimated').read()
+d1037 1
+d1074 1
+d1123 1
+d1125 1
+d1127 1
+d1129 5
+a1133 4
+        print "# cancel_res --res=%s" % id
+        cmd = HOMEDIR + '/cancel_res'
+        cmd_string = cmd + ' --res=' + id
+        returnstring = os.popen(cmd_string).read()
+@
+
+
+1.34
+log
+@*** empty log message ***
+@
+text
+@d600 1
+a600 1
+cmd_string = cmd + ' --job_step_id=' + job_step_name + ' --QOS=8'
+@
+
+
+1.33
+log
+@added run_at_risk
+@
+text
+@d65 1
+a65 1
+cmd_string = cmd + ' --latency=' + latency + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation
+d67 1
+d86 2
+a87 1
+job_restriction = r"'if input_tuple[0][\'job_class\'] == \'interactive\' and input_tuple[0][\'wall_clock_limit\'] <= 1800 : result = 0'"
+d94 1
+a94 1
+cmd_string = cmd + ' --depth=' + depth + ' --start_spec=' + start_spec + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --mode=' + mode + ' --comment=' + comment + ' --affinity_calculation=' + affinity_calculation
+d96 1
+@
+
+
+1.32
+log
+@removed ~/catalina/show_q ~/catalina/bin/show_res debug statements
+@
+text
+@d531 16
+d660 2
+d763 17
+d845 8
+@
+
+
+1.31
+log
+@added test for user_set_res
+@
+text
+@a723 2
+    os.system("~/catalina/bin/show_q")
+    os.system("~/catalina/bin/show_res --job --job_rest")
+a776 2
+    os.system("~/catalina/bin/show_q")
+    os.system("~/catalina/bin/show_res --job --job_rest")
+@
+
+
+1.30
+log
+@added test for --ignore=ALL
+@
+text
+@d180 49
+d671 1
+a671 1
+returnstring = os.popen(HOMEDIR + '/show_guesstimate --account=sys200 --nodes=2 --local_admin=100000 --qos=2 | ___GREP_PLACEHOLDER___ guesstimated').read()
+@
+
+
+1.29
+log
+@diagnosis
+@
+text
+@d180 55
+@
+
+
+1.28
+log
+@strip off USERNAMESUFFIX if == @@IGNORE
+@
+text
+@d620 2
+d675 2
+@
+
+
+1.27
+log
+@changed show_guess to show_guesstimate
+@
+text
+@d24 4
+a27 1
+username_string = pwd.getpwuid(os.getuid())[0] + Catalina.USERNAMESUFFIX
+@
+
+
+1.26
+log
+@removed --reservation_name
+@
+text
+@d563 3
+a565 3
+# check show_guess command
+returnstring = os.popen(HOMEDIR + '/show_guess --account=sys200 --nodes=2 --local_admin=100000 --qos=2 | ___GREP_PLACEHOLDER___ guesstimated').read()
+print "# check show_guess command"
+@
+
+
+1.25
+log
+@bind and unbind opts fix
+@
+text
+@d675 1
+a675 1
+cmd_string = cmd + ' --reservation_name=' + bind_res_id + ' --job_step_id=' + job_step_name
+@
+
+
+1.24
+log
+@consistent opts
+@
+text
+@d452 1
+a452 1
+cmd_string = cmd + ' --reservation_name=' + bind_res_id + ' --job_step_id=' + job_step_name
+d533 1
+a533 1
+cmd_string = cmd + ' --reservation_name=testholder' + ' --job_step_id=' + job_step_name
+d535 1
+a535 1
+cmd_string = cmd + ' --reservation_name=testholder' + ' --job_step_id=' + unbound_job_id
+@
+
+
+1.23
+log
+@added --qos and --local_admin to show_guess test
+@
+text
+@d165 1
+a165 1
+cmd_string = cmd + ' --res_id=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d197 1
+a197 1
+cmd_string = cmd + ' --res_id=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d241 1
+a241 1
+cmd_string = cmd + ' --res_id=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d280 1
+a280 1
+cmd_string = cmd + ' --res_id=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d344 1
+a344 1
+cmd_string = cmd + ' --res_id=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d378 1
+a378 1
+cmd_string = cmd + ' --res_id=' + res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + res_id
+d433 1
+a433 1
+cmd_string = cmd + ' --job_step_id=' + job_id + ' --system_priority=92093'
+d606 1
+a606 1
+cmd_string = cmd + ' --runID' + ' | ___GREP_PLACEHOLDER___ ' + job_id
+d623 1
+a623 1
+cmd_string = cmd + ' --runID' + ' | ___GREP_PLACEHOLDER___ ' + unbound_job_id
+d660 1
+a660 1
+cmd_string = cmd + ' --full --runID' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+d713 1
+a713 1
+        print "# cancel_res --res_id=%s" % id
+d715 1
+a715 1
+        cmd_string = cmd + ' --res_id=' + id
+d717 1
+a717 1
+    print "# cancel_standing_res --res_id=%s" % res_id
+d719 1
+a719 1
+    cmd_string = cmd + " --res_id=%s" % res_id
+d730 1
+a730 1
+    print "# cancel_res --res_id=%s" % res_id
+d732 1
+a732 1
+    cmd_string = cmd + " --res_id=%s" % res_id
+@
+
+
+1.22
+log
+@test for show_bf and show_guess
+@
+text
+@d564 1
+a564 1
+returnstring = os.popen(HOMEDIR + '/show_guess --account=sys200 --nodes=2 | ___GREP_PLACEHOLDER___ guesstimated').read()
+@
+
+
+1.21
+log
+@system priority, look for "* " and job id
+@
+text
+@d554 18
+@
+
+
+1.20
+log
+@many changes to allow variable test parameters
+@
+text
+@d434 1
+d555 1
+a555 1
+returnstring = os.popen(HOMEDIR + '/query_priority | ___GREP_PLACEHOLDER___ 92093').read()
+@
+
+
+1.19
+log
+@fixed test of local_admin_float
+@
+text
+@d49 1
+a49 1
+start_spec = "'0 12 * * 0,1,2,3,4'"
+d51 1
+a51 1
+duration = '43200'
+d53 1
+a53 1
+resource_amount = '2'
+d60 2
+a61 1
+output = r"""standing reservation (?P<res_name>.*) created on \d+ nodes with start_spec 0 12 \* \* 0,1,2,3,4 for duration (?P<duration>.*)"""
+d78 1
+a78 1
+start_spec = "'0 12 * * 0,1,2,3,4'"
+d80 2
+a81 2
+duration = '43200'
+resource_amount = '2'
+d123 1
+a123 1
+output = r"\d\d:\d\d:\d\d 00:00:00 \d+"
+d139 1
+a139 1
+end_time = "%d" % (epoch_now + 86400)
+d141 1
+a141 1
+resource_amount = '3'
+d148 1
+a148 1
+output = r"""reservation (?P<res_name>.*) created on 3 nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)"""
+d179 2
+a180 2
+cmd_string = cmd + ' --resource_amount=4'
+output = r"""reservation (?P<res_name>.+) created on 4 nodes with start_time (?P<res_time>.+) for duration (?P<duration>.+)"""
+d215 1
+a215 1
+resource_amount = '2'
+d256 1
+a256 1
+end_time = "%d" % (epoch_now + 86400)
+d295 1
+a295 1
+end_time = "%d" % (epoch_now + 86400)
+d318 2
+a319 2
+end_time = "%d" % (epoch_now + 86400)
+resource_amount = '3'
+d393 1
+a393 1
+job = HOMEDIR + '/' + Catalina.TESTJOB
+d410 1
+a410 1
+job = HOMEDIR + '/' + Catalina.TESTJOB
+d457 1
+a457 1
+cmd = HOMEDIR + '/show_q'
+@
+
+
+1.18
+log
+@added local_user and local_admin
+@
+text
+@d566 1
+a566 1
+if job_la['priority_element_dict']['local_admin_float'] != 92091.0 :
+@
+
+
+1.17
+log
+@removed print returnstring
+@
+text
+@d450 1
+a450 1
+cmd_string = cmd + ' --reservation_name=' + bind_res_id + ' --job_step_name=' + job_step_name
+d490 39
+d531 1
+a531 1
+cmd_string = cmd + ' --reservation_name=testholder' + ' --job_step_name=' + job_step_name
+d533 1
+a533 1
+cmd_string = cmd + ' --reservation_name=testholder' + ' --job_step_name=' + unbound_job_id
+d562 22
+d655 1
+a655 1
+cmd_string = cmd + ' --reservation_name=' + bind_res_id + ' --job_step_name=' + job_step_name
+@
+
+
+1.16
+log
+@changed stop.ksh to stop.py
+@
+text
+@a445 1
+print returnstring
+a452 1
+print returnstring
+a492 1
+print cmd_string
+a494 1
+print cmd_string
+@
+
+
+1.15
+log
+@added --full to show_q options
+added --full to show_res options
+@
+text
+@d512 2
+a513 2
+print "# " + HOMEDIR + "/stop.ksh"
+cmd = HOMEDIR + '/stop.ksh'
+@
+
+
+1.14
+log
+@added --full and --comment to show_res
+@
+text
+@d479 1
+a479 1
+cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+d583 1
+a583 1
+cmd_string = cmd + ' --runID' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+@
+
+
+1.13
+log
+@use start.ksh and stop.ksh to do a scheduling iteration...
+@
+text
+@d179 1
+a179 1
+output = r"""reservation (?P<res_name>.*) created on 4 nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)"""
+d220 1
+a220 1
+output = r"""reservation (?P<res_name>.*) created on \d+ nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)"""
+d262 1
+a262 1
+output = r"""reservation (?P<res_name>.*) created on \d+ nodes with start_time (?P<res_time>\d+)"""
+d325 1
+a325 1
+output = r"""reservation (?P<res_name>.*) created on \d+ nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)"""
+d359 1
+a359 1
+output = r"""reservation (?P<res_name>.*) created on \d+ nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)"""
+d632 1
+a632 1
+    raw_res_ids = os.popen(HOMEDIR + '/show_res | ___GREP_PLACEHOLDER___ standing | ___GREP_PLACEHOLDER___ ' + res_id + " | ___AWK_PLACEHOLDER___ '{print $1}'").read()
+@
+
+
+1.12
+log
+@use query_priority instead of show_q for priority
+@
+text
+@d502 7
+a508 2
+print "# " + HOMEDIR + "/schedule_jobs"
+cmd = HOMEDIR + '/schedule_jobs'
+d511 5
+@
+
+
+1.11
+log
+@TZ = GMT0
+@
+text
+@a433 1
+print returnstring
+d508 1
+a508 1
+returnstring = os.popen(HOMEDIR + '/show_q | ___GREP_PLACEHOLDER___ 92093').read()
+@
+
+
+1.10
+log
+@fixed grep
+@
+text
+@d26 2
+@
+
+
+1.9
+log
+@jobs_dict line
+@
+text
+@d507 1
+a507 1
+returnstring = os.popen(HOMEDIR + '/show_q | /usr/bin/grep 92093').read()
+@
+
+
+1.8
+log
+@*** empty log message ***
+@
+text
+@d559 1
+@
+
+
+1.7
+log
+@patched
+@
+text
+@a68 1
+    #print "returnstring is (%s)" % returnstring
+a70 3
+    #bind_res_id = res_id
+    #res_start_time = so.group('res_time')
+    #bind_res_start_time = so.group('res_time')
+a83 2
+#conflict_policy_file = HOMEDIR + r"/conflict.nonjob"
+#conflict_policy_file = HOMEDIR + r"/nonconflicting"
+a95 1
+    #print "returnstring is (%s)" % returnstring
+a97 1
+    #bind_res_id = res_id
+a98 1
+    #bind_res_start_time = so.group('res_time')
+a104 1
+#print returnstring
+a156 1
+    #print "returnstring is (%s)" % returnstring
+a157 1
+    #test_res_id_list.append(res_id)
+a158 1
+    #bind_res_id = res_id
+a159 3
+    #bind_res_start_time = so.group('res_time')
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+a187 1
+    #print "returnstring is (%s)" % returnstring
+a190 1
+    #bind_res_id = res_id
+a191 4
+    #bind_res_start_time = so.group('res_time')
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+#cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d209 3
+a211 3
+start_time = "%d" % (epoch_now + 3600)
+end_time = "%d" % (epoch_now + 8640000)
+duration = '129600'
+d222 1
+a222 1
+print "# for bind test, 2 resource, 36 hour, earliest_start +1hr, latest_end +240hr, SDSC nodes only"
+a229 1
+    #print "returnstring is (%s)" % returnstring
+a233 1
+    #print "bind_res_id is (%s)" % bind_res_id
+a235 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+#cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+a274 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+#cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+a289 1
+#cmd = HOMEDIR + '/lookahead'
+a338 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+#cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+a372 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+#cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+a388 1
+#cmd = '/usr/lpp/LoadL/full/bin/llsubmit'
+a425 5
+#if returnstring != '' :
+#    print "not ok"
+#    print returnstring
+#else :
+#    print "ok"
+a504 1
+#print returnstring
+a515 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: \S+" + r" job_runID: (?P<runID>.*)"
+#cmd_string = cmd + ' --runID' + ' | ___GREP_PLACEHOLDER___ ' + job_id
+a532 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: \S+" + r" job_runID: (?P<runID>.*)"
+#cmd_string = cmd + ' --runID' + ' | ___GREP_PLACEHOLDER___ ' + unbound_job_id
+a568 3
+#cmd = HOMEDIR + '/query_res'
+#output = "res_id: " + r"(?P<res_id>.*) start_time: (?P<res_time>.*)" + r" job_runID: (?P<runID>.*)"
+#cmd_string = cmd + ' --runID' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+d602 2
+a603 3
+# llcancel the bound job
+print "# llcancel %s" % job_step_name
+#cmd = 'llcancel'
+d610 2
+a611 3
+# llcancel the unbound job
+print "# llcancel %s.0" % unbound_job_id
+#cmd = 'llcancel'
+@
+
+
+1.6
+log
+@*** empty log message ***
+@
+text
+@a38 12
+# update job info
+cmd = HOMEDIR + '/update_jobs'
+cmd_string = cmd
+print "# update_jobs"
+returnstring = os.popen(cmd_string).read()
+
+# update job priorities
+cmd = HOMEDIR + '/update_job_priorities'
+cmd_string = cmd
+print "# update_job_priorities"
+returnstring = os.popen(cmd_string).read()
+
+d232 2
+a233 2
+end_time = "%d" % (epoch_now + 864000)
+duration = '3600'
+d244 1
+a244 1
+print "# for bind test, 2 resource, 1 hour, earliest_start +1hr, latest_end +24hr, SDSC nodes only"
+d475 1
+a475 11
+#if returnstring != '' :
+#    print "not ok"
+#    print returnstring
+#else :
+#    print "ok"
+returnstring = os.popen(HOMEDIR + '/show_q | ___GREP_PLACEHOLDER___ 92093').read()
+if returnstring != '' :
+    print "ok"
+else :
+    print "not ok"
+    print returnstring
+d477 5
+d483 6
+d496 1
+d534 9
+d550 10
+d608 1
+a608 5
+cmd = HOMEDIR + '/show_q'
+cmd_string = cmd + ' --dump' + ' | ___GREP_PLACEHOLDER___ ' + bind_res_id + ' | ___GREP_PLACEHOLDER___ ' + job_step_name + " | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+raw_returnstring = os.popen(cmd_string).read()
+string.strip(raw_returnstring)
+returnstring = raw_returnstring[:-1]
+d610 1
+a610 1
+if returnstring != '1' :
+d616 1
+d644 2
+a645 5
+cmd = HOMEDIR + '/show_q'
+cmd_string = cmd + ' --dump' + ' | ___GREP_PLACEHOLDER___ ' + bind_res_id + ' | ___GREP_PLACEHOLDER___ ' + job_step_name + " | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+raw_returnstring = os.popen(cmd_string).read()
+string.strip(raw_returnstring)
+returnstring = raw_returnstring[:-1]
+d647 1
+a647 1
+if returnstring != '0' :
+d653 1
+d660 1
+d662 1
+d668 2
+a669 1
+cmd_string = cmd + ' ' + unbound_job_id + Catalina.JOBSUFFIX
+d671 1
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d576 1
+a576 1
+cmd_string = cmd + ' --runID' + '___GREP_PLACEHOLDER___ ' + unbound_job_id
+@
+
+
+1.4
+log
+@removed debug_unlimited_reservation
+@
+text
+@a388 1
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+a425 1
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+d492 1
+a492 1
+returnstring = os.popen(HOMEDIR + '/query_jobs | ___GREP_PLACEHOLDER___ 92093').read()
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@d300 1
+a300 2
+#cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --mode=' + mode
+cmd_string = HOMEDIR + '/debug_unlimited_reservation'
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d65 1
+a65 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file"
+d96 1
+a96 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file"
+d127 1
+a127 1
+cmd = HOMEDIR + '/query_res'
+d129 1
+a129 1
+cmd_string = cmd + ' --purpose' + ' --start' + ' --end' + ' --nodes' + ' --readable' + " | ___GREP_PLACEHOLDER___ standing_reservation | ___AWK_PLACEHOLDER___ '{print $2,$7,$13,$16}'"
+d162 1
+a162 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file"
+d186 5
+a190 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d223 6
+a228 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d248 1
+a248 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file.testjob8"
+d272 6
+a277 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d295 1
+a295 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file"
+d315 6
+a320 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d333 2
+a334 1
+cmd = HOMEDIR + '/lookahead'
+d339 1
+a339 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file"
+d342 1
+a342 1
+mode = 'real'
+d363 1
+a363 1
+node_restriction_file = HOMEDIR + r"/node_restriction_file"
+d383 6
+a388 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d421 6
+a426 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + res_id + r" start_time: (?P<res_time>\d+\.?\d*)"
+cmd_string = cmd + ' --res_id=' + res_id + ' --start'
+d512 2
+a513 1
+cmd = HOMEDIR + '/query_jobs'
+d516 1
+a516 1
+output = "#cat_delim#2#cat_delim#"
+d533 1
+a533 1
+cmd = HOMEDIR + '/query_jobs'
+d536 1
+a536 1
+output = "#cat_delim#8#cat_delim#"
+d554 5
+a558 2
+cmd = HOMEDIR + '/query_res'
+output = "res_id: \S+" + r" job_runID: (?P<runID>.*)"
+d574 6
+a579 3
+cmd = HOMEDIR + '/query_res'
+output = "res_id: \S+" + r" job_runID: (?P<runID>.*)"
+cmd_string = cmd + ' --runID' + ' | ___GREP_PLACEHOLDER___ ' + unbound_job_id
+d602 2
+a603 2
+cmd = HOMEDIR + '/query_jobs'
+cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + bind_res_id + ' | ___GREP_PLACEHOLDER___ ' + job_step_name + " | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+d616 5
+a620 2
+cmd = HOMEDIR + '/query_res'
+output = "res_id: " + r"(?P<res_id>.*) start_time: (?P<res_time>.*)" + r" job_runID: (?P<runID>.*)"
+d641 2
+a642 2
+cmd = HOMEDIR + '/query_jobs'
+cmd_string = cmd + ' | ___GREP_PLACEHOLDER___ ' + bind_res_id + ' | ___GREP_PLACEHOLDER___ ' + job_step_name + " | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d24 1
+a24 1
+username_string = pwd.getpwuid(os.getuid())[0] + '___USERNAME_SUFFIX_PLACEHOLDER___'
+d424 2
+a425 2
+cmd = '___JOB_SUBMIT_PLACEHOLDER___'
+job = HOMEDIR + '/___TESTJOB_PLACEHOLDER___'
+d427 1
+a427 1
+output = r"___SUBMIT_OUTPUT_PLACEHOLDER___"
+d438 1
+a438 1
+    job_id = so.group('job_id') + '___JOB_SUFFIX_PLACEHOLDER___'
+d441 3
+a443 3
+cmd = '___JOB_SUBMIT_PLACEHOLDER___'
+job = HOMEDIR + '/___TESTJOB_PLACEHOLDER___'
+output = r"___SUBMIT_OUTPUT_PLACEHOLDER___"
+d454 1
+a454 1
+    unbound_job_id = so.group('job_id') + '___JOB_SUFFIX_PLACEHOLDER___'
+d629 1
+a629 1
+cmd = '___JOB_CANCEL_PLACEHOLDER___'
+d636 2
+a637 2
+cmd = '___JOB_CANCEL_PLACEHOLDER___'
+cmd_string = cmd + ' ' + unbound_job_id + '___JOB_SUFFIX_PLACEHOLDER___'
+@

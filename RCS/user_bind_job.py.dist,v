@@ -1,0 +1,78 @@
+head	1.2;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.2
+date	2004.10.11.21.07.19;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2004.08.17.15.57.29;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@Python script to allow a user to bind a job to a list of reservations
+@
+
+
+1.2
+log
+@close events db
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# script for a user to bind a reservation to a list of jobs
+
+import sys
+import Catalina
+import time
+import string
+import re
+import os
+import pwd
+import signal
+
+signal.signal(signal.SIGTSTP,signal.SIG_IGN)
+events_db_handle = Catalina.open_db(Catalina.EVENTS_DB,'write')
+jobs_db_handle = Catalina.open_db(Catalina.JOBS_DB,'write')
+
+job_id_string = sys.argv[1]
+
+username_string = pwd.getpwuid(os.getuid())[0]
+
+# Check for username in job_id
+old_job = Catalina.get_object(job_id_string, jobs_db_handle)
+if not old_job['user'] == username_string :
+    print "job (%s) has other user (%s)!" % \
+     (job_id_string, old_job['user'])
+    print "Job has not been bound!"
+    Catalina.close_db(jobs_db_handle)
+    Catalina.close_db(events_db_handle)
+    sys.exit(1)
+
+# If reached here, bind reservation
+
+res_list = string.split(sys.argv[2], ',')
+
+for res in res_list :
+    Catalina.bind_job_to_reservation(job_id_string, res, events_db_handle, jobs_db_handle)
+
+Catalina.close_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d28 1
+d39 1
+@

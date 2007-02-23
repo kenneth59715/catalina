@@ -1,0 +1,31 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to cancel a reservation, given a res_id
+
+import getopt
+import sys
+import Catalina
+
+STANDING_RESERVATIONS_DB = Catalina.STANDING_RESERVATIONS_DB
+
+options = ['res=']
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+usage_string = \
+"""Usage: cancel_standing_res [--res=<res id>]
+                              [--?]
+                              [--help]"""
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+if not argdict.has_key('--res') :
+    print "--res=<res_id> required!"
+    sys.exit(1)
+else :
+    db_handle = Catalina.open_db(STANDING_RESERVATIONS_DB,'write');
+    Catalina.delete_object(argdict['--res'], db_handle)
+    Catalina.close_db(db_handle)

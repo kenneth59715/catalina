@@ -1,0 +1,980 @@
+head	1.30;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.30
+date	2007.01.25.19.35.49;	author mmargo;	state Exp;
+branches;
+next	1.29;
+
+1.29
+date	2006.11.21.22.57.18;	author mmargo;	state Exp;
+branches;
+next	1.28;
+
+1.28
+date	2002.11.07.18.45.11;	author kenneth;	state Exp;
+branches;
+next	1.27;
+
+1.27
+date	2002.11.03.17.58.57;	author kenneth;	state Exp;
+branches;
+next	1.26;
+
+1.26
+date	2002.11.01.19.39.57;	author kenneth;	state Exp;
+branches;
+next	1.25;
+
+1.25
+date	2002.06.19.23.21.48;	author kenneth;	state Exp;
+branches;
+next	1.24;
+
+1.24
+date	2002.03.13.17.57.05;	author kenneth;	state Exp;
+branches;
+next	1.23;
+
+1.23
+date	2002.03.11.17.22.32;	author kenneth;	state Exp;
+branches;
+next	1.22;
+
+1.22
+date	2002.02.27.23.49.34;	author kenneth;	state Exp;
+branches;
+next	1.21;
+
+1.21
+date	2002.02.27.01.29.50;	author kenneth;	state Exp;
+branches;
+next	1.20;
+
+1.20
+date	2002.02.22.20.18.30;	author kenneth;	state Exp;
+branches;
+next	1.19;
+
+1.19
+date	2002.02.22.20.17.55;	author kenneth;	state Exp;
+branches;
+next	1.18;
+
+1.18
+date	2002.02.05.22.46.06;	author kenneth;	state Exp;
+branches;
+next	1.17;
+
+1.17
+date	2002.02.05.22.09.36;	author kenneth;	state Exp;
+branches;
+next	1.16;
+
+1.16
+date	2002.01.17.21.43.28;	author kenneth;	state Exp;
+branches;
+next	1.15;
+
+1.15
+date	2002.01.16.20.57.12;	author kenneth;	state Exp;
+branches;
+next	1.14;
+
+1.14
+date	2002.01.16.20.52.25;	author kenneth;	state Exp;
+branches;
+next	1.13;
+
+1.13
+date	2002.01.11.20.22.46;	author kenneth;	state Exp;
+branches;
+next	1.12;
+
+1.12
+date	2002.01.11.20.20.43;	author kenneth;	state Exp;
+branches;
+next	1.11;
+
+1.11
+date	2001.12.14.18.39.12;	author kenneth;	state Exp;
+branches;
+next	1.10;
+
+1.10
+date	2001.12.14.18.25.08;	author kenneth;	state Exp;
+branches;
+next	1.9;
+
+1.9
+date	2001.11.28.22.05.48;	author kenneth;	state Exp;
+branches;
+next	1.8;
+
+1.8
+date	2001.11.27.00.12.31;	author kenneth;	state Exp;
+branches;
+next	1.7;
+
+1.7
+date	2001.11.07.20.38.10;	author kenneth;	state Exp;
+branches;
+next	1.6;
+
+1.6
+date	2001.11.01.00.15.20;	author kenneth;	state Exp;
+branches;
+next	1.5;
+
+1.5
+date	2001.09.12.23.52.56;	author kenneth;	state Exp;
+branches;
+next	1.4;
+
+1.4
+date	2001.09.12.22.59.45;	author kenneth;	state Exp;
+branches;
+next	1.3;
+
+1.3
+date	2001.09.11.22.21.38;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2001.09.11.22.09.56;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.11.19.46.03;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@config file
+@
+
+
+1.30
+log
+@add feature 669 MACHINE_REFRESH_INTERVAL
+mmargo
+@
+text
+@[main]
+# Example project account checking script.  Only used by
+# user_set_res.py.  Set this to the path of an executable
+# that will take arguments:
+# username=<username of job owner> account=<charge account> su=<charge units integer>
+# return 1 for rejection.
+RESLIST_CMD=/work/kenneth/cattest/install/reslist
+
+# Settings for warning emails
+MAIL_RECIPIENT=kenneth
+MAILX=/usr/bin/mailx
+ECHO=/usr/bin/echo
+
+# Owner and group for lock files
+CAT_LOCK_OWNER=kenneth
+CAT_LOCK_GROUP=sys200
+
+# Server mode. 'NORMAL' means really cancel and run
+# jobs, otherwise, just log.
+# 'SIM' means get job and resource info from sim commands instead
+# of from a real resource manager.
+SERVERMODE=TEST
+
+# Feature 669
+# Allows administrator to set the interval between reload_job_resource_lists()
+# function call. minimum is 1. Greater value speeds up Catalina in the expense
+# of accuracy (especially on DS)
+MACHINE_REFRESH_INTERVAL=1
+
+
+# For simulation mode, query job command and query machine command
+QJ_SIM=/work/kenneth/cattest/install/qj_sim
+QM_SIM=/work/kenneth/cattest/install/qm_sim
+
+DEBUG=None
+# Catalina install directory
+HOMEDIR=/work/kenneth/cattest/install
+# Large directory, for storing archive db files
+ARCHIVE_DIR=/work/kenneth/cattest/archive
+# this config file
+CONFIGFILE=%(HOMEDIR)s/catalina.config
+
+# Database information
+CONFIGURATION_DB=configuration
+CONFIGURED_RESOURCES_DB=configured_resources
+EVENTS_DB=events
+JOBS_DB=jobs
+OLD_JOBS_DB=old_jobs
+OLD_RESERVATIONS_DB=old_reservations
+RESERVATIONS_DB=reservations
+RESOURCE_DB=resource
+STANDING_RESERVATIONS_DB=standing_reservations
+LOCK_SUFFIX=.lock
+
+# Policy
+# ON = enforce max jobs running per user.  All other queued
+# jobs for that user go into non-queued
+MAXJOBPERUSERPOLICY=ON
+# number of running jobs to allow each user
+MAXJOBPERUSERCOUNT=4
+# ON = enforce max jobs queued per user.  All other non-running
+# jobs go in to non-queued
+MAXJOBQUEUEDPERUSERPOLICY=ON
+# number of queued jobs to allow each user
+MAXJOBQUEUEDPERUSERCOUNT=4
+# ON = enforce max jobs running per account.  All other queued
+# jobs for that account go into non-queued
+MAXJOBPERACCOUNTPOLICY=ON
+# number of running jobs to allow each account
+MAXJOBPERACCOUNTCOUNT=4
+# ON = enforce max jobs queued per account.  All other non-running
+# jobs go in to non-queued
+MAXJOBQUEUEDPERACCOUNTPOLICY=ON
+# number of queued jobs to allow each user
+MAXJOBQUEUEDPERACCOUNTCOUNT=4
+# ON = enforce requirements check.  If job does not find any
+# resources, job goes into non-queued.
+BADRESOURCELIST=ON
+# seconds to pad reservations with.  job reservations are longer
+# than actual requested wallclock limit by this amount.
+FUDGE_FACTOR=600.0
+# seconds job may exceed its wall clock limit
+MAXJOBOVERRUN=120.0
+# global max priority value.  Jobs may not have a priority larger
+# than this.
+MAXPRIORITY=2000000000000000
+# sort code for choosing among possible nodes
+# last_available will choose the nodes that free up at
+# the latest time.  This preserves the largest backfill window.
+NODE_SORT_POLICY_CODE_FILE=%(HOMEDIR)s/last_available
+# number of jobs to set reservation for.  None means
+# set for all eligible jobs
+RESERVATION_DEPTH=None
+# max bytes for each db file before archiving
+DBSIZE_LIMIT=5000000
+# Latest time considered for scheduling, in seconds from now.
+SCHEDULING_WINDOW = 7776000.0
+# Timeouts for job start and down nodes in seconds
+JOB_START_TIME_LIMIT=900.0
+DB_WARN_LIMIT=3
+RESOURCE_DOWN_TIME_LIMIT=900.0
+LOST_JOB_LIMIT=43200
+LOST_JOB_WARN=TRUE
+#Recommended for PBS (PBS does not keep info of completed jobs):
+#JOB_START_WARN_LIMIT=3
+#DB_WARN_LIMIT=3
+#JOB_START_TIME_LIMIT=5.0
+#LOST_JOB_LIMIT=0
+#LOST_JOB_WARN=FALSE
+
+# Priority
+# Priority Calculation:
+#(time in seconds, resource in nodes)
+#priority =
+#resource_number      * Resource_Weight                    +
+#local_admin_float    * Local_Admin_Weight                 +
+#local_user_float     * Local_User_Weight                  +
+#expansion_factor     * Expansion_Factor_Weight            +
+#queue_wait_time      * System_Queue_Time_Weight           +
+#submit_wait_time     * Submit_Time_Weight                 +
+#wall_clock_time      * Wall_Time_Weight                   +
+#QOS_priority         * QOS_Priority_Weight                +
+#QOS_target_xf_value  * QOS_Target_Expansion_Factor_Weight +
+#QOS_target_qwt_value * QOS_Target_Queue_Wait_Time_Weight  +
+#local_admin_float    * QOS_LOCAL_ADMIN_WEIGHT             +
+#fairshare_value      * Fairshare_Bonus_Weight
+
+RESOURCE_WEIGHT=11000.0
+EXPANSION_FACTOR_WEIGHT=1.0
+SYSTEM_QUEUE_TIME_WEIGHT=0.1
+SUBMIT_TIME_WEIGHT=0.0
+LOCAL_USER_WEIGHT=0.0
+FAIRSHARE_BONUS_WEIGHT = 0.0
+
+
+# Moved to QOS based setting. Do not use!.
+#LOCAL_ADMIN_WEIGHT=0.0
+
+WALL_TIME_WEIGHT=0.0
+QOS_PRIORITY_WEIGHT = 6000.0
+QOS_TARGET_EXPANSION_FACTOR_WEIGHT = 1.0
+QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT = 1.0
+
+# each QOS has a starting priority value
+QOS_PRIORITY_STRING = { '0' : 0,
+                 '1' : 1,
+                 '2' : 2,
+                 '3' : 3,
+                 '4' : 4,
+                 '5' : 5,
+                 '6' : 3,
+                 '7' : 3,
+                 '8' : 4,
+                 '9' : 4,
+                '10' : 5
+                }
+# each QOS has a max priority
+QOS_MAX_PRIORITY_STRING = { '0' : 1000000000000L,
+                 '1' : 1000000000000L,
+                 '2' : 1000000000000L,
+                 '3' : 1000000000000L,
+                 '4' : 1000000000000L,
+                 '5' : 1000000000000L,
+                 '6' : 1000000000000L,
+                 '7' : 1000000000000L,
+                 '8' : 1000000000000L,
+                 '9' : 1000000000000L,
+                '10' : 1000000000000L
+                }
+# each QOS may have a target expansion factor
+QOS_TARGETXF_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : 1.3,
+                 '8' : None,
+                 '9' : None,
+                '10' : None
+                }
+# each QOS may have a target queue wait time
+QOS_TARGETQT_STRING = { '0' : None,
+                 '1' : None,
+                 '2' : None,
+                 '3' : None,
+                 '4' : None,
+                 '5' : None,
+                 '6' : None,
+                 '7' : 86400.0,
+                 '8' : None,
+                 '9' : None,
+                '10' : None
+                }
+# each QOS may have a max running jobs per user policy
+QOS_MAXJOBPERUSERPOLICY_STRING = { '0' : 4,
+                 '1' : 4,
+                 '2' : 4,
+                 '3' : 4,
+                 '4' : 4,
+                 '5' : 4,
+                 '6' : 4,
+                 '7' : 4,
+                 '8' : 4,
+                 '9' : None,
+                '10' : 4
+                }
+# each QOS may have a max queued jobs per user policy
+QOS_MAXJOBQUEUEDPERUSERPOLICY_STRING = { '0' : 4,
+                 '1' : 4,
+                 '2' : 4,
+                 '3' : 4,
+                 '4' : 4,
+                 '5' : 4,
+                 '6' : 4,
+                 '7' : 4,
+                 '8' : 4,
+                 '9' : None,
+                '10' : 4
+                }
+
+# each QOS may have a max running jobs per account policy
+QOS_MAXJOBPERACCOUNTPOLICY_STRING = { '0' : 4,
+                 '1' : 4,
+                 '2' : 4,
+                 '3' : 4,
+                 '4' : 4,
+                 '5' : 4,
+                 '6' : 4,
+                 '7' : 4,
+                 '8' : 4,
+                 '9' : None,
+                '10' : 4
+                }
+# each QOS may have a max queued jobs per account policy
+QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_STRING = { '0' : 4,
+                 '1' : 4,
+                 '2' : 4,
+                 '3' : 4,
+                 '4' : 4,
+                 '5' : 4,
+                 '6' : 4,
+                 '7' : 4,
+                 '8' : 4,
+                 '9' : None,
+                '10' : 4
+                }
+
+
+# each QOS may have a local admin weight factor.
+# Local admin weight factor influence job's priority for each QOS.
+# This value is multiplied by amount of user's SUs (= local_admin_float)
+#
+# priority += local_admin_weight * local_admin_float
+QOS_LOCAL_ADMIN_WEIGHT_STRING = { '0' : 0.04,
+                 '1' : 0.04,
+                 '2' : 0.04,
+                 '3' : 0.04,
+                 '4' : 0.04,
+                 '5' : 0.04,
+                 '6' : 0.04,
+                 '7' : 0.04,
+                 '8' : 0.04,
+                 '9' : None,
+                '10' : 0.04
+                }
+
+
+                 
+# for PBS
+# used by testresL9.py for test job name
+#SUBMITCMD = /usr/local/bin/qsub -q standard
+#CANCELCMD = /usr/local/bin/qsub -q standard
+#TEST_JOB = testjob.PBS.1
+#USERNAMESUFFIX = @@yylogin
+# Translate PBS node states to Catalina node states
+#RM_TO_CAT_RESOURCE_DICT_STRING = {
+#  'free' : 'Idle',
+#  'Idle' : 'Idle',
+#  'down' : 'Down',
+#  'Down' : 'Down',
+#  'state-unknown,down' : 'Down',
+#  'offline' : 'Down',
+#  'busy' : 'Running',
+#  'Running' : 'Running',
+#  'job-exclusive' : 'Running',
+#  'job-sharing' : 'Running'
+#  }
+# Translate PBS job states to Catalina node states
+#RM_TO_CAT_JOB_DICT_STRING = {
+#  'qtime' : 'Submit_Time',
+#  'R' : 'Running',
+#  'E' : 'Running',
+#  'H' : 'Hold',
+#  'Q' : 'Idle',
+#  'S' : 'Hold',
+#  'T' : 'Hold',
+#  'W' : 'Hold'
+#  }
+
+# for LL
+SUBMITCMD='/usr/lpp/LoadL/full/bin/llsubmit'
+CANCELCMD='/usr/lpp/LoadL/full/bin/llcancel'
+TEST_JOB = testjob.LL
+USERNAMESUFFIX = 
+LOADL_ADMIN_FILE=/paci/loadl/LoadL_admin
+# Translate LoadL node states to Catalina node states
+RM_TO_CAT_RESOURCE_DICT_STRING = {
+  'None' : 'None',
+  'Idle' : 'Idle',
+  'Down' : 'Down',
+  'Drain' : 'Drain',
+  'Draining' : 'Draining',
+  'Busy' : 'Running',
+  'Running' : 'Running',
+  'Starting' : 'Running'
+  }
+# Translate LoadL job states to Catalina node states
+RM_TO_CAT_JOB_DICT_STRING = {
+  'submittime' : 'Submit_Time',
+  'Running' : 'Running',
+  'Canceled' : 'Canceled',
+  'Completed' : 'Completed',
+  'Removed' : 'Removed',
+  'Remove_Pending' : 'Running',
+  'Starting' : 'Running',
+  'Hold' : 'Hold',
+  'Idle' : 'Idle'
+  }
+
+# Used by show_bf and show_q to make assumptions.
+DEFAULT_JOB_CLASS = normal
+# code used by Catalina to screen nodes.  If result = 0,
+# node is accepted.
+NODERESTCODE_STRING = 
+ import string
+ resource = input_tuple[0]
+ if resource['State'] == 'Down' : result = 'Down'
+ elif resource['State'] == 'Drain' : result = 'Drain'
+ elif resource['State'] == 'Drained' : result = 'Drained'
+ elif resource['State'] == 'None' : result = 'None'
+ elif resource['State'] == None : result = None
+ elif resource['State'] == 'Unknown' : result = 'Unknown'
+ elif resource['Max_Starters'] == 0 : result = 'Max_Starters=0'
+ else : result = 0
+# User-settable limits dictionary
+# should set number of instances, nodes/instance, seconds/instance
+# the values can be an integer, with negative meaning no limit
+USER_SET_LIMITS_DICT_STRING = {
+  'sys200' : { 'instances_int' : -1,
+                   'nodes_int' : -1,
+                 'seconds_int' : -1
+             },
+  'use300' : { 'instances_int' : 4,
+                   'nodes_int' : 32,
+                 'seconds_int' : 64800 },
+  'OTHERS' : { 'instance_int' : 3,
+                  'nodes_int' : 13,
+                'seconds_int' : 43200 }
+  }
+
+# used by user_set_res to compute potential cost of
+# a user reservation
+CLASS_PRIORITY_DICT_STRING = {
+  'interactive' : 1.8,
+  'premium' : 1.0,
+  'express' : 1.8,
+  'high' : 1.8,
+  'normal' : 1.0,
+  'low' : 0.5,
+  'standby' : 0.0,
+  'legion' : 0.0,
+  'WH' : 0.0,
+  'Diag' : 0.0,
+  'Diag0' : 0.0,
+  'Diag1' : 0.0,
+  'Diag2' : 0.0,
+  'Diag3' : 0.0,
+  'Diag4' : 0.0,
+  'Diag5' : 0.0,
+  'Diag6' : 0.0,
+  'Diag7' : 0.0,
+  'Diag8' : 0.0,
+  'Diag9' : 0.0
+  }
+# user_set_res uses this class to compute charge
+DEFAULT_RES_CLASS = express
+# user_set_res uses this proc count to compute charge
+DEFAULT_PROC_CHARGE = 8
+
+# Test config info
+TEST_SHORTPOOL_AMOUNT = 2
+TEST_SHORTPOOL_SPEC = 0 0 * * 0,1,2,3,4
+TEST_SHORTPOOL_DURATION = 43200
+TEST_STANDING_AMOUNT = 2
+TEST_STANDING_SPEC = 0 12 * * 0,1,2,3,4
+TEST_STANDING_DURATION = 43200
+TEST_USERRES_AMOUNT = 2
+TEST_USERRES_MOD_AMOUNT = 2
+TEST_USERRES_END = 1209600
+TEST_BINDING_AMOUNT = 2
+TEST_NOEARLIEST_AMOUNT = 2
+
+@
+
+
+1.29
+log
+@add fairshare penalty
+bug 582
+mmargo
+@
+text
+@d24 7
+@
+
+
+1.28
+log
+@added DB_WARN_COUNT
+@
+text
+@d117 3
+a119 1
+#QOS_target_qwt_value * QOS_Target_Queue_Wait_Time_Weight
+d126 6
+a131 1
+LOCAL_ADMIN_WEIGHT=0.0
+d136 1
+d243 21
+d265 1
+a265 1
+# used by testres9.py for test job name
+@
+
+
+1.27
+log
+@added JOB_START_WARN_LIMIT
+@
+text
+@d93 1
+d99 1
+@
+
+
+1.26
+log
+@SIM mode attributes
+@
+text
+@d97 1
+@
+
+
+1.25
+log
+@changed PBS recommended JOB_START_TIME_LIMIT to 5 sec.
+@
+text
+@d20 2
+d23 5
+d59 10
+d193 27
+@
+
+
+1.24
+log
+@added Down and state-unknown,down to RM_TO_CAT_RESOURCE_DICT_STRING
+@
+text
+@d80 1
+a80 1
+#JOB_START_TIME_LIMIT=60.0
+@
+
+
+1.23
+log
+@removed '' from USERNAMESUFFIX, removed LOCALDIR
+@
+text
+@d199 2
+@
+
+
+1.22
+log
+@reslist path change
+@
+text
+@a23 2
+# Fast disk for quickly reading and writing db files
+LOCALDIR=/tmp/test/localdisk
+d221 1
+a221 1
+USERNAMESUFFIX = ''
+@
+
+
+1.21
+log
+@added CANCELCMD
+@
+text
+@d7 1
+a7 1
+RESLIST_CMD=/usr/local/bin/reslist
+@
+
+
+1.20
+log
+@added Running as a PBS job state
+@
+text
+@d193 1
+d199 1
+d221 1
+@
+
+
+1.19
+log
+@added test info
+@
+text
+@d201 1
+@
+
+
+1.18
+log
+@added SCHEDULING_WINDOW
+@
+text
+@d192 2
+d217 2
+d304 13
+@
+
+
+1.17
+log
+@added comments
+@
+text
+@d74 2
+@
+
+
+1.16
+log
+@added default USERNAMESUFFIX for LoadL
+@
+text
+@d3 4
+a6 1
+# user_set_res.py.
+d44 2
+d47 1
+d49 2
+d52 1
+d54 2
+d57 2
+a58 1
+# seconds to pad reservations with
+d62 2
+a63 1
+# global max priority value
+d65 3
+a67 1
+# filenames for policy code fragments
+d79 4
+d85 14
+d191 1
+d200 1
+d215 1
+d226 1
+d239 1
+d241 2
+d254 3
+a256 3
+; User-settable limits dictionary
+; should set number of instances, nodes/instance, seconds/instance
+; the values can be an integer, with negative meaning no limit
+d269 3
+d294 1
+d296 1
+@
+
+
+1.15
+log
+@added spaces to fix parse problem
+@
+text
+@d178 1
+@
+
+
+1.14
+log
+@added some stuff for user_set_res
+@
+text
+@d227 1
+a227 1
+}
+@
+
+
+1.13
+log
+@LOST_JOB_WARN True to TRUE
+@
+text
+@d213 40
+@
+
+
+1.12
+log
+@added LOST_JOB_WARN
+@
+text
+@d63 1
+a63 1
+LOST_JOB_WARN=True
+@
+
+
+1.11
+log
+@added comma for 'None' : 'None'
+@
+text
+@d63 1
+@
+
+
+1.10
+log
+@added 'None' : 'None' to resource translation dictionary
+@
+text
+@d179 1
+a179 1
+  'None' : 'None'
+@
+
+
+1.9
+log
+@added NODERESTCODE
+@
+text
+@d179 1
+@
+
+
+1.8
+log
+@added local_admin, local_user, wall_time priority elements,
+lost job limit
+@
+text
+@d156 19
+a174 19
+USERNAMESUFFIX = @@yylogin
+RM_TO_CAT_RESOURCE_DICT_STRING = {
+  'free' : 'Idle',
+  'down' : 'Down',
+  'offline' : 'Down',
+  'busy' : 'Running',
+  'job-exclusive' : 'Running',
+  'job-sharing' : 'Running'
+  }
+RM_TO_CAT_JOB_DICT_STRING = {
+  'qtime' : 'Submit_Time',
+  'R' : 'Running',
+  'E' : 'Running',
+  'H' : 'Hold',
+  'Q' : 'Idle',
+  'S' : 'Hold',
+  'T' : 'Hold',
+  'W' : 'Hold'
+  }
+d198 13
+@
+
+
+1.7
+log
+@cleaned up a bit
+@
+text
+@d62 1
+d66 6
+a71 3
+EXPANSION_FACTOR_WEIGHT = 1.0
+SYSTEM_QUEUE_TIME_WEIGHT = 0.1
+SUBMIT_TIME_WEIGHT = 0.0
+@
+
+
+1.6
+log
+@added more job states
+@
+text
+@d2 15
+d19 1
+d21 1
+d23 1
+d25 1
+a25 2
+LOADL_ADMIN_FILE=/paci/loadl/LoadL_admin
+USERNAMESUFFIX = @@yylogin
+d27 2
+d38 9
+d48 1
+d50 1
+d52 1
+d54 2
+a55 2
+NODE_RESTRICTION_FILE=%(HOMEDIR)s/node_restriction_file
+CONFLICT_POLICY_CODE_FILE=%(HOMEDIR)s/nonconflicting
+d57 1
+d59 1
+a59 7
+RESLIST_CMD=/usr/local/bin/reslist
+MAIL_RECIPIENT=kenneth
+MAILX=/usr/bin/mailx
+ECHO=/usr/bin/echo
+LOCK_SUFFIX=.lock
+CAT_LOCK_OWNER=kenneth
+CAT_LOCK_GROUP=sys200
+d62 2
+a63 5
+MAXJOBPERUSERPOLICY=ON
+MAXJOBPERUSERCOUNT=4
+MAXJOBQUEUEDPERUSERPOLICY=ON
+MAXJOBQUEUEDPERUSERCOUNT=4
+BADRESOURCELIST=ON
+d71 1
+d84 1
+d97 1
+d110 1
+d123 1
+d136 1
+d151 2
+d173 1
+d189 1
+@
+
+
+1.5
+log
+@*** empty log message ***
+@
+text
+@d154 3
+@
+
+
+1.4
+log
+@removed BATCH_POLICY_CODE_FILE
+@
+text
+@d6 1
+a25 1
+ARCHIVE_DIR=/work/kenneth/cattest/archive
+a27 1
+QUERYMACHINES=%(HOMEDIR)s/ibmqm
+@
+
+
+1.3
+log
+@*** empty log message ***
+@
+text
+@a20 1
+BATCH_POLICY_CODE_FILE=%(HOMEDIR)s/batch_policy
+@
+
+
+1.2
+log
+@*** empty log message ***
+@
+text
+@d123 1
+a123 1
+
+d141 18
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d7 1
+d122 1
+@

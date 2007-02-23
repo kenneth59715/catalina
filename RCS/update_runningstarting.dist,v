@@ -1,0 +1,92 @@
+head	1.3;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.3
+date	2005.03.28.20.07.04;	author kenneth;	state Exp;
+branches;
+next	1.2;
+
+1.2
+date	2004.02.05.17.56.04;	author kenneth;	state Exp;
+branches;
+next	1.1;
+
+1.1
+date	2001.09.12.21.20.51;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@updating job states
+@
+
+
+1.3
+log
+@add preemption
+@
+text
+@#!___PYTHON_PATH_PLACEHOLDER___
+# script to update reservations for running and starting jobs
+
+import Catalina
+
+#RESOURCES_DB = 'resource'
+#JOBS_DB = 'jobs'
+#EVENTS_DB = 'events'
+#RESERVATIONS_DB = 'reservations'
+
+RESOURCES_DB = Catalina.RESOURCE_DB
+JOBS_DB = Catalina.JOBS_DB
+EVENTS_DB = Catalina.EVENTS_DB
+RESERVATIONS_DB = Catalina.RESERVATIONS_DB
+
+events_db_handle = Catalina.open_db(EVENTS_DB,'read')
+jobs_db_handle = Catalina.open_db(JOBS_DB,'read')
+reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+resources_db_handle = Catalina.open_db(RESOURCES_DB,'read')
+
+(eligible_jobs, runningstarting_jobs) = Catalina.get_eligible_and_running_jobs(jobs_db_handle,
+  resources_db_handle, reservations_db_handle)
+Catalina.update_running_reservations(runningstarting_jobs, reservations_db_handle, resources_db_handle, jobs_db_handle, events_db_handle)
+
+
+Catalina.close_db(resources_db_handle)
+Catalina.close_db(reservations_db_handle)
+Catalina.close_db(jobs_db_handle)
+Catalina.close_db(events_db_handle)
+@
+
+
+1.2
+log
+@smp
+@
+text
+@d6 4
+a9 3
+RESOURCES_DB = 'resource'
+JOBS_DB = 'jobs'
+RESERVATIONS_DB = 'reservations'
+d11 6
+d23 1
+a23 1
+Catalina.update_running_reservations(runningstarting_jobs, reservations_db_handle, resources_db_handle)
+d29 1
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@d16 1
+a16 1
+Catalina.update_running_reservations(runningstarting_jobs, reservations_db_handle)
+@

@@ -1,0 +1,295 @@
+# Almost certainly will need to change these:
+MANPATH=/home/kenneth/catalina/test/man
+INSTALLDIR=/home/kenneth/catalina/test/install
+ARCHIVEDIR=/home/kenneth/catalina/test/archive
+
+# resource manager settings for LL
+RESOURCEMANAGER=LL
+RMLIBDIRS=-L/usr/lpp/LoadL/full/lib
+RMINCDIRS=-I/usr/lpp/LoadL/full/include
+RMLIBS=-lllapi -lm
+
+# resource manager settings for PBS
+#RESOURCEMANAGER=PBS
+#RMLIBDIRS=-L/usr/local/lib
+#RMINCDIRS=-I/usr/local/include
+#RMLIBS=-lpbs
+
+# cluster name (DS/Datastar is default)
+CLUSTER_NAME=DS ## SDSC Datastar Power4 cluster
+#CLUSTER_NAME=TG ## SDSC Teragrid IA64 linux cluster
+
+RMCFLAGS=-g $(RMLIBDIRS) $(RMINCDIRS)
+
+CATOWNER=kenneth
+# user to own lock files, enables database write
+CATLOCKOWNER=$(CATOWNER)
+# group to own lock files, enables database write
+CATLOCKGROUP=sys200
+# This is the owner of the user_* files
+# for Blue Horizon, this can be anyone, since the file will use
+# setgid security for obtaining db writing privileges
+CATUSEROWNER=$(CATOWNER)
+CATUSERGROUP=$(CATLOCKGROUP)
+# CATPERMS is the permissions for the user_* commands
+# For Blue Horizon, it should be 2755, since it's sufficient to be
+# setgid security to write to the db
+#CATUSERPERMS=2755
+CATUSERPERMS=755
+#CATUSERCFLAGS=-D__USE_UNIX98 -D_SIGNAL_H
+CATUSERCFLAGS=
+PYTHONPATH=/usr/local/bin/python
+KSHPATH=/usr/bin/ksh
+CC=/usr/local/bin/gcc
+
+# May need to change these:
+AWK=/usr/bin/awk
+WC=/usr/bin/wc
+DATE=/usr/bin/date
+NOHUP=/usr/bin/nohup
+SLEEP=/usr/bin/sleep
+GREP=/usr/bin/grep
+PS=/usr/bin/ps
+PSOPTIONS=-ef
+CP=/usr/bin/cp
+CHMOD=/usr/bin/chmod
+CHOWN=/usr/bin/chown
+MKDIR=/usr/bin/mkdir
+SED=/usr/bin/sed
+CAT=/usr/bin/cat
+FIND=/usr/bin/find
+RM=/usr/bin/rm
+STTY=/usr/bin/stty
+
+# Should not need to change anything below
+SHELL=/bin/sh
+CATALINA=Catalina.py
+CATALINA_RM=Catalina_$(RESOURCEMANAGER).py
+BINDJOB=bind_job_to_res
+CANCELRES=cancel_res
+CANCELSTANDING=cancel_standing_res
+CHECKPY=check.py
+COPYRIGHT=COPYRIGHT
+CREATERES=create_res
+CREATESTANDING=create_standing_res
+CREATESYSTEM=create_system_res
+DELJOB=del_job
+DELPIDS=del_pids
+FIRSTAVAILABLE=first_available
+INITIALIZE=initialize_dbs
+LASTAVAIL=last_available
+LOADCONFIGURED=load_configured_resources
+MOVEOLD=move_old_stuff
+NODEREST=node_restriction_file.$(RESOURCEMANAGER)
+NONCONFLICTING=nonconflicting
+QJ=qj_$(RESOURCEMANAGER)
+QM=qm_$(RESOURCEMANAGER)
+QPRIORITY=query_priority
+RESLIST=reslist
+RESSTATUS=res_status
+RUNJOB=rj_$(RESOURCEMANAGER)
+RUNNINGFIRST=last_available_running_first
+SCHEDULEJOBS=catalina_schedule_jobs
+SCRATCHTEST=scratchtest.py
+SETCONFIG=set_config
+SETRES=set_res
+SHOWBF=show_bf
+SHOWFREE=show_free
+SHOWCONFIG=show_config
+SHOWEVENTS=show_events
+SHOWGUESS=show_guess
+SHOWQ=show_q
+SHOWRES=show_res
+SHOWRESOURCES=show_resources
+SHOWSTANDING=show_standing_res
+START=start.ksh
+STOP=stop.py
+TESTJOB=testjob.$(RESOURCEMANAGER)
+TESTRES=testres9.py
+UNBINDJOB=unbind_job_from_res
+UPDATEJOBS=update_jobs
+UPDATELOCALADMIN=update_local_admin
+UPDATEPRIORITIES=update_job_priorities
+UPDATEQOS=update_qos
+UPDATERESOURCES=update_resources
+UPDATERUNNING=update_runningstarting
+UPDATESTANDING=update_standing_reservations
+UPDATESYSTEM=update_system_priority
+USERBINDWRAP=user_bind_res
+USERBINDPY=user_bind_res.py
+USERUNBINDWRAP=user_unbind_res
+USERUNBINDPY=user_unbind_res.py
+USERCANCELWRAP=user_cancel_res
+USERCANCELPY=user_cancel_res.py
+USERSETWRAP=user_set_res
+USERSETPY=user_set_res.py
+
+SHOWQ_P655=showq_p655
+SHOWQ_P690=showq_p690
+
+C_EXECUTABLE_FILES = $(QJ) $(QM) $(RUNJOB) $(USERCANCELWRAP) $(USERSETWRAP) $(USERBINDWRAP) $(USERUNBINDWRAP)
+
+KSH_EXECUTABLE_FILES = $(START) $(SHOWQ_P655) $(SHOWQ_P690)
+
+PY_EXECUTABLE_FILES = $(BINDJOB) \
+	$(CANCELRES) $(CANCELSTANDING) $(CHECKPY) $(CREATERES) \
+	$(CREATESTANDING) \
+	$(CREATESYSTEM) $(DELJOB) $(DELPIDS) $(INITIALIZE) $(LOADCONFIGURED) \
+	$(MOVEOLD) $(QPRIORITY) $(RESLIST) $(RESSTATUS) \
+	$(SCHEDULEJOBS) $(SCRATCHTEST) \
+	$(SETCONFIG) $(SETRES) $(SHOWBF) $(SHOWFREE) $(SHOWCONFIG) $(SHOWEVENTS) \
+	$(SHOWGUESS) $(SHOWQ) $(SHOWRES) \
+	$(SHOWRESOURCES) \
+	$(SHOWSTANDING) $(STOP) $(TESTRES) $(UNBINDJOB) $(UPDATEJOBS) \
+	$(UPDATELOCALADMIN) \
+	$(UPDATEPRIORITIES) $(UPDATEQOS) $(UPDATERESOURCES) $(UPDATERUNNING) \
+	$(UPDATESTANDING) \
+	$(UPDATESYSTEM) $(USERBINDPY) $(USERCANCELPY) $(USERSETPY) $(USERUNBINDPY)
+
+EXECUTABLE_FILES = $(C_EXECUTABLE_FILES) $(PY_EXECUTABLE_FILES) $(KSH_EXECUTABLE_FILES)
+
+POLICY_FILES = $(NODEREST) $(NONCONFLICTING) $(RUNNINGFIRST) \
+	$(FIRSTAVAILABLE) $(LASTAVAIL) $(COPYRIGHT)
+
+PRODUCTION_FILES = $(CATALINA) $(CATALINA_RM) $(TESTJOB) \
+	$(EXECUTABLE_FILES) $(POLICY_FILES)
+
+all: MACH_SPECIFIC PYSUB KSHSUB $(C_EXECUTABLE_FILES)
+
+install: all
+	# Need to also create the initial dbs with the correct
+	# permissions
+	if \
+		test ! -d $(INSTALLDIR) ; \
+	then \
+		$(MKDIR) -p $(INSTALLDIR) ; \
+	fi
+	if \
+		test ! -d $(ARCHIVEDIR) ; \
+	then \
+		$(MKDIR) -p $(ARCHIVEDIR) ; \
+	fi
+	if \
+		test ! -d $(MANPATH)/cat1 ; \
+	then \
+		$(MKDIR) -p $(MANPATH)/cat1 ; \
+	fi
+	# cp necessary files to INSTALLDIR
+	$(CP) -f $(PRODUCTION_FILES) $(INSTALLDIR)
+	cd $(INSTALLDIR) ; $(CHMOD) 755 $(EXECUTABLE_FILES)
+	cd $(INSTALLDIR) ; $(CHMOD) 644 $(POLICY_FILES) $(TESTJOB)
+        # chmod necessary INSTALLDIR/ directories and files
+        # chown necessary INSTALLDIR/ directories and files
+	- $(CHOWN) $(CATUSEROWNER):$(CATUSERGROUP) $(INSTALLDIR)/$(USERBINDWRAP)
+	$(CHMOD) $(CATUSERPERMS) $(INSTALLDIR)/$(USERBINDWRAP)
+	- $(CHOWN) $(CATUSEROWNER):$(CATUSERGROUP) $(INSTALLDIR)/$(USERUNBINDWRAP)
+	$(CHMOD) $(CATUSERPERMS) $(INSTALLDIR)/$(USERUNBINDWRAP)
+	- $(CHOWN) $(CATUSEROWNER):$(CATUSERGROUP) $(INSTALLDIR)/$(USERCANCELWRAP)
+	$(CHMOD) $(CATUSERPERMS) $(INSTALLDIR)/$(USERCANCELWRAP)
+	- $(CHOWN) $(CATUSEROWNER):$(CATUSERGROUP) $(INSTALLDIR)/$(USERSETWRAP)
+	$(CHMOD) $(CATUSERPERMS) $(INSTALLDIR)/$(USERSETWRAP)
+
+test:
+	- $(INSTALLDIR)/$(TESTRES)
+
+$(QJ): $(QJ).c
+	$(CC) $(RMCFLAGS) -o $@ $(QJ).c $(RMLIBS)
+
+$(QJ).c: $(QJ).c.dist
+	$(CAT) $@.dist > $@
+
+$(QM): $(QM).c
+	$(CC) $(RMCFLAGS) -o $@ $(QM).c $(RMLIBS)
+
+$(QM).c: $(QM).c.dist
+	$(CAT) $@.dist > $@
+
+$(RUNJOB): $(RUNJOB).c
+	$(CC) $(RMCFLAGS) -o $@ $(RUNJOB).c $(RMLIBS)
+
+$(RUNJOB).c: $(RUNJOB).c.dist
+	$(CAT) $@.dist > $@
+
+$(USERBINDWRAP): $(USERBINDWRAP).c
+	$(CC) $(CATUSERCFLAGS) -o $@ $(USERBINDWRAP).c
+
+$(USERBINDWRAP).c: $(USERBINDWRAP).c.dist
+	$(CAT) $@.dist | $(SED) 's@___USER_BIND_RES_PLACEHOLDER___@$(INSTALLDIR)/$(USERBINDPY)@g' > $@
+
+$(USERUNBINDWRAP): $(USERUNBINDWRAP).c
+	$(CC) $(CATUSERCFLAGS) -o $@ $(USERUNBINDWRAP).c
+
+$(USERUNBINDWRAP).c: $(USERUNBINDWRAP).c.dist
+	$(CAT) $@.dist | $(SED) 's@___USER_UNBIND_RES_PLACEHOLDER___@$(INSTALLDIR)/$(USERUNBINDPY)@g' > $@
+
+# There's a problem with signal handling here
+$(USERCANCELWRAP): $(USERCANCELWRAP).c
+	$(CC) $(CATUSERCFLAGS) -o $@ $(USERCANCELWRAP).c
+
+$(USERCANCELWRAP).c: $(USERCANCELWRAP).c.dist
+	$(CAT) $@.dist | $(SED) 's@___USER_CANCEL_RES_PLACEHOLDER___@$(INSTALLDIR)/$(USERCANCELPY)@g' > $@
+
+#$(USERCANCELWRAP).o: $(USERCANCELWRAP).c
+#	$(CC) -c $(CATUSERCFLAGS) $(USERCANCELWRAP).c
+
+$(USERSETWRAP): $(USERSETWRAP).c
+	$(CC) $(CATUSERCFLAGS) -o $@ $(USERSETWRAP).c
+
+$(USERSETWRAP).c: $(USERSETWRAP).c.dist
+	$(CAT) $@.dist | $(SED) 's@___USER_SET_RES_PLACEHOLDER___@$(INSTALLDIR)/$(USERSETPY)@g' > $@
+
+#$(USERSETWRAP).o: $(USERSETWRAP).c
+#	$(CC) -c $(CATUSERCFLAGS) $(USERSETWRAP).c
+
+
+MACH_SPECIFIC
+	$(CP) -f $(SHOWBF).$(CLUSTER_NAME).dist $(SHOWBF).dist
+
+	
+PYSUB:
+	for i in $(PY_EXECUTABLE_FILES) $(CATALINA) $(CATALINA_RM) ; do \
+		$(CAT) $$i.dist | \
+		$(SED) 's@___PYTHON_PATH_PLACEHOLDER___@$(PYTHONPATH)@g' \
+		| $(SED) 's@___HOMEDIR_PLACEHOLDER___@$(INSTALLDIR)@g' \
+		| $(SED) 's@___ARCHIVEDIR_PLACEHOLDER___@$(ARCHIVEDIR)@g' \
+		| $(SED) 's@___RESOURCEMANAGER_PLACEHOLDER___@$(RESOURCEMANAGER)@g' \
+                | $(SED) 's@___QJ_PLACEHOLDER___@$(QJ)@g' \
+                | $(SED) 's@___QM_PLACEHOLDER___@$(QM)@g' \
+                | $(SED) 's@___RUNJOB_PLACEHOLDER___@$(RUNJOB)@g' \
+		| $(SED) 's@___PS_PLACEHOLDER___@$(PS)@g' \
+		| $(SED) 's@___PSOPTIONS_PLACEHOLDER___@$(PSOPTIONS)@g' \
+		| $(SED) 's@___GREP_PLACEHOLDER___@$(GREP)@g' \
+		| $(SED) 's@___CAT_PLACEHOLDER___@$(CAT)@g' \
+		| $(SED) 's@___WC_PLACEHOLDER___@$(WC)@g' \
+		| $(SED) 's@___AWK_PLACEHOLDER___@$(AWK)@g' \
+		| $(SED) 's@___DATE_PLACEHOLDER___@$(DATE)@g' \
+		| $(SED) 's@___HOMEDIR_PLACEHOLDER___@$(INSTALLDIR)@g' \
+		| $(SED) 's@___NOHUP_PLACEHOLDER___@$(NOHUP)@g' \
+		> $$i ; \
+	done
+
+KSHSUB:
+	for i in $(KSH_EXECUTABLE_FILES) ; do \
+		$(CAT) $$i.dist \
+		| $(SED) 's@___KSH_PATH_PLACEHOLDER___@$(KSHPATH)@g' \
+		| $(SED) 's@___PS_PLACEHOLDER___@$(PS)@g' \
+		| $(SED) 's@___PSOPTIONS_PLACEHOLDER___@$(PSOPTIONS)@g' \
+		| $(SED) 's@___GREP_PLACEHOLDER___@$(GREP)@g' \
+		| $(SED) 's@___WC_PLACEHOLDER___@$(WC)@g' \
+		| $(SED) 's@___AWK_PLACEHOLDER___@$(AWK)@g' \
+		| $(SED) 's@___DATE_PLACEHOLDER___@$(DATE)@g' \
+		| $(SED) 's@___HOMEDIR_PLACEHOLDER___@$(INSTALLDIR)@g' \
+		| $(SED) 's@___NOHUP_PLACEHOLDER___@$(NOHUP)@g' \
+		| $(SED) 's@___SLEEP_PLACEHOLDER___@$(SLEEP)@g' \
+		> $$i ; \
+	done
+
+clean:
+	- $(RM) *.c *.o *.py
+	- for i in $(PY_EXECUTABLE_FILES) $(CATALINA) $(CATALINA_RM) ; do \
+		if \
+		test -x $$i ; \
+		then \
+		$(RM) $$i ; \
+		fi ; \
+	done

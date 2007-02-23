@@ -1,0 +1,28 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to print release identifier
+
+import sys
+import string
+
+releaseinfo_list = ('DATESTAMP',
+                    'VERSIONHASH'
+                   )
+
+releasestrings_list = []
+
+for releasefile in releaseinfo_list :
+    try :
+        FO = file(releasefile,'r')
+        raw_info = FO.read()
+        FO.close()
+        releasestrings_list.append(string.strip(raw_info))
+    except :
+        print "%s could not be opened and read!" % releasefile
+        sys.exit(1)
+
+list_length = len(releasestrings_list)
+
+release_string = string.join(releasestrings_list,'.')
+
+print release_string
+

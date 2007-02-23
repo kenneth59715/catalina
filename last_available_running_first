@@ -1,0 +1,28 @@
+# policy for sorting reservation windows
+# in ascending start_time (first available chosen first)
+import string
+
+def sortfunc (first, second) :
+    # choose running nodes first (those with availability window
+    # start time later than Now_float)
+    if first[0] > Now_float and second[0] <= Now_float :
+        return -1
+    if second[0] > Now_float and first[0] <= Now_float :
+        return 1
+    # If reached here, the nodes are either both Idle or both Running
+    # Take the latest available, to preserve backfill window.
+    if first[0] > second[0] :
+        return -1
+    if first[0] == second[0] :
+        return 0
+    if first[0] < second[0] :
+        return 1
+
+windows = input_tuple[0]
+nodes = input_tuple[1]
+new_res = input_tuple[2]
+Now_float = input_tuple[3]
+
+windows.sort(sortfunc)
+
+result = windows

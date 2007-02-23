@@ -1,0 +1,46 @@
+head	1.1;
+access;
+symbols;
+locks; strict;
+comment	@# @;
+
+
+1.1
+date	2003.06.26.18.23.06;	author kenneth;	state Exp;
+branches;
+next	;
+
+
+desc
+@testjob for run_at_risk feature
+@
+
+
+1.1
+log
+@Initial revision
+@
+text
+@#!/usr/bin/ksh
+#@@ environment = COPY_ALL; MP_EUILIB=us; XLSMPOPTS=parthds=1:spins=0:yields=0:schedule=static;MP_CPU_USAGE=unique;AIXTHREAD_SCOPE=S;AIXTHREAD_MNRATIO=8:8;MP_SHARED_MEMORY=yes;MP_PULSE=0;RT_GRQ=ON;MP_CSS_INTERRUPT=yes;MP_INTRDELAY=100;OMP_NUM_THREADS=2
+#@@ output = LL_out.$(jobid)
+#@@ error = LL_err.$(jobid)
+#@@ initialdir = /work/kenneth
+#@@ job_type = parallel
+#@@ notify_user = kenneth@@sdsc.edu
+##@@ network.MPI = css0,not_shared,US
+#@@ node_usage = not_shared
+#@@ notification = always
+#@@ wall_clock_limit = 12:00:00
+#@@ class = normal
+#@@ account_no = sys200
+##@@ requirements = (Memory >= 4086) && (Machine == {"tf226i.sdsc.edu" "tf227i.sdsc.edu" "tf228i.sdsc.edu" }) && (Feature == "SDSC")
+#@@ requirements = (Memory >= 64)
+#@@ node = 2
+#@@ total_tasks = 8
+##@@ hold = user
+#@@ comment = Catalina_local_admin_priority = 92091 ; Catalina_local_user_priority = -100 ; Catalina_res_bind = testholder ; QOS = 7 ; Catalina_run_at_risk = 1 ;
+#@@ queue
+#/paci/sdsc/kenneth/testprog/ring.sp/ring
+poe /usr/bin/sleep 600
+@

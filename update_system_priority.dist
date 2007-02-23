@@ -1,0 +1,48 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to update system priority of a job
+# if system_priority is 0, then system priority will be canceled
+
+import Catalina
+import sys
+import getopt
+import string
+
+options = ['?', 'help', 'job=', 'system_priority=']
+
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist :
+    argdict[pair[0]] = pair[1]
+    if pair[0] == '--job' :
+        job_step_id = pair[1]
+    elif pair[0] == '--system_priority' :
+        system_priority_int = string.atoi(pair[1])
+
+usage_string = \
+"""Usage: update_system_priority --job=<job id>
+                                 --system_priority=<integer>
+                                 [--?]
+                                 [--help]"""
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+if not ( argdict.has_key('--job') and argdict.has_key('--system_priority') ) :
+    print usage_string
+    sys.exit(0)
+
+JOBS_DB = Catalina.JOBS_DB
+
+jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+try :
+    temp_job = Catalina.get_object(job_step_id, jobs_db_handle)
+except 'KeyNotFound' :
+    print "Job (%s) not found in Catalina DB" % job_step_id
+    Catalina.close_db(jobs_db_handle)
+    sys.exit(1)
+
+Catalina.set_system_priority( temp_job, system_priority_int, jobs_db_handle )
+
+Catalina.close_db(jobs_db_handle)

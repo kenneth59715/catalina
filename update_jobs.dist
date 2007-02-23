@@ -1,0 +1,12 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# script to load the jobs database
+
+import Catalina
+
+JOB_DB = 'jobs'
+
+db_handle = Catalina.open_db(JOB_DB,'write')
+Catalina.update_job_info(db_handle)
+
+
+Catalina.close_db(db_handle)

@@ -1,0 +1,27 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+import sys
+import os
+import string
+DEVNULL = open('/dev/null', 'w')
+old_stdout = sys.stdout
+sys.stdout = DEVNULL
+import Catalina
+CONFIGURATION_DB = Catalina.CONFIGURATION_DB
+configuration_db_handle = Catalina.open_ro_db(CONFIGURATION_DB,'read')
+sys.stdout = old_stdout
+configuration_dict = configuration_db_handle[0]
+if configuration_dict['state'] == 'running' :
+    cmd_string = "___PS_PLACEHOLDER___ ___PSOPTIONS_PLACEHOLDER___ | ___GREP_PLACEHOLDER___ 'catalina_schedule_jobs' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+    return_string = os.popen(cmd_string).read()
+    if string.atoi(return_string) < 1 :
+        # check again
+        cmd_string = "___PS_PLACEHOLDER___ ___PSOPTIONS_PLACEHOLDER___ | ___GREP_PLACEHOLDER___ 'catalina_schedule_jobs' | ___GREP_PLACEHOLDER___ -v grep | ___WC_PLACEHOLDER___ -l | ___AWK_PLACEHOLDER___ '{print $1}'"
+        return_string = os.popen(cmd_string).read()
+        if string.atoi(return_string) < 1 :
+            os.system('___DATE_PLACEHOLDER___')
+            print "not running!"
+            os.chdir('___HOMEDIR_PLACEHOLDER___')
+            cmd_string = "___NOHUP_PLACEHOLDER___ ./catalina_schedule_jobs --iterate >/dev/null 2>&1 &"
+            os.system(cmd_string)
+sys.stdout = DEVNULL
+Catalina.close_ro_db(configuration_db_handle)
