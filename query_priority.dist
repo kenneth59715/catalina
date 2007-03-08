@@ -80,6 +80,12 @@ job_steps = Catalina.get_object_list(db_handle)
 
 idle_jobs = filter ( lambda job : job['state'] in ['Idle', 'IDLE'], job_steps )
 
+#remedy ticket 0084513
+incomplete_info_jobs = filter (lambda job: not job.has_key('priority'), idle_jobs)
+# sanitize the job without proper attributes to prevent it from crashing sort method
+idle_jobs = filter (lambda job : job.has_key('priority'), idle_jobs)
+
+
 eligible_jobs = filter ( lambda job : job['ineligible_reason'] == 'Eligible', idle_jobs )
 ineligible_jobs = filter ( lambda job : job['ineligible_reason'] != 'Eligible', idle_jobs )
 
@@ -110,5 +116,10 @@ print "NON-QUEUED:"
 
 for job_step in ineligible_jobs :
     print_job_line(job_step)
+
+if len(incomplete_info_jobs) > 0 :
+    print "The following job are missing one ore more attribute(s)"
+    for job in incomplete_info_jobs :
+        print job['name']
 
 Catalina.close_ro_db(db_handle)

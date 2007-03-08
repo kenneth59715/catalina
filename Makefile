@@ -1,3 +1,4 @@
+SVN=/usr/local/apps/subversion-1.4.3/bin/svn
 TAR=/bin/tar
 ECHO=/bin/echo
 RM=/bin/rm -f
@@ -12,58 +13,62 @@ LN=/bin/ln
 MD5SUM=/usr/bin/md5sum
 FTP_SITE_PATH=/misc/ftp/pub/sdsc/system/catalina
 WEB_SITE_PATH=/misc/www/server/catalina
-TIMESTAMP=`$(DATE) +%Y%m%d` 
+TIMESTAMP=`$(DATE) +%Y%m%d%H%M` 
 CATALINA=catalina
 DISTFILE=dist.tar
+#TEMP_DIR_OUT=build-`$(DATE) +%Y%m%d`
+TEMP_DIR_OUT=build-catalina
+TEMP_DIR=$(TEMP_DIR_OUT)
+REPO_LOCATION=file:///projects/sysint/admin/sdsc/dev/sched/svn/repository/catalina
 
 all:
-	@ $(ECHO) "To modify any file:"
-	@ $(ECHO) "	/usr/local/bin/co -l <filename>"
-	@ $(ECHO) "	vi <filename>"
-	@ $(ECHO) "	/usr/local/bin/ci -u <filename>"
-	@ $(ECHO) "To create a tar distribution:"
-	@ $(ECHO) "	make dist"
-	@ $(ECHO) "This will create the file dist.tar"
-	@ $(ECHO) "To install a test instance:"
-	@ $(ECHO) "	cd <test directory>"
-	@ $(ECHO) "	tar xf <path to tar file>"
-	@ $(ECHO) "	cd catalina"
-	@ $(ECHO) "Read the README file for install directions"
 
 dist: clean
-	if \
-		test -e $(DISTFILE) ; \
+	@ if \
+		test -e $(TEMP_DIR) ; \
 	then \
-		$(RM) $(DISTFILE) ; \
+		$(ECHO) "This directory already exist. Please check $(TEMP_DIR), empty it and rerun"; \
+		exit 1; \
+	else \
+		mkdir $(TEMP_DIR); \
 	fi
-	if \
-		test -e DATESTAMP ; \
-	then \
-		$(RM) DATESTAMP ; \
-	fi
-	if \
-		test -e MANIFEST ; \
-	then \
-		$(RM) MANIFEST ; \
-	fi
-	if \
-		test -e VERSIONHASH ; \
-	then \
-		$(RM) VERSIONHASH ; \
-	fi
-	$(DATE) +%Y%m%d > DATESTAMP
-	$(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^VERSIONHASH$$ > MANIFEST
-	$(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > VERSIONHASH
-	cd .. ; $(TAR) cf $(CATALINA)/dist.tar --exclude Makefile --exclude RCS $(CATALINA)
+	
+	@ $(ECHO) "Downloading files from SVN .."  
+	@ cd $(TEMP_DIR); $(SVN) co $(REPO_LOCATION)
+	@ $(ECHO) "done"
+
+	@ $(ECHO) "Creating DATESTAMP file .."	
+	@ cd $(TEMP_DIR)/$(CATALINA); $(ECHO) $(TIMESTAMP) > DATESTAMP
+	@ $(ECHO) "done"
+
+	@ $(ECHO) "Creating MANIFEST file .."	
+	@ cd $(TEMP_DIR)/$(CATALINA); $(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^VERSIONHASH$$ > MANIFEST
+	@ $(ECHO) "done"
+	
+	@ $(ECHO) "Creating VERSIONHASH file .."
+	cd $(TEMP_DIR)/$(CATALINA); $(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > VERSIONHASH
+	@ $(ECHO) "done"
+
+	@ $(ECHO) "Tarring everything up .."	
+	@ cd $(TEMP_DIR); $(TAR) cf dist.tar --exclude Makefile --exclude RCS --exclude .svn  $(CATALINA)
+	@ $(ECHO) "done"
+
 	@ $(ECHO) "Packing $(DISTFILE) into $(DISTFILE).gz "
-	$(GZIP) $(DISTFILE)
+	@ cd $(TEMP_DIR); $(GZIP) $(DISTFILE)
+	
+release:
 	@ $(ECHO) "** Moving $(DISTFILE).gz to FTP server **"
+
+	@ $(ECHO) "Copying $(DISTFILE).gz file from build dir to cwd"
+	@ $(CP) $(TEMP_DIR)/$(DISTFILE).gz .
+	
 	@ $(ECHO) "Removing old symlink catalina.tar.gz"
 	$(RM) $(FTP_SITE_PATH)/catalina.tar.gz
+	
 	@ $(ECHO) "Copying $(DISTFILE).gz to $(FTP_SITE_PATH)"
 	$(CP) $(DISTFILE).gz $(FTP_SITE_PATH)/
-	@ $(ECHO) "Copying $(DISTFILE).gz to catalina.`date +%Y%m%d%H%M`.tar.gz"	
-	cd $(FTP_SITE_PATH) ; $(CP) $(DISTFILE).gz catalina.`date +%Y%m%d%H%M`.tar.gz
+	@ $(ECHO) "Copying $(DISTFILE).gz to catalina.`$(CAT) $(TEMP_DIR)/$(CATALINA)/DATESTAMP`.tar.gz"	
+	$(CP) $(FTP_SITE_PATH)/$(DISTFILE).gz $(FTP_SITE_PATH)/catalina.`$(CAT) $(TEMP_DIR)/$(CATALINA)/DATESTAMP`.tar.gz
 	@ $(ECHO) "Linking Catalina.tar.gz to dist.tar.gz"
 	cd $(FTP_SITE_PATH) ; $(LN) -s $(DISTFILE).gz catalina.tar.gz
 	@ $(ECHO) "** Moving $(DISTFILE).gz to FTP server **.... done"
@@ -71,5 +76,6 @@ dist: clean
 	@ $(ECHO) "The MD5SUM for this build is: `$(MD5SUM) $(DISTFILE).gz`"	
 	@ $(ECHO) "Completed"
 clean:
-	- $(RM) $(DISTFILE)
-	- $(RM) $(DISTFILE).gz
+	- @$(RM) $(DISTFILE)
+	- @$(RM) $(DISTFILE).gz
+	- @$(RM) -rf ./$(TEMP_DIR)

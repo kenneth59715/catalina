@@ -282,7 +282,7 @@ for a response from the down nodes.  It may be necessary to issue:
                     message = """
 job (%s) (user %s) has unrecognized consumable resources specification. 
 To continue scheduling, Catalina assumes that the user wanted 1 CPU per task
-and/or 3GB of RAM per task. 
+and/or 2GB of RAM per task. 
 
 Your job may fail because of these assumptions.
 Please carefully read your job script and correct any errors.""" % (job['name'],job['user'])

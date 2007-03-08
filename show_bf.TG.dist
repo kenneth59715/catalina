@@ -48,22 +48,55 @@ usage_string = \
 """
 Usage: show_free 
                [--?]
+               [--start=<mm/dd/yyyy_hh:mm>] | [--offset=<seconds to begin window]
                [--help]
 """
 options = [ 
             '?',
+            'start=',
+            'offset=',
             'help'
            ]
            
+default_argdict = {
+            '--offset' : 0
+}
 args = sys.argv[1:]
-argdict = {}
-optlist, lineargs = getopt.getopt(args, '', options)
-for pair in optlist:
-        argdict[pair[0]] = pair[1]
 
+if len(args) == 0 :
+    argdict= default_argdict
+else :
+    argdict={}
+    try :
+        optlist, lineargs = getopt.getopt(args, '', options)
+    except :
+        print usage_string
+        sys.exit(0)
+    for pair in optlist:
+        argdict[pair[0]] = pair[1]
+    
+if argdict.has_key('--offset') and argdict.has_key('--start') :
+    print usage_string
+    sys.exit(0)
 if argdict.has_key('--?') or argdict.has_key('--help') :
     print usage_string
     sys.exit(0)
+
+
+#calculate the beginning of time window (now = 0), 1 hour from now = 3600
+if argdict.has_key('--start'):
+    start_tuple = time.strptime(argdict['--start'],"%m/%d/%Y_%H:%M")
+    start_list = list(start_tuple)
+    start_list[8] = -1 #list is mutable, tuple is not, we have to change TZ
+    start_tuple = tuple(start_list)
+    start_epoch=time.mktime(start_tuple) - Catalina.Now_float
+    
+elif argdict.has_key('--offset') :
+    start_epoch=float(argdict['--offset'])
+else :
+    print usage_string
+    sys.exit(0)
+
 
 node_restriction_code = Catalina.NODERESTCODE
 conflict_policy = None
@@ -128,7 +161,7 @@ for node in accepted_nodes :
 
 open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res, blocking_reservations_list, resources_db_handle)
 
-now_windows = filter( lambda window : window[0] <= Catalina.Now_float <= window[1], open_windows_list )
+now_windows = filter( lambda window : window[0] <= (Catalina.Now_float + start_epoch) < window[1], open_windows_list )
 
 if len(now_windows) == 0 :
     #if Catalina.DEBUG != None :
@@ -174,7 +207,7 @@ print "Node Backfill window:"
 for window in now_windows :
     
     if window[2].has_key('node') :
-        duration = window[1] - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
         #if duration > 18 hours, set it to 18 hours (max time avail)
         if duration > max_time :
             duration=max_time        
@@ -185,7 +218,7 @@ for window in now_windows :
 
 
         for jobclass in intersection :
-        	# increment total number of nodes found for this specified class
+            # increment total number of nodes found for this specified class
             dict_total_node[jobclass] += 1
             # update the time too
             # we only update dict_total_time if the time found is less than
@@ -201,7 +234,7 @@ for window in now_windows :
         	
         
     if window[2].has_key('cpu') :
-        duration = window[1] - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        duration = window[1] - Catalina.Now_float - start_epoch- Catalina.FUDGE_FACTOR
         # if duration is greater than 18 hours, set it to 18 hours, that's the max time avail
         if duration > max_time :
             duration = max_time
@@ -219,6 +252,7 @@ for window in now_windows :
                     #empty dictionary
                     dict_total_cpu[jobclass][duration] = window[2]['cpu']
                 else :
+                    #I have seen this CPU before, add it.
                     dict_total_cpu[jobclass][duration] += window[2]['cpu']
             
     

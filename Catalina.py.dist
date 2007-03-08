@@ -126,7 +126,6 @@ mandatory_dict = {
   'EXPANSION_FACTOR_WEIGHT' : None,
   'SYSTEM_QUEUE_TIME_WEIGHT' : None,
   'SUBMIT_TIME_WEIGHT' : None,
-  'FAIRSHARE_BONUS_WEIGHT' : None,
   'QOS_PRIORITY_WEIGHT' : None,
   'QOS_TARGET_EXPANSION_FACTOR_WEIGHT' : None,
   'QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT' : None,
@@ -148,7 +147,10 @@ mandatory_dict = {
   'SUBMITCMD' : None,
   'CANCELCMD' : None,
   'RM_TO_CAT_RESOURCE_DICT_STRING' : None,
-  'RM_TO_CAT_JOB_DICT_STRING' : None
+  'RM_TO_CAT_JOB_DICT_STRING' : None,
+  'PENALTY_PERCENTAGE' : None,
+  'TOTAL_AVAILABLE': None,
+  'THRESHOLD_PERCENTAGE': None
   }
 
 # In the future, could put this in a function, so
@@ -273,7 +275,6 @@ priority_weights_tuple = (
   'EXPANSION_FACTOR_WEIGHT',
   'SYSTEM_QUEUE_TIME_WEIGHT',
   'SUBMIT_TIME_WEIGHT',
-  'FAIRSHARE_BONUS_WEIGHT',
   'LOCAL_USER_WEIGHT',
   'LOCAL_ADMIN_WEIGHT',
   'WALL_TIME_WEIGHT',
@@ -321,8 +322,6 @@ else :
 EXPANSION_FACTOR_WEIGHT = long(float(EXPANSION_FACTOR_WEIGHT) * max_places_float)
 SYSTEM_QUEUE_TIME_WEIGHT = long(float(SYSTEM_QUEUE_TIME_WEIGHT)* max_places_float)
 SUBMIT_TIME_WEIGHT = long(float(SUBMIT_TIME_WEIGHT) * max_places_float)
-#feature 582
-FAIRSHARE_BONUS_WEIGHT = long(float(FAIRSHARE_BONUS_WEIGHT) * max_places_float)
 QOS_PRIORITY_WEIGHT = long(float(QOS_PRIORITY_WEIGHT) * max_places_float)
 QOS_TARGET_EXPANSION_FACTOR_WEIGHT = long(float(QOS_TARGET_EXPANSION_FACTOR_WEIGHT) * max_places_float)
 QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT = long(float(QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT) * max_places_float)
@@ -2809,7 +2808,6 @@ def update_job_priorities (jobs_db_handle) :
           'EXPANSION_FACTOR_WEIGHT'            : EXPANSION_FACTOR_WEIGHT,
           'SYSTEM_QUEUE_TIME_WEIGHT'           : SYSTEM_QUEUE_TIME_WEIGHT,
           'SUBMIT_TIME_WEIGHT'                 : SUBMIT_TIME_WEIGHT,
-          'FAIRSHARE_BONUS_WEIGHT'             : FAIRSHARE_BONUS_WEIGHT,
           'WALL_TIME_WEIGHT'                   : WALL_TIME_WEIGHT,
           'QOS_PRIORITY_WEIGHT'                : QOS_PRIORITY_WEIGHT,
           'QOS_TARGET_EXPANSION_FACTOR_WEIGHT' : QOS_TARGET_EXPANSION_FACTOR_WEIGHT,
@@ -2927,11 +2925,34 @@ def update_job_priorities (jobs_db_handle) :
                 long(expansion_factor * 100) * EXPANSION_FACTOR_WEIGHT + \
                 long(queue_wait_time * 100) * SYSTEM_QUEUE_TIME_WEIGHT + \
                 long(submit_wait_time * 100) * SUBMIT_TIME_WEIGHT + \
-                long(fairshare_value_float * 100) * FAIRSHARE_BONUS_WEIGHT + \
                 long(wall_clock_time * 100) * WALL_TIME_WEIGHT + \
                 long(QOS_priority * 100) * QOS_PRIORITY_WEIGHT + \
                 long(QOS_target_xf_value * 100) * QOS_TARGET_EXPANSION_FACTOR_WEIGHT + \
                 long(QOS_target_qwt_value * 100) * QOS_TARGET_QUEUE_WAIT_TIME_WEIGHT
+            
+            #feature 582
+            #if fairshare_value_float / total available >= 0.6, then penalize FAIRSHARE_BONUS_WEIGHT % for overall priority
+            try :
+                total_available_cpu = float(TOTAL_AVAILABLE)
+            except :
+                total_available_cpu = 1.0
+                
+            try :
+                threshold_percentage = float(THRESHOLD_PERCENTAGE)
+            except :
+                threshold_percentage = 100.0
+            
+            try :
+                penalty_percentage = float(PENALTY_PERCENTAGE)
+            except :
+                penalty_percentage = 0.0
+            
+            if total_available_cpu == 1 :
+                pass
+            elif ((fairshare_value_float / total_available_cpu ) > (threshold_percentage/100)) :
+                #penalize
+                priority = priority - (penalty_percentage * priority / 100)
+            
             if QOS_MAX_PRIORITY_dict.has_key(temp_job['QOS']) :
                 max_pri = long(float(QOS_MAX_PRIORITY_dict[temp_job['QOS']]) * max_places_float ) * 100L
             else :
@@ -3197,7 +3218,6 @@ def update_job_resource_lists(jobs_db_handle, resources_db_handle) :
      comes up.  reload_job_resource_lists should be run periodically..."""
     jobs_dict = jobs_db_handle[0]
     for key in jobs_dict.keys() :
-        #print "update_job_resource_lists for (%s)" % key
         #Martin Margo was here 11/6/2006
         #this code can speeds up catalina tremendously
         #only update object attribute those jobs who doesn't have a resource_dict_list

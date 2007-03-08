@@ -4,7 +4,6 @@
 import sys
 import getopt
 import string
-sys.path.append('/gpfs/mmargo/catalina/test-20050610/bin')
 import Catalina
 import time
 import os
