@@ -312,7 +312,7 @@ DEF_CLASS_PRIORITY_DICT_STRING="{\\
 DEF_DEFAULT_RES_CLASS=express
 DEF_DEFAULT_PROC_CHARGE=8
 
-${ECHO} "s@___NODERESTCODE_STRING_PLACEHOLDER___@${NODERESTCODE_STRING}@g" > sedscr
+
 FORCETZ=${CATALINA_FORCETZ-'NOFORCE'}
 ${ECHO} "RMCFLAGS= -g ${CATALINA_RMCFLAGS} \$(RMLIBDIRS) \$(RMINCDIRS)" >> Makefile
 ${ECHO} "RMSERVER_DEFAULT=${RMSERVER_DEFAULT}" >> Makefile
@@ -501,6 +501,58 @@ esac
 ${ECHO} "RM=${RM}" >> Makefile
 RMDIR=`get_first_exe rmdir` || bailout 'Could not find rmdir' 1
 ${RMDIR} testdir.$$
+
+MAILX=`get_first_exe mailx` || MAILX=`get_first_exe mail` || bailout 'Could not find mail' 1
+${ECHO} testing... | ${MAILX} -s "Catalina is testing mail functionality" ${CATOWNER}
+case $? in
+0)	${ECHO} mail works... ;;
+*)	${ECHO} ERROR mail failed! ; exit 1 ;;
+esac
+LOGGER=`get_first_exe logger` || LOGGER=`get_first_exe logger` || bailout 'Could not find logger' 1
+${LOGGER} -t CATALINA -p daemon.debug 'testing logger...'
+case $? in
+0)	${ECHO} logger works... ;;
+*)	${ECHO} ERROR logger failed! ; exit 1 ;;
+esac
+LOGGER_FACILITY=daemon
+
+${ECHO} "s@___NODERESTCODE_STRING_PLACEHOLDER___@${NODERESTCODE_STRING}@g" > sedscr
+${ECHO} "s@___RESLIST_CMD_PLACEHOLDER___@${CATALINA_RESLIST-${HOMEDIR}/reslist}@g" >> sedscr
+${ECHO} "s#___MAIL_RECIPIENT_PLACEHOLDER___#${CATALINA_MAIL_RECIPIENT-${CATOWNER}}#g" >> sedscr
+${ECHO} "s#___USER_SET_RECIPIENT_PLACEHOLDER___#${CATALINA_USER_SET_RECIPIENT-${CATOWNER}}#g" >> sedscr
+${ECHO} "s#___PROLOGUE_RES_PLACEHOLDER___#${CATALINA_PROLOGUE_RES-${HOMEDIR}/prologue.res}#g" >> sedscr
+${ECHO} "s#___EPILOGUE_RES_PLACEHOLDER___#${CATALINA_EPILOGUE_RES-${HOMEDIR}/prologue.res}#g" >> sedscr
+${ECHO} "s@___MAILX_PLACEHOLDER___@${CATALINA_MAILX-${MAILX}}@g" >> sedscr
+${ECHO} "s@___LOGGER_PLACEHOLDER___@${CATALINA_LOGGER-${LOGGER}}@g" >> sedscr
+${ECHO} "s@___LOGGER_FACILITY_PLACEHOLDER___@${CATALINA_LOGGER_FACILITY-${LOGGER_FACILITY}}@g" >> sedscr
+${ECHO} "s#___TEST_MAIL_RECIPIENT_PLACEHOLDER___#${CATALINA_TEST_MAIL_RECIPIENT-${CATOWNER}@${HOSTNAME}}#g" >> sedscr
+${ECHO} "s@___TESTACCOUNT_PLACEHOLDER___@${CATALINA_TESTACCOUNT-${TESTACCOUNT}}@g" >> sedscr
+${ECHO} "s@___ECHO_PLACEHOLDER___@${ECHO}@g" >> sedscr
+${ECHO} "s@___FORCETZ_PLACEHOLDER___@${FORCETZ}@g" >> sedscr
+${ECHO} "s@___CAT_LOCK_OWNER_PLACEHOLDER___@${CATOWNER}@g" >> sedscr
+${ECHO} "s@___CAT_LOCK_GROUP_PLACEHOLDER___@${CATGROUP}@g" >> sedscr
+${ECHO} "s@___INSTALLDIR_PLACEHOLDER___@${HOMEDIR}@g" >> sedscr
+${ECHO} "s@___DBDIR_PLACEHOLDER___@${DBDIR}@g" >> sedscr
+${ECHO} "s@___ARCHIVEDIR_PLACEHOLDER___@${ARCHIVEDIR}@g" >> sedscr
+${ECHO} "s@___JOB_START_TIME_LIMIT_PLACEHOLDER___@${JOB_START_TIME_LIMIT}@g" >> sedscr
+${ECHO} "s@___DB_WARN_LIMIT_PLACEHOLDER___@${DB_WARN_LIMIT}@g" >> sedscr
+${ECHO} "s@___JOB_START_WARN_LIMIT_PLACEHOLDER___@${JOB_START_WARN_LIMIT}@g" >> sedscr
+${ECHO} "s@___RESOURCE_DOWN_TIME_LIMIT_PLACEHOLDER___@${RESOURCE_DOWN_TIME_LIMIT}@g" >> sedscr
+${ECHO} "s@___LOST_JOB_LIMIT_PLACEHOLDER___@${LOST_JOB_LIMIT}@g" >> sedscr
+${ECHO} "s@___LOST_JOB_WARN_PLACEHOLDER___@${LOST_JOB_WARN}@g" >> sedscr
+${ECHO} "s@___SUBMITCMD_PLACEHOLDER___@${SUBMITCMD}@g" >> sedscr
+${ECHO} "s@___CANCELCMD_PLACEHOLDER___@${CANCELCMD}@g" >> sedscr
+${ECHO} "s@___TEST_JOB_PLACEHOLDER___@${TESTJOB}@g" >> sedscr
+${ECHO} "s@___TEST_JOB_RUN_AT_RISK_PLACEHOLDER___@${TESTJOB_RUN_AT_RISK}@g" >> sedscr
+${ECHO} "s#___USERNAMESUFFIX_PLACEHOLDER___#${USERNAMESUFFIX}#g" >> sedscr
+${ECHO} "s@___LOADL_ADMIN_FILE_PLACEHOLDER___@${LOADL_ADMIN_FILE}@g" >> sedscr
+${ECHO} "s@___RM_TO_CAT_RESOURCE_DICT_STRING_PLACEHOLDER___@${RM_TO_CAT_RESOURCE_DICT_STRING}@g" >> sedscr
+${ECHO} "s@___RM_TO_CAT_JOB_DICT_STRING_PLACEHOLDER___@${RM_TO_CAT_JOB_DICT_STRING}@g" >> sedscr
+${ECHO} "s@___CLASS_PRIORITY_DICT_STRING_STRING_PLACEHOLDER___@${CATALINA_CLASS_PRIORITY_DICT_STRING-${DEF_CLASS_PRIORITY_DICT_STRING}}@g" >> sedscr
+${ECHO} "s@___DEFAULT_RES_CLASS_PLACEHOLDER___@${CATALINA_DEFAULT_RES_CLASS-${DEF_DEFAULT_RES_CLASS}}@g" >> sedscr
+${ECHO} "s@___DEFAULT_PROC_CHARGE_PLACEHOLDER___@${CATALINA_DEFAULT_PROC_CHARGE-${DEF_DEFAULT_PROC_CHARGE}}@g" >> sedscr
+${ECHO} "s@___DEFAULT_JOB_CLASS_PLACEHOLDER___@${DEFAULT_JOB_CLASS}@g" >> sedscr
+
 #STTY=`get_first_exe stty` || bailout 'Could not find stty' 1
 #case $? in
 #0)	${ECHO} stty works... ;;
@@ -828,53 +880,5 @@ ${ECHO} "" >> Makefile
 ${ECHO} "config:" >> Makefile
 ${ECHO} "	\$(CHMOD) u+w catalina.config" >> Makefile
 ${ECHO} "	\$(CAT) catalina.config.dist \\" >> Makefile
-${ECHO} "	| \$(SED) 's@___RESLIST_CMD_PLACEHOLDER___@${CATALINA_RESLIST-${HOMEDIR}/reslist}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's#___MAIL_RECIPIENT_PLACEHOLDER___#${CATALINA_MAIL_RECIPIENT-${CATOWNER}}#g' \\">> Makefile
-${ECHO} "	| \$(SED) 's#___USER_SET_RECIPIENT_PLACEHOLDER___#${CATALINA_USER_SET_RECIPIENT-${CATOWNER}}#g' \\">> Makefile
-${ECHO} "	| \$(SED) 's#___PROLOGUE_RES_PLACEHOLDER___#${CATALINA_PROLOGUE_RES-${HOMEDIR}/prologue.res}#g' \\">> Makefile
-${ECHO} "	| \$(SED) 's#___EPILOGUE_RES_PLACEHOLDER___#${CATALINA_EPILOGUE_RES-${HOMEDIR}/prologue.res}#g' \\">> Makefile
-MAILX=`get_first_exe mailx` || MAILX=`get_first_exe mail` || bailout 'Could not find mail' 1
-${ECHO} testing... | ${MAILX} -s "Catalina is testing mail functionality" ${CATOWNER}
-case $? in
-0)	${ECHO} mail works... ;;
-*)	${ECHO} ERROR mail failed! ; exit 1 ;;
-esac
-LOGGER=`get_first_exe logger` || LOGGER=`get_first_exe logger` || bailout 'Could not find logger' 1
-${LOGGER} -t CATALINA -p daemon.debug 'testing logger...'
-case $? in
-0)	${ECHO} logger works... ;;
-*)	${ECHO} ERROR logger failed! ; exit 1 ;;
-esac
-LOGGER_FACILITY=daemon
-${ECHO} "	| \$(SED) 's@___MAILX_PLACEHOLDER___@${CATALINA_MAILX-${MAILX}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___LOGGER_PLACEHOLDER___@${CATALINA_LOGGER-${LOGGER}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___LOGGER_FACILITY_PLACEHOLDER___@${CATALINA_LOGGER_FACILITY-${LOGGER_FACILITY}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's#___TEST_MAIL_RECIPIENT_PLACEHOLDER___#${CATALINA_TEST_MAIL_RECIPIENT-${CATOWNER}@${HOSTNAME}}#g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___TESTACCOUNT_PLACEHOLDER___@${CATALINA_TESTACCOUNT-${TESTACCOUNT}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___ECHO_PLACEHOLDER___@${ECHO}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___FORCETZ_PLACEHOLDER___@${FORCETZ}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___CAT_LOCK_OWNER_PLACEHOLDER___@${CATOWNER}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___CAT_LOCK_GROUP_PLACEHOLDER___@${CATGROUP}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___INSTALLDIR_PLACEHOLDER___@${HOMEDIR}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___DBDIR_PLACEHOLDER___@${DBDIR}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___ARCHIVEDIR_PLACEHOLDER___@${ARCHIVEDIR}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___JOB_START_TIME_LIMIT_PLACEHOLDER___@${JOB_START_TIME_LIMIT}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___DB_WARN_LIMIT_PLACEHOLDER___@${DB_WARN_LIMIT}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___JOB_START_WARN_LIMIT_PLACEHOLDER___@${JOB_START_WARN_LIMIT}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___RESOURCE_DOWN_TIME_LIMIT_PLACEHOLDER___@${RESOURCE_DOWN_TIME_LIMIT}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___LOST_JOB_LIMIT_PLACEHOLDER___@${LOST_JOB_LIMIT}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___LOST_JOB_WARN_PLACEHOLDER___@${LOST_JOB_WARN}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___SUBMITCMD_PLACEHOLDER___@${SUBMITCMD}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___CANCELCMD_PLACEHOLDER___@${CANCELCMD}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___TEST_JOB_PLACEHOLDER___@${TESTJOB}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___TEST_JOB_RUN_AT_RISK_PLACEHOLDER___@${TESTJOB_RUN_AT_RISK}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's#___USERNAMESUFFIX_PLACEHOLDER___#${USERNAMESUFFIX}#g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___LOADL_ADMIN_FILE_PLACEHOLDER___@${LOADL_ADMIN_FILE}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___RM_TO_CAT_RESOURCE_DICT_STRING_PLACEHOLDER___@${RM_TO_CAT_RESOURCE_DICT_STRING}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___RM_TO_CAT_JOB_DICT_STRING_PLACEHOLDER___@${RM_TO_CAT_JOB_DICT_STRING}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___CLASS_PRIORITY_DICT_STRING_STRING_PLACEHOLDER___@${CATALINA_CLASS_PRIORITY_DICT_STRING-${DEF_CLASS_PRIORITY_DICT_STRING}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___DEFAULT_RES_CLASS_PLACEHOLDER___@${CATALINA_DEFAULT_RES_CLASS-${DEF_DEFAULT_RES_CLASS}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___DEFAULT_PROC_CHARGE_PLACEHOLDER___@${CATALINA_DEFAULT_PROC_CHARGE-${DEF_DEFAULT_PROC_CHARGE}}@g' \\">> Makefile
-${ECHO} "	| \$(SED) 's@___DEFAULT_JOB_CLASS_PLACEHOLDER___@${DEFAULT_JOB_CLASS}@g' \\">> Makefile
 ${ECHO} "	| \$(SED) -f sedscr \\">> Makefile
 ${ECHO} "	> catalina.config" >> Makefile
