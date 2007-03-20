@@ -179,6 +179,8 @@ while ( (state == 'running' or state == 'suspended') and
         # feature 669
         if count % Catalina.MACHINE_REFRESH_INTERVAL == 0 :
             print "refreshing node dictionary after %s intervals" %(Catalina.MACHINE_REFRESH_INTERVAL)
+            print "update_resources and filter out bad nodes from job list"
+            Catalina.update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle)
             Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
             
         Catalina.schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle, cfg_resources_db_handle, standing_reservations_db_handle )

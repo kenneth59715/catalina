@@ -212,6 +212,58 @@ PBS)
  elif resource[\"State\"] == \"Unknown\" : result = \"Unknown\"\\
  else : result = 0" ;;
 
+TORQUE)
+	${ECHO} "RESOURCEMANAGER=PBS" >> Makefile ;
+	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS--L/usr/local/lib}" >> Makefile ;
+	${ECHO} "RMINCDIRS=${CATALINA_RMINCDIRS--I/usr/local/include}" >> Makefile ;
+	${ECHO} "RMLIBS=-ltorque" >> Makefile ;
+	USERNAMESUFFIX=@${CATALINA_PBS_SUBMITHOST?CATALINA_PBS_SUBMITHOST must be set to the machine on which users will set reservations!} ;
+	JOB_START_TIME_LIMIT=5.0 ;
+	DB_WARN_LIMIT=3 ;
+	JOB_START_WARN_LIMIT=0 ;
+	RESOURCE_DOWN_TIME_LIMIT=900.0 ;
+	LOST_JOB_LIMIT=0 ;
+	LOST_JOB_WARN=FALSE ;
+	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
+	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
+	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
+	PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe qstat`} || bailout 'Could not find qstat' 1 ;
+	TESTJOB=testjob.PBS ;
+	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.PBS ;
+	LOADL_ADMIN_FILE= ;
+	RM_TO_CAT_RESOURCE_DICT_STRING="{\\
+  \"free\" : \"Idle\",\\
+  \"Idle\" : \"Idle\",\\
+  \"Down\" : \"Down\",\\
+  \"down\" : \"Down\",\\
+  \"offline\" : \"Down\",\\
+  \"state-unknown,down\" : \"Down\",\\
+  \"busy\" : \"Running\",\\
+  \"Running\" : \"Running\",\\
+  \"job-exclusive\" : \"Running\",\\
+  \"job-sharing\" : \"Running\"\\
+  }" ;
+	RM_TO_CAT_JOB_DICT_STRING="{\\
+  \"qtime\" : \"Submit_Time\",\\
+  \"R\" : \"Running\",\\
+  \"E\" : \"Running\",\\
+  \"H\" : \"Hold\",\\
+  \"Q\" : \"Idle\",\\
+  \"S\" : \"Hold\",\\
+  \"T\" : \"Hold\",\\
+  \"W\" : \"Hold\"\\
+  }" ;
+	NODERESTCODE_STRING="\\
+ import string\\
+ resource = input_tuple[0]\\
+ if resource[\"State\"] == \"Down\" : result = \"Down\"\\
+ elif resource[\"State\"] == \"Drain\" : result = \"Drain\"\\
+ elif resource[\"State\"] == \"Drained\" : result = \"Drained\"\\
+ elif resource[\"State\"] == \"None\" : result = \"None\"\\
+ elif resource[\"State\"] == None : result = None\\
+ elif resource[\"State\"] == \"Unknown\" : result = \"Unknown\"\\
+ else : result = 0" ;;
+
 DISK)
 	${ECHO} "RESOURCEMANAGER=DISK" >> Makefile ;
 	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS--L/usr/local/lib}" >> Makefile ;
@@ -262,7 +314,7 @@ DEF_DEFAULT_PROC_CHARGE=8
 
 ${ECHO} "s@___NODERESTCODE_STRING_PLACEHOLDER___@${NODERESTCODE_STRING}@g" > sedscr
 FORCETZ=${CATALINA_FORCETZ-'NOFORCE'}
-${ECHO} "RMCFLAGS= -g \$(RMLIBDIRS) \$(RMINCDIRS)" >> Makefile
+${ECHO} "RMCFLAGS= -g ${CATALINA_RMCFLAGS} \$(RMLIBDIRS) \$(RMINCDIRS)" >> Makefile
 ${ECHO} "RMSERVER_DEFAULT=${RMSERVER_DEFAULT}" >> Makefile
 ${ECHO} "" >> Makefile
 WHOAMI=`get_first_exe whoami` || bailout 'Could not find whoami' 1
@@ -767,7 +819,7 @@ ${ECHO} "" >> Makefile
 ${ECHO} "clean:" >> Makefile
 ${ECHO} "	\$(RM) -f *.c *.o *.py" >> Makefile
 ${ECHO} "	for i in \$(PY_EXECUTABLE_FILES) \$(CATALINA) \$(CATALINA_RM) ; do \\" >> Makefile
-${ECHO} "		if test -x \$\$i ; \\ " >> Makefile
+${ECHO} "		if test -x \$\$i ; \\" >> Makefile
 ${ECHO} "		then \\" >> Makefile
 ${ECHO} "		\$(RM) \$\$i ; \\" >> Makefile
 ${ECHO} "		fi ; \\" >> Makefile
