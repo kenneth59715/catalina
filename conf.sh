@@ -214,6 +214,7 @@ PBS)
 
 TORQUE)
 	${ECHO} "RESOURCEMANAGER=PBS" >> Makefile ;
+	RESOURCEMANAGER=PBS ;
 	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS--L/usr/local/lib}" >> Makefile ;
 	${ECHO} "RMINCDIRS=${CATALINA_RMINCDIRS--I/usr/local/include}" >> Makefile ;
 	${ECHO} "RMLIBS=-ltorque" >> Makefile ;
@@ -350,6 +351,7 @@ if [ ${CATALINA_PYTHONPATH} ]
 then
 	${ECHO} Using ${CATALINA_PYTHONPATH}
 	${ECHO} "PYTHONPATH=${CATALINA_PYTHONPATH}" >> Makefile
+	PYTHONPATH=${CATALINA_PYTHONPATH}
 else
 	PYTHONPATH=`get_first_exe python` || bailout 'ERROR: Could not find python' 1
 	${PYTHONPATH} -c 'print "hello"'
@@ -588,17 +590,48 @@ ${ECHO} "NODEREST=node_restriction_file.\$(RESOURCEMANAGER)" >> Makefile
 ${ECHO} "NONCONFLICTING=nonconflicting" >> Makefile
 if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
 	${ECHO} "QJ=qj_\$(RESOURCEMANAGER)_sim" >> Makefile
+	QJ=qj_${RESOURCEMANAGER}_sim
 	${ECHO} "QM=qm_\$(RESOURCEMANAGER)_sim" >> Makefile
+	QM=qm_${RESOURCEMANAGER}_sim
 	${ECHO} "RUNJOB=rj_\$(RESOURCEMANAGER)_sim" >> Makefile
+	RUNJOB=rj_${RESOURCEMANAGER}_sim
 	${ECHO} "PREEMPTJOB=pj_\$(RESOURCEMANAGER)_sim" >> Makefile
+	PREEMPTJOB=pj_${RESOURCEMANAGER}_sim
 	${ECHO} "RESUMEJOB=resj_\$(RESOURCEMANAGER)_sim" >> Makefile
+	RESUMEJOB=resj_${RESOURCEMANAGER}_sim
 else
 	${ECHO} "QJ=qj_\$(RESOURCEMANAGER)" >> Makefile
+	QJ=qj_${RESOURCEMANAGER}
 	${ECHO} "QM=qm_\$(RESOURCEMANAGER)" >> Makefile
+	QM=qm_${RESOURCEMANAGER}
 	${ECHO} "RUNJOB=rj_\$(RESOURCEMANAGER)" >> Makefile
+	RUNJOB=rj_${RESOURCEMANAGER}
 	${ECHO} "PREEMPTJOB=pj_\$(RESOURCEMANAGER)" >> Makefile
+	PREEMPTJOB=pj_${RESOURCEMANAGER}
 	${ECHO} "RESUMEJOB=resj_\$(RESOURCEMANAGER)" >> Makefile
+	RESUMEJOB=resj_${RESOURCEMANAGER}
 fi
+
+${ECHO} "s@___PYTHON_PATH_PLACEHOLDER___@${PYTHONPATH}@g"  >sedscrb
+${ECHO} "s@___HOMEDIR_PLACEHOLDER___@${HOMEDIR}@g"  >>sedscrb
+${ECHO} "s@___DBDIR_PLACEHOLDER___@${DBDIR}@g"  >>sedscrb
+${ECHO} "s@___ARCHIVEDIR_PLACEHOLDER___@${ARCHIVEDIR}@g"  >>sedscrb
+${ECHO} "s@___RESOURCEMANAGER_PLACEHOLDER___@${RESOURCEMANAGER}@g"  >>sedscrb
+${ECHO} "s@___RMSERVER_DEFAULT_PLACEHOLDER___@${RMSERVER_DEFAULT}@g"  >>sedscrb
+${ECHO} "s@___QJ_PLACEHOLDER___@${QJ}@g"  >>sedscrb
+${ECHO} "s@___QM_PLACEHOLDER___@${QM}@g"  >>sedscrb
+${ECHO} "s@___RUNJOB_PLACEHOLDER___@${RUNJOB}@g"  >>sedscrb
+${ECHO} "s@___PREEMPTJOB_PLACEHOLDER___@${PREEMPTJOB}@g"  >>sedscrb
+${ECHO} "s@___RESUMEJOB_PLACEHOLDER___@${RESUMEJOB}@g"  >>sedscrb
+${ECHO} "s@___PS_PLACEHOLDER___@${PS}@g"  >>sedscrb
+${ECHO} "s@___PSOPTIONS_PLACEHOLDER___@${PSOPTIONS}@g"  >>sedscrb
+${ECHO} "s@___GREP_PLACEHOLDER___@${GREP}@g"  >>sedscrb
+${ECHO} "s@___CAT_PLACEHOLDER___@${CAT}@g"  >>sedscrb
+${ECHO} "s@___WC_PLACEHOLDER___@${WC}@g"  >>sedscrb
+${ECHO} "s@___AWK_PLACEHOLDER___@${AWK}@g"  >>sedscrb
+${ECHO} "s@___DATE_PLACEHOLDER___@${DATE}@g"  >>sedscrb
+${ECHO} "s@___NOHUP_PLACEHOLDER___@${NOHUP}@g"  >>sedscrb
+
 ${ECHO} "QPRIORITY=query_priority" >> Makefile
 ${ECHO} "RESLIST=reslist" >> Makefile
 ${ECHO} "PROLOGUERES=prologue.res" >> Makefile
@@ -829,25 +862,7 @@ ${ECHO} "	done" >> Makefile
 ${ECHO} "PYSUB: " >> Makefile
 ${ECHO} "	for i in \$(PY_EXECUTABLE_FILES) \$(CATALINA) \$(CATALINA_RM) ; do \\" >> Makefile
 ${ECHO} "		\$(CAT) \$\$i.dist | \\" >> Makefile
-${ECHO} "		\$(SED) 's@___PYTHON_PATH_PLACEHOLDER___@\$(PYTHONPATH)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___HOMEDIR_PLACEHOLDER___@\$(INSTALLDIR)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___DBDIR_PLACEHOLDER___@\$(DBDIR)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___ARCHIVEDIR_PLACEHOLDER___@\$(ARCHIVEDIR)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___RESOURCEMANAGER_PLACEHOLDER___@\$(RESOURCEMANAGER)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___RMSERVER_DEFAULT_PLACEHOLDER___@\$(RMSERVER_DEFAULT)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___QJ_PLACEHOLDER___@\$(QJ)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___QM_PLACEHOLDER___@\$(QM)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___RUNJOB_PLACEHOLDER___@\$(RUNJOB)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___PREEMPTJOB_PLACEHOLDER___@\$(PREEMPTJOB)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___RESUMEJOB_PLACEHOLDER___@\$(RESUMEJOB)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___PS_PLACEHOLDER___@\$(PS)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___PSOPTIONS_PLACEHOLDER___@\$(PSOPTIONS)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___GREP_PLACEHOLDER___@\$(GREP)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___CAT_PLACEHOLDER___@\$(CAT)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___WC_PLACEHOLDER___@\$(WC)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___AWK_PLACEHOLDER___@\$(AWK)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___DATE_PLACEHOLDER___@\$(DATE)@g' \\" >> Makefile
-${ECHO} "		| \$(SED) 's@___NOHUP_PLACEHOLDER___@\$(NOHUP)@g' \\" >> Makefile
+${ECHO} "		\$(SED) -f sedscrb \\">> Makefile
 ${ECHO} "		> \$\$i ; \\" >> Makefile
 ${ECHO} "	done" >> Makefile
 

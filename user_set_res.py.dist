@@ -512,7 +512,8 @@ map(
   filter(
     lambda x :
         x['purpose_type_string'] == 'user_set' and \
-        x['account_string'] == account_string,
+        x['account_string'] == account_string and \
+        x['end_time_float'] > Catalina.Now_float,
     existing_reservations
     )
   )
