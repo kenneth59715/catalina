@@ -30,7 +30,7 @@ def file_to_string(filename) :
 
 usage_string = \
 """
-Usage: show_bf [--user=<username>]
+Usage: show_free [--user=<username>]
                [--?]
                [--help]
                [--account=<account>]

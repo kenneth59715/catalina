@@ -645,6 +645,7 @@ ${ECHO} "SETCONFIG=set_config" >> Makefile
 ${ECHO} "SETRES=set_res" >> Makefile
 ${ECHO} "SHOWFREE=show_free" >> Makefile
 ${ECHO} "SHOWBF=show_bf" >> Makefile
+${ECHO} "SHOWBFALL=show_bf-all" >> Makefile
 ${ECHO} "SHOWCONFIG=show_config" >> Makefile
 ${ECHO} "SHOWEVENTS=show_events" >> Makefile
 ${ECHO} "SHOWGUESS=show_guesstimate" >> Makefile
@@ -698,7 +699,7 @@ ${ECHO} "	\$(CREATESYSTEM) \$(DELJOB) \$(DELPIDS) \$(INITIALIZE) \$(LOADCONFIGUR
 ${ECHO} "	\$(MOVEOLD) \$(QPRIORITY) \$(RELEASE) \$(RESLIST) \$(RESSTATUS) \\" >> Makefile
 ${ECHO} "	\$(PROLOGUERES) \$(EPILOGUERES) \\" >> Makefile
 ${ECHO} "	\$(SCHEDULEJOBS) \$(SCRATCHTEST) \\" >> Makefile
-${ECHO} "	\$(SETCONFIG) \$(SETRES) \$(SHOWFREE) \$(SHOWBF) \$(SHOWCONFIG) \$(SHOWEVENTS) \\" >> Makefile
+${ECHO} "	\$(SETCONFIG) \$(SETRES) \$(SHOWFREE) \$(SHOWBF) \$(SHOWBFALL) \$(SHOWCONFIG) \$(SHOWEVENTS) \\" >> Makefile
 ${ECHO} "	\$(SHOWGUESS) \$(SHOWQ) \$(SHOWRES) \\" >> Makefile
 ${ECHO} "	\$(SHOWRESOURCES) \$(DUMP)\\" >> Makefile
 ${ECHO} "	\$(SHOWSTANDING) \$(STOP) \$(TESTRES) \$(UNBINDJOB) \$(UPDATEJOBS) \\" >> Makefile
@@ -848,7 +849,7 @@ ${ECHO} "" >> Makefile
 
 ${ECHO} "MACH_SPECIFIC:" >> Makefile
 ${ECHO} "	\$(CP) -f \$(SHOWBF).\$(CLUSTER_NAME).dist \$(SHOWBF).dist" >> Makefile
-
+${ECHO} "	\$(CP) -f \$(SHOWBFALL).\$(CLUSTER_NAME).dist \$(SHOWBFALL).dist" >> Makefile
 
 ${ECHO} "TESTJOBS: " >> Makefile
 ${ECHO} "	for i in \$(TESTJOB_FILES) ; do \\" >> Makefile
