@@ -177,7 +177,8 @@ open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res
 increment = 3600 # one hour
 for time_window in range(num_of_days*24):
     #print "for time window %d ==========" %(time_window*increment)
-    start_epoch= (time_window*increment)
+    #fix bug 794
+    start_epoch += (time_window*increment)
     current_time =  time.strftime("%Y%m%d%H%M",time.localtime(start_epoch+Catalina.Now_float))
     
     
