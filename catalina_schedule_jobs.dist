@@ -10,6 +10,7 @@ import socket
 import traceback
 import string
 import types
+import copy
 
 RESOURCES_DB = 'resource'
 JOBS_DB = 'jobs'
@@ -73,6 +74,9 @@ state = 'running'
 count = startcount
 failed_count = 0
 log_warn_count = 0
+old_jobs_dict = {}
+old_reservations_list = []
+old_resources_dict = {}
 while ( (state == 'running' or state == 'suspended') and
   (argdict.has_key('--iterate') or count <= endcount) ) :
     cfg_resources_db_handle = None
@@ -129,13 +133,196 @@ while ( (state == 'running' or state == 'suspended') and
                 state = 'stopped'
                 sys.exit(1)
         Catalina.close_db(configuration_db_handle)
-        cfg_resources_db_handle = Catalina.open_db(CONFIGURED_RESOURCES_DB,'write')
-        events_db_handle = Catalina.open_db(EVENTS_DB,'write')
-        jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+
+        # loop until something changes
+        # should update last schedule update also
+        # need to also put something in to run jobs when
+        # it's time for the job res.
+        # need to cancel overrun jobs.
+        do_full = 0
+        while do_full == 0 :
+            print "event loop..."
+            configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+            cfg_resources_db_handle = Catalina.open_db(CONFIGURED_RESOURCES_DB,'read')
+            events_db_handle = Catalina.open_db(EVENTS_DB,'write')
+            jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
+            reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+            resources_db_handle = Catalina.open_db(RESOURCES_DB,'write')
+
+            new_resources_dict = {}
+            Catalina.update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle)
+            for resourcename in resources_db_handle[0].keys() :
+                new_resources_dict[resourcename] = resources_db_handle[0][resourcename]
+            if len(old_resources_dict.keys()) != len(new_resources_dict.keys()) :
+                do_full = 1
+                print "len(old_resources_dict.keys()) (%s) len(new_resources_dict.keys()) (%s)" % (len(old_resources_dict.keys()), len(new_resources_dict.keys()))
+                if len(old_resources_dict.keys()) < len(new_resources_dict.keys()) :
+                    for resourcestring in new_resources_dict.keys() :
+                        if not resourcestring in old_resources_dict.keys() :
+                            print "new resource, not in old: (%s)" % resourcestring
+                if len(new_resources_dict.keys()) < len(old_resources_dict.keys()) :
+                    for resourcestring in old_resources_dict.keys() :
+                        if not resourcestring in new_resources_dict.keys() :
+                            print "old resource, not in new: (%s)" % resourcestring
+                old_resources_dict = new_resources_dict
+                break
+            for resourcename in new_resources_dict.keys() :
+                if not resourcename in old_resources_dict.keys() :
+                    do_full = 1
+                    print "new resource (%s) not in old resource dict" % new_resources_dict[resourcename]
+                    old_resources_dict = new_resources_dict
+                    break
+                oresource_copy = copy.deepcopy(old_resources_dict[resourcename])
+                nresource_copy = copy.deepcopy(new_resources_dict[resourcename])
+                # there is jitter in 'Disk' for LoadL
+                oresource_copy['Disk'] = None
+                nresource_copy['Disk'] = None
+                #if oresource_copy['State'] == 'Running' :
+                oresource_copy['resource_usability_int'] = None
+                nresource_copy['resource_usability_int'] = None
+                if oresource_copy['speculative_state'] == None \
+                  and nresource_copy['speculative_state'] == None :
+                    # skip if there is None state for both old and new
+                    continue
+                    
+                #if old_resources_dict[resourcename] != new_resources_dict[resourcename] :
+                if oresource_copy != nresource_copy :
+                    do_full = 1
+                    print "old resource (%s) not equal to new resource (%s)" % (oresource_copy, nresource_copy)
+                    for attkey in oresource_copy.keys() :
+                        if oresource_copy[attkey] != \
+                          nresource_copy[attkey] :
+                            print "old (%s) (%s) new (%s) (%s)" % (attkey, oresource_copy[attkey], attkey, nresource_copy[attkey])
+                    old_resources_dict = new_resources_dict
+                    break
+            if do_full == 1 :
+                print "resources differ, triggering full..."
+                break
+            else :
+                print "resources unchanged"
+
+            new_reservations_list = []
+            for reservationname in reservations_db_handle[0].keys() :
+                new_reservations_list.append(copy.deepcopy(reservations_db_handle[0][reservationname]))
+            new_reservations_list.sort()
+            if len(old_reservations_list) != len(new_reservations_list) :
+                do_full = 1
+                print "len(old_reservations_list) (%s) len(new_reservations_list) (%s)" % (len(old_reservations_list), len(new_reservations_list))
+                #if len(old_reservations_list) < len(new_reservations_list) :
+                #    if len(new_reservations_list) - len(old_reservations_list) < 10 :
+                #        for reservationstring in new_reservations_list :
+                #            if not reservationstring in old_reservations_list :
+                #                print "new res, not in old: (%s)" % reservationstring
+                #if len(new_reservations_list) < len(old_reservations_list) :
+                #    if len(old_reservations_list) - len(new_reservations_list) < 10 :
+                #        for reservationstring in old_reservations_list :
+                #            if not reservationstring in new_reservations_list :
+                #                print "old res, not in new: (%s)" % reservationstring
+                    
+                old_reservations_list = new_reservations_list
+                break
+            for resindex in range(len(new_reservations_list)) :
+                if old_reservations_list[resindex] != new_reservations_list[resindex] :
+                    # is it just start and end time jitter for a reservation?
+                    or_copy = copy.deepcopy(old_reservations_list[resindex])
+                    nr_copy = copy.deepcopy(new_reservations_list[resindex])
+                    if or_copy['start_time_float'] - Catalina.FUDGE_FACTOR < nr_copy['start_time_float'] < or_copy['start_time_float'] + Catalina.FUDGE_FACTOR \
+                      and \
+                      or_copy['end_time_float'] - Catalina.FUDGE_FACTOR < nr_copy['end_time_float'] < or_copy['end_time_float'] + Catalina.FUDGE_FACTOR :
+                        # start and end are within FUDGE_FACTOR
+                        print "start and end times are within FUDGE_FACTOR"
+                        or_copy['name'] = None
+                        or_copy['node_list'] = None
+                        or_copy['start_time_float'] = None
+                        or_copy['end_time_float'] = None
+                        nr_copy['name'] = None
+                        nr_copy['node_list'] = None
+                        nr_copy['start_time_float'] = None
+                        nr_copy['end_time_float'] = None
+                        if or_copy != nr_copy :
+                            do_full = 1
+                            print "resindex (%s) old_reservation (%s) new_reservation (%s)" % (resindex, new_reservations_list[resindex], old_reservations_list[resindex])
+                            for nrkey in nr_copy.keys() :
+                                if or_copy.has_key(nrkey) :
+                                    print "nr_copy[%s] (%s), or_copy[%s] (%s)" % (nrkey, nr_copy[nrkey], nrkey, or_copy[nrkey])
+                                else :
+                                    print "or_copy lacks key (%s)" % nrkey
+                            old_reservations_list = new_reservations_list
+                            break
+                    else :
+                        do_full = 1
+                        print "start and end times are not within FUDGE_FACTOR"
+                        print "or_copy (%s), nr_copy (%s)" % (or_copy, nr_copy)
+                        old_reservations_list = new_reservations_list
+                        break
+            if do_full == 1 :
+                print "reservations differ, triggering full..."
+                break
+
+            new_jobs_dict = {}
+            Catalina.update_job_info(jobs_db_handle)
+            Catalina.update_job_speculative_system_queue_time(jobs_db_handle)
+            Catalina.update_job_priorities(jobs_db_handle)
+            for jobname in jobs_db_handle[0].keys() :
+               new_jobs_dict[jobname] = repr(jobs_db_handle[0][jobname])
+            if len(old_jobs_dict.keys()) != len(new_jobs_dict.keys()) :
+                do_full = 1
+                print "len(old jobs) not equal to len(new jobs)"
+                old_jobs_dict = new_jobs_dict
+                break
+            for jobname in new_jobs_dict.keys() :
+                if not jobname in old_jobs_dict.keys() :
+                    do_full = 1
+                    print "new job (%s) not in old jobs" % new_jobs_dict[jobname]
+                    old_jobs_dict = new_jobs_dict
+                    break
+                if old_jobs_dict[jobname] != new_jobs_dict[jobname] :
+                    do_full = 1
+                    print "old job (%s) differs from new job (%s)" % (old_jobs_dict[jobname], new_jobs_dict[jobname])
+                    old_jobs_dict = new_jobs_dict
+                    break
+            if do_full == 1 :
+                print "jobs differ, triggering full..."
+                break
+
+            Catalina.Now_float = Catalina.get_scheduler_time()
+
+            need_to_run = 0
+            for reservationname in reservations_db_handle[0].keys() :
+                if reservations_db_handle[0][reservationname]['purpose_type_string'] == 'job' and \
+                  reservations_db_handle[0][reservationname]['start_count_int'] == 0 and \
+                  reservations_db_handle[0][reservationname]['start_time_float'] <= Catalina.Now_float :
+                    need_to_run = 1
+                    break
+            if need_to_run == 1 :
+                Catalina.run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle)
+
+            update_object = { 'name' : 'last_schedule_update', 'timestamp' : Catalina.Now_float }
+            Catalina.insert_new_object(update_object, configuration_db_handle)
+            
+            Catalina.close_db(resources_db_handle)
+            Catalina.close_db(reservations_db_handle)
+            Catalina.close_db(jobs_db_handle)
+            Catalina.close_db(events_db_handle)
+            Catalina.close_db(cfg_resources_db_handle)
+            Catalina.close_db(configuration_db_handle)
+            print "Loop again..."
+        print "after event loop..."
+  
+
+        #Catalina.close_db(resources_db_handle)
+        #Catalina.close_db(reservations_db_handle)
+        #Catalina.close_db(jobs_db_handle)
+        #Catalina.close_db(events_db_handle)
+        #Catalina.close_db(cfg_resources_db_handle)
+
+        #cfg_resources_db_handle = Catalina.open_db(CONFIGURED_RESOURCES_DB,'write')
+        #events_db_handle = Catalina.open_db(EVENTS_DB,'write')
+        #jobs_db_handle = Catalina.open_db(JOBS_DB,'write')
         old_jobs_db_handle = Catalina.open_db(OLD_JOBS_DB,'write')
         old_reservations_db_handle = Catalina.open_db(OLD_RESERVATIONS_DB,'write')
-        reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
-        resources_db_handle = Catalina.open_db(RESOURCES_DB,'write')
+        #reservations_db_handle = Catalina.open_db(RESERVATIONS_DB,'write')
+        #resources_db_handle = Catalina.open_db(RESOURCES_DB,'write')
         standing_reservations_db_handle = Catalina.open_db(STANDING_RESERVATIONS_DB,'read')
         #print "updating standing reservations"
         #Catalina.update_standing_reservations(
@@ -151,8 +338,8 @@ while ( (state == 'running' or state == 'suspended') and
             Catalina.move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle)
             print "moving old reservations"
             Catalina.move_old_reservations(events_db_handle, reservations_db_handle, old_reservations_db_handle)
-            print "refreshing node dictionary"
-            Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
+            #print "refreshing node dictionary"
+            #Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
             print "rolling logs"
             try :
                 Catalina.roll_logs(events_db_handle, old_jobs_db_handle, old_reservations_db_handle)
@@ -179,8 +366,6 @@ while ( (state == 'running' or state == 'suspended') and
         # feature 669
         if count % Catalina.MACHINE_REFRESH_INTERVAL == 0 :
             print "refreshing node dictionary after %s intervals" %(Catalina.MACHINE_REFRESH_INTERVAL)
-            print "update_resources and filter out bad nodes from job list"
-            Catalina.update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle)
             Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
             
         Catalina.schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle, cfg_resources_db_handle, standing_reservations_db_handle )
