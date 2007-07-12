@@ -474,6 +474,8 @@ result = windows
 
 username_string = pwd.getpwuid(os.getuid())[0]
 
+open_windows_dict = None
+
 def initialize_reservation(reservation_name) :
     new_reservation = {}
     new_reservation['name'] = reservation_name
@@ -940,7 +942,1117 @@ def get_object(key, db_handle) :
 #            screened_nodes_list.append(node)
 #    return screened_nodes_list
 
-def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, resources_db_handle) :
+def get_events_list(reservations_db_handle, resources_db_handle, jobs_db_handle, nr_names_list) :
+    # [ [<time>, <'add' | 'dec'>, <reservation id>, <nodename>, <node resource name>, <amount>],]
+    # allocated_dict_list:
+#{'allocated_dict_list': [{'node': 0, 'cpu': 32L, 'type': 'node_shared', 'nodenam
+#e': 'ds007', 'memory': 12800L}], 'affinity_calculation': None, 'node_usage': Non
+#e, 'notify_string': None, 'notify_count_int': 0, 'node_restriction': None, 'acco
+#unt_string': None, 'node_list': ['ds007'], 'duration_float': 64810.0, 'purpose_t
+#ype_string': 'running', 'conflict_policy': None, 'overlap_running_int': 0, 'late
+#ncy_float': None, 'earliest_start_float': None, 'start_spec_string': None, 'node
+#_sort_policy': None, 'job_runID': 'ds002.247011.0', 'latest_end_float': None, 'r
+#esource_dict_list': None, 'creator_string': None, 'name': '1179145374', 'ignore_
+#reservations_list': None, 'end_time_float': 1179216993.3317461, 'job_restriction
+#': 'result = 1', 'comment_string': None, 'start_count_int': 0, 'resource_amount_
+#int': 1, 'job_binding': None, 'start_time_float': 1179152183.3317461}
+    events_list = []
+    preempted_nodes_list = []
+    # populate with initial resources at time 0.0
+    for resource_name in resources_db_handle[0].keys() :
+        for nr_name in nr_names_list :
+            events_list.append(
+              copy.deepcopy([ 0.0, 'add', None, resource_name, nr_name, resources_db_hande[0][resource_name][nr_name] ])
+              )
+            events_list.append(
+              copy.deepcopy([ END_OF_SCHEDULING, 'dec', None, resource_name, nr_name, resources_db_hande[0][resource_name][nr_name] ])
+              )
+    # from all the allocated_dict_lists, generate dec and add events for
+    # node resources
+    for reservation_name in reservations_db_handle[0].keys() :
+        for allocated_dict in reservations_db_handle[0][reservation_name]['allocated_dict_list'] :
+            for nr_name in nr_names_list :
+                events_list.append(
+                  copy.deepcopy([ reservations_db_handle[0]['start_time_float'], 'dec', reservation_name, allocated_dict['nodename'], nr_name, allocated_dict[nr_name] ])
+                )
+                events_list.append(
+                  copy.deepcopy([ reservations_db_handle[0]['end_time_float'], 'add', reservation_name, allocated_dict['nodename'], nr_name, allocated_dict[nr_name] ])
+                )
+            if reservations_db_handle[0][reservation_name]['purpose_type_string'] == 'preempt_job' :
+                if not allocated_dict['nodename'] in preempted_nodes_list :
+                    preempted_nodes_list.append(allocated_dict['nodename'])
+    events_list.sort()
+    return (events_list, preempted_nodes_list)
+
+def get_preemptible_reservations(Now_float, new_res, jobs_db_handle, reservations_db_handle) :
+    # return a list of reservations that may be preempted by the job in new_res
+    # need to take PREEMPT_MIN_RUNTIME into account.  A job will not be
+    # preempted in the last PREEMPT_MIN_RUNTIME seconds of its reservation.
+    # This should apply only for running reservations, not job reservations.
+    preemptible_reservations_list = []
+    for reservation in reservations_db_handle[0].keys() :
+        if new_res.has_key('job_runID') and new_res['job_runID'] != None \
+          and
+          jobs_db_handle[0][new_res['job_runID']].has_key('preempting') \
+          and \
+          jobs_db_handle[0][new_res['job_runID']]['preempting'] >= 1 \
+          and \
+          reservations_db_handle[0][reservation]['purpose_type_string'] in ['prempted_job', 'running'] \
+          and \
+          jobs_db_handle[0][reservations_db_handle[0][reservation]['job_runID']].has_key('preemptible') \
+          and \
+          jobs_db_handle[0][reservations_db_handle[0][reservation]['job_runID']]['preemptible'] >= 1 \
+          and \
+          jobs_db_handle[0][reservations_db_handle[0][reservation]['job_runID']]['priority_int'] < jobs_db_handle[0][new_res['job_runID']]['priority_int'] :
+            # need to see if any reservation blocks preemption on the
+            # backend.  For efficiency, should probably save a list of
+            # possibly preemptible reservations, then look at each for
+            # each possible blocking reservation.
+            # For now, do it inefficiently, going through every reservation
+            # for each possibly preemptible reservation.
+            blocked = 0
+            for blocking_reservation in reservations_db_handle[0].keys() :
+                if reservation == blocking_reservation :
+                    # ignore the reservation we are preempting
+                    continue
+                if reservations_db_handle[0][blocking_reservation]['end_time_float'] < reservations_db_handle[0][reservation]['start_time_float'] :
+                    # ignore the blocking reservation, if it ends before
+                    # the reservation start
+                    continue
+                if reservations_db_handle[0][blocking_reservation]['start_time_float'] > reservations_db_handle[0][reservation]['end_time_float'] + new_res['duration_float'] + FUDGE_FACTOR :
+                    # reservation does not block, if there is enough time
+                    # between end of reservation and start of blocking
+                    # reservation
+                    continue
+                common_nodes = 0
+                for allocated_dict in reservations_db_handle[0][reservation]['allocated_dict_list'] :
+                    reservation_node = allocated_dict['nodename']
+                    for allocated_dict in reservations_db_handle[0][blocking_reservation]['allocated_dict_list'] :
+                        if reservation_node == allocated_dict['nodename'] :
+                            common_nodes = 1
+                            break
+                    if common_nodes == 1 :
+                        break
+                if common_nodes == 0 :
+                    continue
+                blocked = 1
+            if blocked == 0 :
+                # reservation can be preempted, skip for now, check later
+                preemptible_reservations_list.append(reservation)
+                # for running reservations, block the last PREEMPT_MIN_RUNTIME
+                # of the run from getting preempted.  can do this with a
+                # reservation
+                # need to allow low priority preemptible reservations to be
+                # made over higher priority reservations, with the expectation
+                # that the higher priority res will preempt the low.
+                # There is code for this in run_at_risk.
+    return(preemptible_reservations_list)
+
+def get_sufficient_resources(events_list, new_res, nr_names_list, permissive_reservations_list, duration, node_list, requested_resource_list, preempted_nodes_list, preempible_reservations_list, earliest_start_float=0.0, latest_end_float=END_OF_SCHEDULING) :
+    # return the sized windows that provide sufficient resources to
+    # satisfy the reservation.  This can be fed to get_sorted.
+    # return a list of preempted reservations, with new times
+    # get_chosen will need to update reservations_db and the events_list
+    # depending on which reservations are chosen to be preempted
+#  'requested_resource_list': [
+#    {'req_list': [{'cpu': 1L, 'memory': 1024L}], 'type': 'node_exclusive'},
+#    {'req_list': [{'cpu': 1L, 'memory': 1024L}], 'type': 'node_exclusive'},
+#    {'req_list': [{'cpu': 1L, 'memory': 1024L}], 'type': 'node_exclusive'},
+#    {'req_list': [{'cpu': 1L, 'memory': 1024L}], 'type': 'node_exclusive'},
+#    {'req_list': [{'cpu': 1L, 'memory': 1024L}], 'type': 'node_exclusive'}]
+    # each element of requested_resource_list is one node, must be
+    # unique.  each element of req_list is the resource required
+    # by one task on that node.
+    # to handle preempting reservations, it would be more efficient
+    # to have some info passed in:
+    # - preempted_nodes_list would give us nodes which already have
+    #   a preempted job sitting
+    # no, the preempted_nodes_list changes as we move up through the
+    # events_list
+    # as we look at events for resources, check if reservation
+    # for that event can be pushed back.  If so, ignore the event,
+    # add to ignored_reservation_list.  If sufficient_start is after
+    # the 'add' event for the ignored reservation, remove the
+    # reservation from the ignored reservations list.  When bins are filled,
+    # push back any ignored reservations, 
+    # how to tell if a reservation can be pushed back?  
+    # find all nodes in the reservation
+    # set the push horizon to preempting duration + preempted duration
+    # check events from events[0] to events[0] + push horizon
+    # to see if there are any blocking reservations.  If a user or
+    # system res, then the reservation can't be pushed.  If a job
+    # reservation, add its duration to push
+    # horizon and keep going.  Need to updated preempted_nodes_list.
+    filled_resource_list = copy.deepcopy(requested_resource_list)
+    # each task needs a dict with nodename and nr_names to
+    # track accumulated nodes and resources.  As 'dec' events
+    # are encountered, the appropriate fields in found_dict can be
+    # decremented.  The found dict would have the structure:
+    # found_dict = { <node_name> : { <nr_name1> : <
+    for resource_index in range(len(filled_resource_list)) :
+        filled_resource_list[resource_index]['found_dict'] = {}
+        #for nr_name in nr_names_list :
+        #    filled_resource_list[resource_index]['found_dict'][nr_name] = 0
+    # each bin must be on a different node.
+    # collect nodes, with resources
+    found_node_dict ={}
+    sufficient_resources = 0
+    filled_bins = 0
+    sufficient_start = None
+    preempted_reservations_dict = {}
+    preempted_resources_dict = {}
+    for event_index in range(len(events_list)) :
+        # [ [<time>, <'add' | 'dec'>, <reservation id>, <nodename>, <node resource name>, <amount>],]
+        event = events_list[event_index]
+        # if reservation is for job that is 'preemptible' and
+        # new_res is for job that is 'preempting' and new_res job
+        # has higher priority than preemptible job
+        # do not 'dec' or 'add' for now.
+        # if sufficient_resources, check that any preempted_reservations
+        # are not on nodes with a preempted job and there is sufficient
+        # time to complete preempted job after current job
+
+        if event[2] in permissive_reservations_list :
+            # reservation does not block, so do not 'dec' and 'add'
+            continue
+        if not event[3] in node_list :
+            # not in accepted node list, so ignore
+            continue
+        if event[0] > latest_end :
+            # we are looking at events after latest end, so break out
+            break
+        if filled_bins == 1 :
+            # this check should happen before the current event
+            # can dec resources
+            if sufficient_start != None and \
+              event[0] - sufficient_start >= duration + FUDGE_FACTOR :
+                # check preempted reservations
+                # if there are no events, on reserved nodes, between
+                # sufficient_start and completion_horizon then we
+                # can preempt.  if reservation is not job, then
+                # we can't preempt.  What about shared nodes, cpu
+                # and memory reservations?  Node will have events,
+                # but there may be space for the new job...
+                # The policy should not be one preempted job per node
+                # rather one preempted job per that nodes cpu and memory
+                # To check for this, would need to keep track of how
+                # many preempted cpus and memory is on that node.
+                # actually, should adjust data structure as we
+                # go through events
+                
+#                preempted_resources_dict = {}
+#                for preempted_reservation in preempted_reservations_dict.keys() :
+#                    if preempted_reservations_dict[preempted_reservation].has_key('dec') \
+#                      and \
+#                      preempted_reservations_dict[preempted_reservation].has_key('add')
+#                      and \
+#                      preempted_reservations_dict[preempted_reservation]['dec'] \
+#                      <= \
+#                      preempted_reservations_dict[preempted_reservation]['add'] \
+#                      :
+#                        # reservation has come and gone, so we can ignore
+#                        del preempted_resources_dict[preempted_reservation]
+#                        continue
+#                    # build list of preempted node resources
+#                    for allocated_dict in reservations_db_handle[0][preempted_reservation]['allocated_dict_list'] :
+#                        if preempted_resources_dict.has_key(allocated_dict['nodename']) :
+#                            for nr_name in nr_names_list :
+#                                if allocated_dict.has_key(nr_name) :
+#                                    if preempted_resources_dict[allocated_dict['nodename']].has_key(nr_name) :
+#                                        # increment the nr_name
+#                                        preempted_resources_dict[allocated_dict['nodename']][nr_name] = preempted_resources_dict[allocated_dict['nodename']] + allocated_dict['nr_name']
+#                                    else :
+#                                        # should never get here
+#                                        preempted_resources_dict[allocated_dict['nodename']][nr_name] = 0
+#                        else :
+#                            preempted_resources_dict[allocated_dict['nodename']] = {}
+#                            for nr_name in nr_names_list :
+#                                if allocated_dict.has_key(nr_name) :
+#                                    preempted_resources_dict[allocated_dict['nodename']][nr_name] = allocated_dict[nr_name]
+#                                else :
+#                                    preempted_resources_dict[allocated_dict['nodename']][nr_name] = 0
+                
+                completion_horizon = sufficient_start + new_res['duration_float'] + FUDGE_FACTOR
+                unpreemptible_reservations_list = []
+                # from sufficient_start to completion_horizon,
+                # are there any events for generic, user_set, system,
+                # or standing reservations?
+                # these can't be pushed back, nor can the preempted job
+                # be scheduled afterwards.
+                # it might be possible to ignore a job reservation,
+                # if there is time to push back the preempted job
+                # to after the job finishes.
+                # check if reservation can be pushed back
+                # this should also deal with one preempted reservation
+                # per node's worth of resources
+                # [ [<time>, <'add' | 'dec'>, <reservation id>, <nodename>, <node resource name>, <amount>],]
+                for push_event_index in range(len(events_list)) :
+                    if events_list[push_event_index][0] < sufficient_start :
+                        continue
+                    if events_list[push_event_index][0] > completion_horizon :
+                        break
+                    if reservations_db_handle[0][events_list[push_event_index][2]]['purpose_type_string'] == 'job'
+                    
+                # check if bins can still be filled
+                # we have had sufficient resources for longer than duration
+                # so we can stop looking at events
+                sufficient_resources = 1
+                break
+
+        # preempt checks
+        # where should min runtime check go?  At this point, we don't
+        # know when the running job needs to be preempted.  Could be
+        # now or later.  After we have sufficient_resources, including
+        # possible preempted_reservations, check each preempted reservation
+        # to see if it conforms to preemption policy and can be pushed
+        # back.  If not, dec resources.  and recheck for sufficient
+        # resources.
+        # Here, just add or dec each event to preempted_resources_dict
+        if new_res.has_key('job_runID') and new_res['job_runID'] != None :
+            if jobs_db_handle[0][new_res['job_runID']].has_key('preemptible') \
+              and \
+              jobs_db_handle[0][new_res['job_runID']]['preemptible'] >= 1 \
+              and \
+              reservations_db_handle[0][event[2]]['purpose_type_string'] in ['prempted_job', 'running'] \
+              and \
+              jobs_db_handle[0][reservations_db_handle[0][event[2]]['job_runID']]['priority_int'] < jobs_db_handle[0][new_res['job_runID']]['priority_int'] :
+                # reservation can be preempted, skip for now, check later
+                # for pushback and min runtime and existing preempted nodes
+                preempted_reservations_dict[event[2]] = {}
+                if event[1] == 'dec' :
+                    preempted_reservations_dict[event[2]]['dec'] = copy.deepcopy(event_index)
+                else :
+                    preempted_reservations_dict[event[2]]['add'] = copy.deepcopy(event_index)
+                # build list of preempted node resources
+                for allocated_dict in reservations_db_handle[0][event[2]]['allocated_dict_list'] :
+                    if preempted_resources_dict.has_key(allocated_dict['nodename']) :
+                        for nr_name in nr_names_list :
+                            if allocated_dict.has_key(nr_name) :
+                                if preempted_resources_dict[allocated_dict['nodename']].has_key(nr_name) :
+                                    # increment the nr_name
+                                    preempted_resources_dict[allocated_dict['nodename']][nr_name] = preempted_resources_dict[allocated_dict['nodename']] + allocated_dict['nr_name']
+                                else :
+                                    # should never get here
+                                    preempted_resources_dict[allocated_dict['nodename']][nr_name] = 0
+                    else :
+                        preempted_resources_dict[allocated_dict['nodename']] = {}
+                        for nr_name in nr_names_list :
+                            if allocated_dict.has_key(nr_name) :
+                                preempted_resources_dict[allocated_dict['nodename']][nr_name] = allocated_dict[nr_name]
+                            else :
+                                preempted_resources_dict[allocated_dict['nodename']][nr_name] = 0
+                continue
+
+#        for preempted_reservation in preempted_reservations_dict.keys() :
+#            if preempted_reservations_dict[preempted_reservation].has_key('dec') \
+#              and \
+#              preempted_reservations_dict[preempted_reservation].has_key('add')
+#              and \
+#              preempted_reservations_dict[preempted_reservation]['dec'] \
+#              <= \
+#              preempted_reservations_dict[preempted_reservation]['add'] \
+#              :
+#                # reservation has come and gone, so we can ignore
+#                del preempted_resources_dict[preempted_reservation]
+#                continue
+                
+        if event[1] == 'add' :
+            if found_node_dict.has_key(event[3]) :
+                if found_node_dict[event[3]].has_key(event[4]) :
+                    found_node_dict[event[3]][event[4]] = \
+                      found_node_dict[event[3]][event[4]] + event[5]
+                else :
+                    found_node_dict[event[3]][event[4]] = event[5]
+            else :
+                found_node_dict[event[3]] = { event[4] : event[5] }
+        else :
+            # dec, so take away
+            if found_node_dict.has_key(event[3]) :
+                if found_node_dict[event[3]].has_key(event[4]) :
+                    found_node_dict[event[3]][event[4]] = \
+                      found_node_dict[event[3]][event[4]] - event[5]
+                else :
+                    # should never get here, since we should never
+                    # decrement without add first
+                    print "decrement without adding! (%s)" % (event,)
+                    found_node_dict[event[3]][event[4]] = event[5]
+            else :
+                # should never get here, since we should never
+                # decrement without add first
+                print "decrement without adding! (%s)" % (event,)
+                found_node_dict[event[3]] = { event[4] : event[5] }
+        # check next event, to see if we should evaluate sufficient
+        # nodes here
+        if events_list[event_index + 1][0] == event[0] :
+            # the next event has the same time, so add or dec it
+            if event_index == len(events_list) - 1 :
+                # we are at last event, so go ahead and evaluate resources
+                pass
+            else :
+                continue
+        if event[0] < earliest_start :
+            # we are still looking at events before earliest start, so
+            # keep going
+            continue
+        if events_list[event_index + 1] != event[0] :
+            # next event is not the same time as this one, so
+            # we should see if we've filled all bins
+            filled_bins = 1
+            used_nodes_list = []
+            for resource_index in range(len(filled_resource_list)) :
+                # does this task have sufficient resources?
+                #if filled_resource_list[resource_index]['req_list'][0][nr_name] < \
+                #  filled_resource_list[resource_index]['found_dict'][nr_name] :
+                #    # this one is satisfied
+                #    continue
+                #else :
+                # look for unused nodes that can fill this bin
+                sufficient_task_resources = 0
+                for node_name in found_node_dict.keys() :
+                    if node_name in used_nodes_list :
+                        continue
+                    else :
+                        insufficient_resources = 0
+                        for nr_name in nr_names_list :
+                            if found_node_dict[node_name][nr_name] < \
+                              filled_resource_list[resource_index]['req_list'][0][nr_name] :
+                                insufficient_resources = 1
+                                break
+                        if insufficient_resources == 0 :
+                            # all nr_names satisfied
+                            # find a node for next task
+                            used_nodes_list.append(node_name)
+                            sufficient_task_resources = 1
+                            break
+                        else :
+                            # this node does not satisfy resource request
+                            # for this task, so continue
+                            continue
+                if sufficient_task_resources == 0 :
+                    # no node satisfies resource request for this task,
+                    # stop looking at tasks
+                    filled_bins = 0
+                    break
+            if filled_bins == 1 :
+                # we have enough resources to satisfy all tasks,
+                # so stop looking at events
+                if sufficient_start == None :
+                    # we did not have sufficient resources until this event
+                    sufficient_start = event[0]
+            else :
+                # some tasks cannot be satisfied
+                sufficient_start = None
+        if sufficient_resources == 1 :
+            # we have sufficient task resources for enough duration
+            # stop looking at events
+            # break
+            # but we can't break out of the event loop, since
+            # we need to check the preempted reservations
+            # if those are okay, we can break out
+            #continue
+            break
+    if sufficient_resources == 1 :
+        # we found sufficient resources
+        # should return sized_windows_list here...
+        return (sufficient_start, used_nodes_list)
+    else :
+        # we looked through all events and failed to find sufficient
+        # resources
+        raise 'InsufficientResources', requested_resource_list
+
+def new_get_nonconflicting(input_tuple) :
+    # maybe, instead of open_windows_dict, we should use
+    # events_list.  The events list would look like:
+    # [ [<time>, <reservation id>, <'add' | 'dec'>, <nodename>, <node resource name>, <amount>],]
+    # sorted by time.  To find an open time slot, start at earliest_start,
+    # for event in events_list :
+    #     if event[1] in permissive_reservations_list :
+    #         continue
+    #     if not event[3] in temp_nodes_list :
+    #         continue
+    #     if event[2] == 'add' :
+    #         accumulated_resource_dict[event[3]][event[4]] = accumulated_resource_dict[event[3]][event[4]] + event[5]
+    #     else :
+    #         # if sufficient_resources = 1, does this decrement create an insufficiency?
+    #         run through requested_resource_dict_list, with the new decrement.
+    #         if insufficiency arises, then set sufficient_end = event[0]
+    #         break and return these sized windows.
+    #         accumulated_resource_dict[event[3]][event[4]] = accumulated_resource_dict[event[3]][event[4]] - event[5]
+    #     sufficient_resources = 1
+    #     run through requested_resource_dict_list. if any insufficiencies,
+    #     set sufficient_resources = 0, break
+    #     if no insufficiencies, set sufficient_start = event[0]
+    # to support preemption, ignore preemptible job reservations, assuming
+    # that all can be preempted.  If sufficient resources are found,
+    # go through the list of preemptible job reservations, and see if
+    # they can actually be preempted.  If individual reservations
+    # cannot be preempted, decrement their resources from the found
+    # resources.  Check again to see if there are sufficient resources.
+    # For any reservations to preempted, create a new running reservation
+    # and update events_list.  So, for each job, a preemptible running
+    # job could be pushed back indefinitely.  Need to update priorities
+    # of running jobs.
+    # Also, can a preempted job be pushed through a later job
+    # reservation?  Should not displace the future job, but should
+    # be able to run after it.  Need to re-schedule the preempted job,
+    # to see if it can run before system or user res.
+    # What are the preemption rules?  Can a job be preempted again?
+    # A job labeled preempting may preempt a job labeled preemptible
+    # A job may preempt a running job only if the preempting job has
+    # a higher priority
+    # A job may be preempted only if both it and the preempting job
+    # can be completed before the next system or user reservation
+    # On any given node, there may be only one preempted job at a time
+    # If a running job has less remaining wallclock time than
+    # PREEMPT_MIN_RUNTIME seconds (default 1800) then it will not be preempted
+
+    #input_tuple = (temp_nodes_list, new_res, temp_reservations_list, Now_float, resources_db_handle, reservations_db_handle, nr_names_list, open_windows_dict)
+    temp_nodes_list = input_tuple[0]
+    temp_reservations_list = input_tuple[1]
+    Now_float = input_tuple[2]
+    resources_db_handle = input_tuple[3]
+    nr_names_list = input_tuple[4]
+    open_windows_dict = input_tuple[5]
+    end_limit = END_OF_SCHEDULING
+    reservation_windows = []
+    node_reservations = {}
+    if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+        print "len(accepted_nodes) (%s)" % len(accepted_nodes)
+    # if open_windows_dict is None, this is our first time
+    # through, so generate the full open_windows_dict
+    if open_windows_dict == None :
+        # we need _all_ the reservations here, not just the relevant ones
+        pass
+    else :
+        # open_windows_dict exists, so we can skip generating
+        # it from scratch
+        pass
+    #if new_res['purpose_type_string'] in ['preempted_job',] :
+    #    print "reservations (%s)" % (reservations,)
+    for reservation in reservations :
+        #print "reservation (%s)" % reservation
+        #if reservation['purpose_type_string'] == 'running' :
+        #    print "reservation name (%s) purpose (%s) start (%s) end (%s)" % \
+        #      (reservation['name'], reservation['purpose_type_string'], reservation['start_time_float'], reservation['end_time_float'])
+        #    print "running reservation (%s)" % reservation
+        #print "reservation name (%s) purpose (%s) start (%s) end (%s)" % \
+        #  (reservation['name'], reservation['purpose_type_string'], reservation['start_time_float'], reservation['end_time_float'])
+        res_id = reservation['name']
+        node_list = reservation['node_list']
+        if reservation.has_key('allocated_dict_list') and reservation['allocated_dict_list'] != None :
+            allocated_dict_list = reservation['allocated_dict_list']
+            # should move this to create_reservation, where allocated_dict
+            # is created.  It may need to call an RM-specific function
+            # to translate Consumables to generic node resources
+            #Kenneth patch leaking reservation. 7/24/06
+            for allocated_dict in allocated_dict_list:
+                if allocated_dict.has_key('type') and allocated_dict['type'] == 'node_exclusive' and allocated_dict.has_key('nodename'):
+                    if resources_dict[allocated_dict['nodename']].has_key('ConsumableCpus'):
+                        allocated_dict['cpu'] = resources_dict[allocated_dict['nodename']]['ConsumableCpus']
+                    if resources_dict[allocated_dict['nodename']].has_key('ConsumableMemory'):
+                        allocated_dict['memory'] = resources_dict[allocated_dict['nodename']]['ConsumableMemory']
+            #end of patch
+            if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                print "existing allocated_dict_list (%s)" % (allocated_dict_list,)
+        else :
+            allocated_dict_list = []
+            for node in reservation['node_list'] :
+                #print "node (%s)" % node
+                if resources_dict.has_key(node) and resources_dict[node].has_key('ConsumableCpus') and resources_dict[node].has_key('ConsumableMemory') :
+                    allocated_consumablecpus = resources_dict[node]['ConsumableCpus']
+                    allocated_consumablememory = resources_dict[node]['ConsumableMemory']
+                else :
+                    allocated_consumablecpus = 0
+                    allocated_consumablememory = 0
+                allocated_dict_list.append(
+                  { 'nodename' : node,
+                    'type' : 'node_exclusive',
+                    'node' : 1,
+                    'cpu' : allocated_consumablecpus,
+                    'memory' : allocated_consumablememory }
+                  )
+            if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                print "generated allocated_dict_list (%s)" % (allocated_dict_list,)
+        #print "allocated_dict_list (%s)" % (allocated_dict_list,)
+        node_resource_list = filter(lambda x : x.has_key('nodename'), allocated_dict_list)
+        #print "node_resource_list (%s)" % (node_resource_list,)
+        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+            print "node_resource_list (%s)" % (node_resource_list,)
+        start_time_float = reservation['start_time_float']
+        if reservation.has_key('end_time_float') :
+            end_time_float = reservation['end_time_float']
+        else :
+            end_time_float = END_OF_SCHEDULING
+        #print "node_resource_list (%s)" % (node_resource_list,)
+        for index in range(len(node_resource_list)) :
+            node = node_resource_list[index]['nodename']
+            #print "doing node (%s)" % node
+            if not resources_dict.has_key(node) or not node in accepted_nodes :
+                continue
+            if not node_reservations.has_key(node) :
+                node_reservations[node] = []
+                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                    print "node_reservations[node].append (%s)" % ( (0.0, 'increment', 
+                  { 'nodename' : node, 'type' : 'node_exclusive',
+                    'node' : 1,
+                    'cpu' : resources_dict[node]['ConsumableCpus'],
+                    'memory' : resources_dict[node]['ConsumableMemory']
+                  }
+                  ),
+                  )
+                #print "node (%s)" % node
+                node_reservations[node].append( (0.0, 'add', 
+                  { 'nodename' : node, 'type' : 'node_exclusive',
+                    'node' : 1,
+                    'cpu' : resources_dict[node]['ConsumableCpus'],
+                    'memory' : resources_dict[node]['ConsumableMemory']
+                  }
+                  )
+                  )
+                node_reservations[node].append( (END_OF_SCHEDULING, 'decrement', 
+                  { 'nodename' : node, 'type' : 'node_exclusive',
+                    'node' : 1,
+                    'cpu' : resources_dict[node]['ConsumableCpus'],
+                    'memory' : resources_dict[node]['ConsumableMemory']
+                  } )
+                  )
+            if node in accepted_nodes :
+                #print "adding (%s) to node_reservations" % node
+                if node_reservations.has_key(node) :
+                    #node_reservations[node].append( (start_time_float, end_time_float, node_resource_list[index]) )
+                    #if reservation['purpose_type_string'] == 'running' :
+                    #    print "appending running node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+                    node_reservations[node].append( (start_time_float, 'decrement', node_resource_list[index]) )
+                    node_reservations[node].append( (end_time_float, 'add', node_resource_list[index]) )
+                    #print "appending later node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+                else :
+                    #if reservation['purpose_type_string'] == 'running' :
+                    #    print "appending running node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+                    node_reservations[node] = [ (start_time_float, 'decrement', node_resource_list[index]) ]
+                    node_reservations[node].append( (end_time_float, 'add', node_resource_list[index]) )
+                if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                    print "appending node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+                #if reservation['purpose_type_string'] == 'running' :
+                #    print "appending running node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+    #potential_start_time_float = new_res['earliest_start_float']
+    #if potential_start_time_float == None :
+    #    potential_start_time_float = Now_float
+    potential_start_time_float = 0.0
+    for accepted_node in accepted_nodes :
+        if not node_reservations.has_key(accepted_node) :
+            # node is free, create window for Now_float
+            #reservation_windows.append( (potential_start_time_float, end_limit, accepted_node) )
+            # I need resource_dict here, to see ConsumableCpus and ConsumableMemory for the node...
+            #print "accepted_node (%s)" % accepted_node
+            if resources_dict[accepted_node].has_key('ConsumableCpus') :
+                acConsumableCpus = resources_dict[accepted_node]['ConsumableCpus']
+            else :
+                acConsumableCpus = 0
+            if resources_dict[accepted_node].has_key('ConsumableMemory') :
+                acConsumableMemory = resources_dict[accepted_node]['ConsumableMemory']
+            else :
+                acConsumableMemory = 0
+            reservation_windows.append( (potential_start_time_float, end_limit, {'nodename' : accepted_node,
+ 'node' : 1}) )
+            reservation_windows.append( (potential_start_time_float, end_limit, {'nodename' : accepted_node,
+ 'cpu' : acConsumableCpus}) )
+            reservation_windows.append( (potential_start_time_float, end_limit, {'nodename' : accepted_node,
+ 'memory' : acConsumableMemory}) )
+            if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                print "appending open window (%s, %s, %s)" % (potential_start_time_float, end_limit, accepted_node)
+                print "end_limit is (%s)" % time.asctime(time.localtime(end_limit))
+    # sort the reservations for each node, in ascending start_time_float order
+    # keep a potential start time for the reservation window.
+    # for each reservation, if the start_time_float - the potential start_time_float
+    # is less than the duration_float, the window is too small (or negative)
+    # instead of doing this by reservation, need to do it by event
+    # + or - of cpus or memory.  Create an open window between each event
+    for node in node_reservations.keys() :
+        #node_reservations[node].sort(sort_by_start)
+        node_reservations[node].sort()
+        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+            print "node_reservations[node] (%s)" % (node_reservations[node],)
+        #print "node_reservations[node] (%s)" % (node_reservations[node],)
+        #potential_start_time_float = new_res['earliest_start_float']
+        #if potential_start_time_float == None :
+        #    potential_start_time_float = Now_float
+        potential_start_time_float = 0.0
+        freenodes = 0
+        freecpus = 0
+        freememory = 0
+        #for index in range(len(node_reservations[node])) :
+        started_windows_list = []
+        negative_node = 0
+        negative_cpu = 0
+        negative_memory = 0
+        for event in node_reservations[node] :
+            if event[1] == 'add' :
+                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                    print "add event (%s)" % (event,)
+                #print "add event (%s)" % (event,)
+                #if event[2]['type'] == 'node_exclusive' :
+                if new_res['node_usage'] == 'node_exclusive' :
+                    node_amount = 1
+                else :
+                    if event[2].has_key('node') :
+                        node_amount = event[2]['node']
+                    else :
+                        node_amount = 1
+                if event[2].has_key('node') :
+                    started_windows_list.append(
+                      ( event[0],
+                        { 'start' : event[0], 'type' : 'node',
+                          'amount' : node_amount, 'state' : 'active'
+                        }
+                      )
+                      )
+                else :
+                    # is this right?  should we really say this is the
+                    # start of a time window for a free node?
+                    started_windows_list.append(
+                      ( event[0],
+                        { 'start' : event[0], 'type' : 'node',
+                          'amount' : 1, 'state' : 'active'
+                        }
+                      )
+                      )
+                started_windows_list.append(
+                  ( event[0],
+                    { 'start' : event[0], 'type' : 'cpu',
+                      'amount' : event[2]['cpu'], 'state' : 'active'
+                    }
+                  )
+                  )
+                started_windows_list.append(
+                  ( event[0],
+                    { 'start' : event[0], 'type' : 'memory',
+                      'amount' : event[2]['memory'], 'state' : 'active'
+                    }
+                  )
+                  )
+            if event[1] == 'decrement' :
+                # sort started_windows_list LASTAVAILABLE
+                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                    print "decrement event(%s)" % (event,)
+                #print "decrement event(%s)" % (event,)
+                #if negative_cpu > 0 :
+                #    # choose early cpu starts first, to get
+                #    # rid of cpu debt
+                #    cpu_started_windows_list.sort()
+                #else :
+                #    cpu_started_windows_list.sort()
+                #    cpu_started_windows_list.reverse()
+                #if negative_memory > 0 :
+                #    # choose early memory starts first, to get
+                #    # rid of memory debt
+                #    memory_started_windows_list.sort()
+                #else :
+                #    memory_started_windows_list.sort()
+                #    memory_started_windows_list.reverse()
+                started_windows_list.sort()
+                started_windows_list.reverse()
+                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                    print "started_windows_list (%s)" % (started_windows_list,)
+                foundnodes = 0
+                foundcpus = 0
+                foundmemory = 0
+                #if event[2]['type'] == 'node_exclusive' :
+                #    neednode = event[2]['node']
+                #else :
+                #    neednode = 0
+                if new_res['node_usage'] == 'node_exclusive' :
+                    neednodes = 1
+                else :
+                    if event[2].has_key('node') :
+                        neednodes = event[2]['node']
+                    else :
+                        neednodes = 1
+                needcpus = event[2]['cpu']
+                needmemory = event[2]['memory']
+                new_windows_list = []
+                # pay node debt
+                if negative_node > 0 :
+                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                        print "negative_node (%s)" % negative_node
+                    # choose early node starts first, to get
+                    # rid of cpu debt
+                    started_windows_list.sort()
+                    extranodes = 0
+                    for index in range(len(started_windows_list)) :
+                        started_window = started_windows_list[index]
+                        if started_window[1]['state'] == 'inactive' :
+                            continue
+                        if started_window[1]['type'] == 'node' :
+                            if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                print "started_window (%s)" % (started_window,)
+                            if negative_node == 0 :
+                                break
+                            foundnodes = started_window[1]['amount']
+                            if foundnodes >= negative_node :
+                                extranodes = foundnodes - negative_node
+                                negative_node = 0
+                                if extranodes > 0 :
+                                    new_started_window = copy.deepcopy(started_window)
+                                    new_started_window[1]['amount'] = extranodes
+                                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                        print "new_started_window (%s)" % (new_started_window,)
+                                    new_windows_list.append(new_started_window)
+                            else :
+                                negative_node = negative_node - foundnodes
+                            started_windows_list[index][1]['state'] = 'inactive'
+                # pay cpu debt
+                if negative_cpu > 0 :
+                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                        print "negative_cpu (%s)" % negative_cpu
+                    # choose early cpu starts first, to get
+                    # rid of cpu debt
+                    started_windows_list.sort()
+                    extracpus = 0
+                    for index in range(len(started_windows_list)) :
+                        started_window = started_windows_list[index]
+                        if started_window[1]['state'] == 'inactive' :
+                            continue
+                        if started_window[1]['type'] == 'cpu' :
+                            if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                print "started_window (%s)" % (started_window,)
+                            if negative_cpu == 0 :
+                                break
+                            foundcpus = started_window[1]['amount']
+                            if foundcpus >= negative_cpu :
+                                extracpus = foundcpus - negative_cpu
+                                negative_cpu = 0
+                                if extracpus > 0 :
+                                    new_started_window = copy.deepcopy(started_window)
+                                    new_started_window[1]['amount'] = extracpus
+                                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                        print "new_started_window (%s)" % (new_started_window,)
+                                    new_windows_list.append(new_started_window)
+                            else :
+                                negative_cpu = negative_cpu - foundcpus
+                            started_windows_list[index][1]['state'] = 'inactive'
+                # pay memory debt
+                if negative_memory > 0 :
+                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                        print "negative_memory (%s)" % negative_memory
+                    # choose early memory starts first, to get
+                    # rid of memory debt
+                    started_windows_list.sort()
+                    extramemory = 0
+                    for index in range(len(started_windows_list)) :
+                        started_window = started_windows_list[index]
+                        if started_window[1]['state'] == 'inactive' :
+                            continue
+                        if started_window[1]['type'] == 'memory' :
+                            if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                print "started_window (%s)" % (started_window,)
+                            if negative_memory == 0 :
+                                break
+                            foundmemory = started_window[1]['amount']
+                            if foundmemory >= negative_memory :
+                                extramemory = foundmemory - negative_memory
+                                negative_memory = 0
+                                if extramemory > 0 :
+                                    new_started_window = copy.deepcopy(started_window)
+                                    new_started_window[1]['amount'] = extramemory
+                                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                        print "new_started_window (%s)" % (new_started_window,)
+                                    new_windows_list.append(new_started_window)
+                            else :
+                                negative_memory = negative_memory - foundmemory
+                            started_windows_list[index][1]['state'] = 'inactive'
+                started_windows_list = started_windows_list + new_windows_list
+                new_windows_list = []
+                started_windows_list.sort()
+                started_windows_list.reverse()
+                foundnodes = 0
+                foundcpus = 0
+                foundmemory = 0
+                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                    print "negative_node (%s) negative_cpu (%s) negative_memory (%s)" % (negative_node, negative_cpu, negative_memory)
+                for index in range(len(started_windows_list)) :
+                    started_window = started_windows_list[index]
+                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                        print "started_window (%s)" % (started_window,)
+                    if started_window[1]['state'] == 'inactive' :
+                        continue
+                    if started_window[1]['type'] == 'node' :
+                        if foundnodes >= neednodes :
+                            continue
+                        foundnodes = foundnodes + started_window[1]['amount']
+                        if foundnodes >= 0 :
+                            negative_node = 0
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "foundnodes (%s)" % foundnodes
+                            print "neednodes (%s)" % neednodes
+                        if foundnodes >= neednodes :
+                            extranodes = foundnodes - neednodes
+                            if extranodes > 0 :
+                                new_started_window = copy.deepcopy(started_window)
+                                new_started_window[1]['amount'] = extranodes
+                                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                    print "new_started_window (%s)" % (new_started_window,)
+                                new_windows_list.append(new_started_window)
+                            if started_window[1]['start'] != event[0] :
+                                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                    print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                      {'nodename' : node,
+                                       'node' : started_window[1]['amount'] - extranodes}
+                                      ),
+                                      )
+                                    print "start (%s) end (%s)" % (time.asctime(time.localtime(started_window[1]['start'])), time.asctime(time.localtime(event[0])))
+                                reservation_windows.append(
+                                  (started_window[1]['start'], event[0],
+                                   {'nodename' : node,
+                                    'node' : started_window[1]['amount'] - extranodes}
+                                  )
+                                  )
+                        else :
+                            # remove started_window from list,
+                            # end the previously started windows
+                            # append to reservation_windows
+                            if started_window[1]['amount'] > 0 and foundnodes > 0 :
+                                if started_window[1]['start'] != event[0] :
+                                    #print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                    #  {'nodename' : node,
+                                    #   'node' : started_window[1]['amount']}
+                                    #  ),
+                                    #  )
+                                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                        print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                          {'nodename' : node,
+                                           'node' : started_window[1]['amount']}
+                                          ),
+                                          )
+                                    reservation_windows.append(
+                                      (started_window[1]['start'], event[0],
+                                       {'nodename' : node,
+                                        'node' : started_window[1]['amount']}
+                                      )
+                                      )
+                        started_windows_list[index][1]['state'] = 'inactive'
+                    if started_window[1]['type'] == 'cpu' :
+                        if foundcpus >= needcpus :
+                            continue
+                        foundcpus = foundcpus + started_window[1]['amount']
+                        if foundcpus >= 0 :
+                            negative_cpu = 0
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "foundcpus (%s)" % foundcpus
+                            print "needcpus (%s)" % needcpus
+                        if foundcpus >= needcpus :
+                            extracpus = foundcpus - needcpus
+                            if extracpus > 0 :
+                                new_started_window = copy.deepcopy(started_window)
+                                new_started_window[1]['amount'] = extracpus
+                                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                    print "new_started_window (%s)" % (new_started_window,)
+                                new_windows_list.append(new_started_window)
+                            if started_window[1]['start'] != event[0] :
+                                #print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                #  {'nodename' : node,
+                                #   'cpu' : started_window[1]['amount'] - extracpus}
+                                #  ),
+                                #  )
+                                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                    print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                      {'nodename' : node,
+                                       'cpu' : started_window[1]['amount'] - extracpus}
+                                      ),
+                                      )
+                                reservation_windows.append(
+                                  (started_window[1]['start'], event[0],
+                                   {'nodename' : node,
+                                    'cpu' : started_window[1]['amount'] - extracpus}
+                                  )
+                                  )
+                        else :
+                            # remove started_window from list,
+                            # end the previously started windows
+                            # append to reservation_windows
+                            if started_window[1]['amount'] > 0 and foundcpus > 0 :
+                                if started_window[1]['start'] != event[0] :
+                                    #print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                    #  {'nodename' : node,
+                                    #   'cpu' : started_window[1]['amount']}
+                                    #  ),
+                                    #  )
+                                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                        print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                          {'nodename' : node,
+                                           'cpu' : started_window[1]['amount']}
+                                          ),
+                                          )
+                                    reservation_windows.append(
+                                      (started_window[1]['start'], event[0],
+                                       {'nodename' : node,
+                                        'cpu' : started_window[1]['amount']}
+                                      )
+                                      )
+                        started_windows_list[index][1]['state'] = 'inactive'
+                    if started_window[1]['type'] == 'memory' :
+                        if foundmemory >= needmemory :
+                            continue
+                        foundmemory = foundmemory + started_window[1]['amount']
+                        if foundmemory >= 0 :
+                            negative_memory = 0
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "foundmemory (%s)" % foundmemory
+                            print "needmemory (%s)" % needmemory
+                        if foundmemory >= needmemory :
+                            extramemory = foundmemory - needmemory
+                            if extramemory > 0 :
+                                new_started_window = copy.deepcopy(started_window)
+                                new_started_window[1]['amount'] = extramemory
+                                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                    print "new_started_window (%s)" % (new_started_window,)
+                                new_windows_list.append(new_started_window)
+                            if started_window[1]['start'] != event[0] :
+                                #print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                #  {'nodename' : node,
+                                #   'memory' : started_window[1]['amount'] - extramemory}
+                                #  ),
+                                #  )
+                                if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                    print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                      {'nodename' : node,
+                                       'memory' : started_window[1]['amount'] - extramemory}
+                                      ),
+                                      )
+                                reservation_windows.append(
+                                  (started_window[1]['start'], event[0],
+                                   {'nodename' : node,
+                                    'memory' : started_window[1]['amount'] - extramemory}
+                                  )
+                                  )
+                        else :
+                            # remove started_window from list,
+                            # end the previously started windows
+                            # append to reservation_windows
+                            if started_window[1]['amount'] > 0 and foundmemory > 0 :
+                                if started_window[1]['start'] != event[0] :
+                                    #print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                    #  {'nodename' : node,
+                                    #   'memory' : started_window[1]['amount']}
+                                    #  ),
+                                    #  )
+                                    if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                                        print "appending reservation_window (%s)" % (                                     (started_window[1]['start'], event[0],
+                                          {'nodename' : node,
+                                           'memory' : started_window[1]['amount']}
+                                          ),
+                                          )
+                                    reservation_windows.append(
+                                      (started_window[1]['start'], event[0],
+                                       {'nodename' : node,
+                                        'memory' : started_window[1]['amount']}
+                                      )
+                                      )
+                        #del started_windows_list[index]
+                        started_windows_list[index][1]['state'] = 'inactive'
+                    if foundnodes >= neednodes and foundcpus >= needcpus and foundmemory >= needmemory :
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "found nodes and cpus and memory (%s) (%s) (%s)" % (foundnodes, foundcpus, foundmemory)
+                        break
+                if foundnodes < neednodes or foundcpus < needcpus or foundmemory < needmemory :
+                    # nodes or cpus or memory are overcommitted.  Create
+                    # a negative amount started window.
+                    if foundnodes < neednodes :
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "overcommitted nodes neednodes - foundnodes (%s)" % (neednodes - foundnodes,)
+                        negative_node = negative_node + neednodes - foundnodes
+                    if foundcpus < needcpus :
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "overcommitted cpus needcpus - foundcpus (%s)" % (needcpus - foundcpus,)
+                        negative_cpu = negative_cpu + needcpus - foundcpus
+                    if foundmemory < needmemory :
+                        if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+                            print "overcommitted cpus needmemory - foundmemory (%s)" % (needmemory - foundmemory,)
+                        negative_memory = negative_memory + needmemory - foundmemory
+                started_windows_list = started_windows_list + new_windows_list
+            #if event[0] > potential_start_time_float :
+            #    # create open window here
+            #reservation_windows.append( 
+            #  (potential_start_time_float,
+            #  reservation[0], { 'nodename' : node, 'cpu' : ) ) 
+#            for reservation in node_reservations[node] :
+#                if reservation[0] < end_limit :
+#                    # reservation starts before end_limit
+#                    if reservation[0] - potential_start_time_float >= \
+#                    new_res['duration_float'] :
+#                        # There is enough space ( duration )
+#                        # between the potential start time and the start of this
+#                        # blocking node reservation
+#                        reservation_windows.append( 
+#                          (potential_start_time_float,
+#                          reservation[0], { 'nodename' : node, 'cpu' : ) ) 
+#                        if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+#                            print "appending open window (%s, %s, %s)" % (potential_start_time_float, reservation[0], node)
+#                            print "appending open window (%s, %s, %s)" % (time.asctime(time.localtime(potential_start_time_float)), time.asctime(time.localtime(reservation[0])), node)
+#                else :
+#                    # reservations starts after end_limit
+#                    if end_limit - potential_start_time_float >= \
+#                    new_res['duration_float'] :
+#                        # There is enough space between the potential
+#                        # start time and the end_limit for duration
+#                        reservation_windows.append(
+#                        (potential_start_time_float,
+#                        end_limit, node) ) 
+#                        if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+#                            print "appending open window (%s, %s, %s)" % (potential_start_time_float, end_limit, node)
+#                if reservation[1] > potential_start_time_float :
+#                    # The node reservation ends after the potential start time
+#                    # advance the potential start time for this node
+#                    # for cpu/memory scheduling the next cpu/memory open
+#                    # window might overlap this reservations end time...
+#                    potential_start_time_float = reservation[1]
+        # handle the last window for the node
+        #last_window = None
+        #if end_limit >= potential_start_time_float + new_res['duration_float'] :
+        #    last_window = ( potential_start_time_float, end_limit, node )
+        #if last_window != None :
+        #    reservation_windows.append(last_window)
+        #    if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+        #        print "appending open window (%s, %s, %s)" % (potential_start_time_float, end_limit, node)
+    reservation_windows.sort()
+    if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+        print "checking reservation_windows before returning"
+        for new_window in reservation_windows :
+            print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+              (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+    result = reservation_windows
+    return result
+    # End of get_nonconflicting function
+
+
+
+
+def new_get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, resources_db_handle, reservations_db_handle, nr_names_list=None, open_windows_dict=None) :
+    # Use default get_nonconflicting or custom nonconflicting code
+
+    conflict_policy_code = new_res['conflict_policy']
+    temp_nodes_list = accepted_nodes_list[:]
+    input_tuple = (temp_nodes_list, new_res, temp_reservations_list, Now_float, resources_db_handle, reservations_db_handle, nr_names_list, open_windows_dict)
+    if conflict_policy_code == None :
+        if DEBUGJOB !=None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+            print "calling get_nonconflicting"
+        open_windows_list = new_get_nonconflicting(input_tuple)
+    else :
+        # if a nonstandard conflict policy was provided,
+        # create the get_noncoflicting function out of that
+        # this allows arbitrary code to be used to determine
+        # reservation windows...
+        open_windows_list = apply_policy_code(conflict_policy_code, input_tuple)
+    if DEBUGJOB !=None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+        print "checking open_windows_list before returning"
+        for new_window in open_windows_list :
+            print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+              (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+    #for new_window in open_windows_list :
+    #    print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+    #      (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+    return open_windows_list
+
+def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, resources_db_handle, nr_names_list=None, open_windows_dict=None) :
     def get_nonconflicting(input_tuple) :
         # This python code fragment can be used to obtain a list of available
         # node reservation windows.
@@ -951,6 +2063,13 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
         # ( <window start_time_float>, <window end_time_float>, <node name> )
         # To accomodate cpu and memory scheduling, need to return
         # ( <window start_time_float>, <window end_time_float>, { 'nodename' : <node name>, 'cpu' : <cpus>, 'memory' : <memory>} )
+        # This should be generalized.  A list of names of node resources
+        # should be passed in.  This needs to be synced with resources_dict
+        # 
+        # should have a global open_windows_dict, each reservation
+        # takes resources from open_windows_dict.  If there are
+        # permissive reservations, the resources for these are added
+        # to open_windows_dict temporarily
         def sort_by_start(first, second) :
             if first[0] < second[0] :
                 return -1
@@ -990,7 +2109,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                         if resources_dict[allocated_dict['nodename']].has_key('ConsumableMemory'):
                             allocated_dict['memory'] = resources_dict[allocated_dict['nodename']]['ConsumableMemory']
                 #end of patch
-
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "existing allocated_dict_list (%s)" % (allocated_dict_list,)
             else :
@@ -1209,7 +2327,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     needcpus = event[2]['cpu']
                     needmemory = event[2]['memory']
                     new_windows_list = []
-
                     # pay node debt
                     if negative_node > 0 :
                         if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -1240,7 +2357,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                 else :
                                     negative_node = negative_node - foundnodes
                                 started_windows_list[index][1]['state'] = 'inactive'
-
                     # pay cpu debt
                     if negative_cpu > 0 :
                         if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -1271,10 +2387,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                 else :
                                     negative_cpu = negative_cpu - foundcpus
                                 started_windows_list[index][1]['state'] = 'inactive'
-
-
-
-
                     # pay memory debt
                     if negative_memory > 0 :
                         if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -1305,8 +2417,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                 else :
                                     negative_memory = negative_memory - foundmemory
                                 started_windows_list[index][1]['state'] = 'inactive'
-
-
                     started_windows_list = started_windows_list + new_windows_list
                     new_windows_list = []
                     started_windows_list.sort()
@@ -1322,7 +2432,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                             print "started_window (%s)" % (started_window,)
                         if started_window[1]['state'] == 'inactive' :
                             continue
-
                         if started_window[1]['type'] == 'node' :
                             if foundnodes >= neednodes :
                                 continue
@@ -1378,8 +2487,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                           )
                                           )
                             started_windows_list[index][1]['state'] = 'inactive'
-
-
                         if started_window[1]['type'] == 'cpu' :
                             if foundcpus >= needcpus :
                                 continue
@@ -1439,9 +2546,6 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                           )
                                           )
                             started_windows_list[index][1]['state'] = 'inactive'
-
-
-
                         if started_window[1]['type'] == 'memory' :
                             if foundmemory >= needmemory :
                                 continue
@@ -1587,6 +2691,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
             print "calling get_nonconflicting"
         open_windows_list = get_nonconflicting(input_tuple)
     else :
+        print "custom conflict_policy_code (%s)" % (conflict_policy_code,)
         # if a nonstandard conflict policy was provided,
         # create the get_noncoflicting function out of that
         # this allows arbitrary code to be used to determine
