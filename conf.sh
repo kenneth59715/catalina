@@ -643,6 +643,7 @@ ${ECHO} "SCHEDULEJOBS=catalina_schedule_jobs" >> Makefile
 ${ECHO} "SCRATCHTEST=scratchtest.py" >> Makefile
 ${ECHO} "SETCONFIG=set_config" >> Makefile
 ${ECHO} "SETRES=set_res" >> Makefile
+${ECHO} "SHOWAVAIL=show_available" >> Makefile
 ${ECHO} "SHOWFREE=show_free" >> Makefile
 ${ECHO} "SHOWBF=show_bf" >> Makefile
 ${ECHO} "SHOWBFALL=show_bf-all" >> Makefile
@@ -700,7 +701,7 @@ ${ECHO} "	\$(MOVEOLD) \$(QPRIORITY) \$(RELEASE) \$(RESLIST) \$(RESSTATUS) \\" >>
 ${ECHO} "	\$(PROLOGUERES) \$(EPILOGUERES) \\" >> Makefile
 ${ECHO} "	\$(SCHEDULEJOBS) \$(SCRATCHTEST) \\" >> Makefile
 ${ECHO} "	\$(SETCONFIG) \$(SETRES) \$(SHOWFREE) \$(SHOWBF) \$(SHOWBFALL) \$(SHOWCONFIG) \$(SHOWEVENTS) \\" >> Makefile
-${ECHO} "	\$(SHOWGUESS) \$(SHOWQ) \$(SHOWRES) \\" >> Makefile
+${ECHO} "	\$(SHOWGUESS) \$(SHOWQ) \$(SHOWRES) \$(SHOWAVAIL)\\" >> Makefile
 ${ECHO} "	\$(SHOWRESOURCES) \$(DUMP)\\" >> Makefile
 ${ECHO} "	\$(SHOWSTANDING) \$(STOP) \$(TESTRES) \$(UNBINDJOB) \$(UPDATEJOBS) \\" >> Makefile
 ${ECHO} "	\$(UPDATELOCALADMIN) \$(UPDATEPREEMPTION) \\" >> Makefile

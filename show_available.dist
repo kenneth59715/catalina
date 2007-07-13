@@ -1,0 +1,92 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# ./show_available [--start_date=<HH:MM_mm/dd/yyyy>] [--account=<allocations account>]
+# show how many node seconds are available in the user_settable reservation
+# window, starting at input date or Now_float, if no input date
+
+import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import getopt
+import string
+import Catalina
+import time
+
+usage_string = \
+"""
+Usage: show_availabl [--?]
+               [--help]
+               [--start_date=<HH:MM_mm/dd/yyyy>]
+               [--account=<allocations account>]
+               [--debug]"""
+
+options = [ '?',
+            'help',
+            'debug',
+            'start_date=',
+            'account=',
+           ]
+args = sys.argv[1:]
+argdict = {}
+optlist, lineargs = getopt.getopt(args, '', options)
+for pair in optlist:
+        argdict[pair[0]] = pair[1]
+
+if argdict.has_key('--?') or argdict.has_key('--help') :
+    print usage_string
+    sys.exit(0)
+
+RESERVATIONS_DB = 'reservations'
+
+reservations_db_handle = Catalina.open_ro_db(RESERVATIONS_DB, 'read')
+
+if argdict.has_key('--start_date') :
+    start_date_string = argdict['--start_date']
+    start_date_tuple = time.strptime(start_date_string,
+      "%H:%M_%m/%d/%Y")
+    start_date_list = list(start_date_tuple)
+    start_date_list[8] = -1
+    start_date_tuple = tuple(start_date_list)
+    start_date_epoch = time.mktime( start_date_tuple )
+else :
+    start_date_epoch = Catalina.Now_float
+if argdict.has_key('--account') :
+    account_string = argdict['--account']
+else :
+    account_string = None
+if argdict.has_key('--debug') :
+    Catalina.DEBUG = 'TRUE'
+
+# node-seconds
+alimit_int = Catalina.USER_SET_LIMITS_dict['GLOBAL']['ABSOLUTE_LIMIT']
+#print "alimit_int (%s)" % (alimit_int,)
+# seconds
+window_int = Catalina.USER_SET_LIMITS_dict['GLOBAL']['window']
+#print "window_int (%s)" % (window_int,)
+
+# get all existing reservations
+existing_reservations = Catalina.get_object_list(reservations_db_handle)
+
+used_node_seconds = 0
+for existing_reservation in existing_reservations :
+    if existing_reservation['purpose_type_string'] == 'user_set' :
+        if start_date_epoch < existing_reservation['end_time_float'] and \
+          existing_reservation['start_time_float'] < start_date_epoch + window_int :
+            duration = existing_reservation['duration_float']
+            if existing_reservation['start_time_float'] < start_date_epoch :
+                duration = duration - (start_date_epoch - existing_reservation['start_time_float'])
+            if start_date_epoch + window_int < existing_reservation['end_time_float'] :
+                duration = duration - (existing_reservation['end_time_float'] - (start_date_epoch + window_int))
+            #print "duration (%s)" % (duration,)
+            #print "existing_reservation['resource_amount_int'] (%s)" % (existing_reservation['resource_amount_int'],)
+            used_node_seconds = used_node_seconds + existing_reservation['resource_amount_int'] * duration
+        else :
+            #print "reservation (%s) ends early or starts late" % (existing_reservation,)
+            #print "start_date_epoch (%s)" % (start_date_epoch,)
+            #print "start_date_epoch + window_int (%s)" % (start_date_epoch + window_int,)
+            #print "existing_reservation['start_time_float'] (%s)" % (existing_reservation['start_time_float'],)
+            #print "existing_reservation['end_time_float'] (%s)" % (existing_reservation['end_time_float'],)
+            pass
+
+print "Available node-seconds (%s)" % (alimit_int - used_node_seconds)
+
+# release lock, close the file
+Catalina.close_ro_db(reservations_db_handle)
