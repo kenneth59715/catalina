@@ -147,10 +147,7 @@ mandatory_dict = {
   'SUBMITCMD' : None,
   'CANCELCMD' : None,
   'RM_TO_CAT_RESOURCE_DICT_STRING' : None,
-  'RM_TO_CAT_JOB_DICT_STRING' : None,
-  'PENALTY_PERCENTAGE' : None,
-  'TOTAL_AVAILABLE': None,
-  'THRESHOLD_PERCENTAGE': None
+  'RM_TO_CAT_JOB_DICT_STRING' : None
   }
 
 # In the future, could put this in a function, so

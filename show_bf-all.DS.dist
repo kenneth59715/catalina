@@ -1,6 +1,6 @@
 #!___PYTHON_PATH_PLACEHOLDER___
 
-# ./show_bf-all
+# ./show_free 
 # create a fake job with the requested characteristics
 # create ignore list for reservations in which the job can run
 # using the ignore list, create a reservation with earliest_start now, no resource amount specified,
@@ -173,13 +173,11 @@ for node in accepted_nodes :
 
 open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res, blocking_reservations_list, resources_db_handle)
 
-#fix bug 794
 absolute_start_epoch = start_epoch
 increment = 3600 # one hour
 for time_window in range(num_of_days*24):
     #print "for time window %d ==========" %(time_window*increment)
-    #fix bug 794
-    start_epoch = absolute_start_epoch + (time_window*increment)
+    start_epoch= absolute_start_epoch + (time_window*increment)
     current_time =  time.strftime("%Y%m%d%H%M",time.localtime(start_epoch+Catalina.Now_float))
     
     
@@ -206,14 +204,16 @@ for time_window in range(num_of_days*24):
     # 2 new dictionaries, 1 to keep track of time, and others to keep track
     # of how many nodes found so far
     
-    dict_total_node={'normal':0,'normal32':0}
-    dict_total_time={'normal':{},'normal32':{}}
+    dict_total_node={'normal':0,'normal32':0,'MEM16':0,'MEM32':0}
+    dict_total_time={'normal':{},'normal32':{},'MEM16':{},'MEM32':{}}
     dict_total_cpu={'normal':{},'normal32':{}}
+    dict_total_memory={'normal':{},'normal32':{}}
     
     
-    set_legit_class = set(dict_total_node.keys())
+    set_legit_class = set(dict_total_cpu.keys())
     set_legit_cpu_class = set(['normal32'])
-    
+    set_legit_memory_class = set(['normal32'])
+    set_legit_property = set(['MEM16','MEM32'])
     ## oh by the way, we discard any window smaller than 15 minutes.
     minimum_time_considered_in_seconds= 900
     
@@ -228,6 +228,11 @@ for time_window in range(num_of_days*24):
     
     for window in now_windows :
         
+        nodename = resources_db_handle[0][window[2]['nodename']]['name']
+        set_property = set(resources_db_handle[0][window[2]['nodename']]['properties_list'])
+        property = " ".join(set_property & set_legit_property) #convert the intersection of the two sets into a string property
+            
+            
         if window[2].has_key('node') :
             duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
             #if duration > 18 hours, set it to 18 hours (max time avail)
@@ -235,6 +240,8 @@ for time_window in range(num_of_days*24):
                 duration=max_time        
             #now we see if the node is part of our keys in dict_total_node
             # do it via Python intersection of sets
+            
+            
             set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
             intersection = set_class & set_legit_class
     
@@ -242,6 +249,7 @@ for time_window in range(num_of_days*24):
             for jobclass in intersection :
                 # increment total number of nodes found for this specified class
                 dict_total_node[jobclass] += 1
+                
                 # update the time too
                 # we only update dict_total_time if the time found is less than
                 if duration > minimum_time_considered_in_seconds :
@@ -249,11 +257,13 @@ for time_window in range(num_of_days*24):
                     if not dict_total_time[jobclass].has_key(duration):
                     #never seen a open window from this class before
                         dict_total_time[jobclass][duration] = 1
+                        
                     else :
                         #I have seen this class before, update it
                         dict_total_time[jobclass][duration] += 1
-            
-            
+                    
+                    
+                    
             
         if window[2].has_key('cpu') :
             duration = window[1] - Catalina.Now_float - start_epoch- Catalina.FUDGE_FACTOR
@@ -276,14 +286,62 @@ for time_window in range(num_of_days*24):
                     else :
                         #I have seen this CPU before, add it.
                         dict_total_cpu[jobclass][duration] += window[2]['cpu']
+            
+        if window[2].has_key('memory') :
+            duration = window[1] -Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
+            # if duration is greater than 18 hours, set it to 18 hours. That's the max time avail
+            if duration > max_time:
+                duration = max_time
                 
+            set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+            intersection = set_class & set_legit_memory_class
+            
+            
+            for jobclass in intersection :
+                # count memory
+                if duration > minimum_time_considered_in_seconds :
+                    ## build dictionary that contains cpu info for each duration
+                    if not dict_total_memory[jobclass].has_key(duration):
+                        # this is empty
+                        dict_total_memory[jobclass][duration] = window[2]['memory']
+                    else :
+                        # add it
+                        dict_total_memory[jobclass][duration] += window[2]['memory']
+        if window[2].has_key('node') :
         
+            nodename = resources_db_handle[0][window[2]['nodename']]['name']
+            set_property = set(resources_db_handle[0][window[2]['nodename']]['properties_list'])
+            property = " ".join(set_property & set_legit_property) #convert the intersection of the two sets into a string property
+            
+            if property == 'MEM16' or property == 'MEM32' :
+                #if property not empty
+                duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
+                if duration > max_time :
+                    duration = max_time
+                
+            
+            
+                #should not be any node with more than 1 property MEM16 and MEM32
+                if len(set_property & set_legit_property) > 1 :
+                    #error
+                    print "Error! MEM16 and MEM32 can't coexist on the same node"
+                    sys.exit(-2)
+                
+                dict_total_node[property] += 1
+                if duration > minimum_time_considered_in_seconds :
+                    if not dict_total_time[property].has_key(duration):
+                    # I've never seen an open window from this class before
+                        dict_total_time[property][duration] = 1
+                    else:
+                        dict_total_time[property][duration] += 1
+                    
+           
     # end of for window in now_windows :
     
     
     collective_cpu = 0
     collective_node = 0
-    
+    collective_memory = 0 
     ## Now we iterate through our legit queue class dictionary and print them out
     
     ## I need to make sure ordering is correct. Nancy wanted the normal queue be displayed first
@@ -295,6 +353,7 @@ for time_window in range(num_of_days*24):
         
         if legit_class in set_legit_cpu_class :
             # need to print CPU info too
+            # and now need to print memory information, added 7/13/2007
         
             if len(dict_total_cpu[legit_class]) > 0 :
                 for dur in reverse_sort_dict(dict_total_cpu[legit_class]):
@@ -314,28 +373,56 @@ for time_window in range(num_of_days*24):
                         
                 #end of for
             #end of if
+            
+            if len(dict_total_memory[legit_class]) > 0:
+                for dur in reverse_sort_dict(dict_total_memory[legit_class]):
+                    hour = math.floor(dur/3600)
+                    minute = ((dur - (hour * 3600) ) / 60.0)
+                    
+                    minute = str(math.floor(minute))[0:-2]
+                    
+                    collective_memory += dict_total_memory[legit_class][dur]
+                    
+                    print "      %s=%s:  %s MB of memory for %2.0f:%s hrs" % (current_time,legit_class,collective_memory,hour,string.zfill(minute,2))
+                    collective_memory = 0 #reset collective memory
         else :
             # no need to print CPU info
-         
-            if len(dict_total_time[legit_class]) > 0 :
-                for dur in reverse_sort_dict(dict_total_time[legit_class]) :
-                    hour = math.floor(dur/3600)
-                    minute = ((dur - (hour * 3600))/60.0)
+            if legit_class == 'normal' :
+                if len(dict_total_time[legit_class]) > 0 :
+                    for dur in reverse_sort_dict(dict_total_time[legit_class]) :
+                        hour = math.floor(dur/3600)
+                        minute = ((dur - (hour * 3600))/60.0)
                     
-                    #convert the floor of the minute float, convert to string,
-                    #strip the last 2 character(=.0) from minute
-                    minute=str(math.floor(minute))[0:-2]
+                        #convert the floor of the minute float, convert to string,
+                        #strip the last 2 character(=.0) from minute
+                        minute=str(math.floor(minute))[0:-2]
                     
-                    collective_node += dict_total_time[legit_class][dur]
-                    #print "      Opportunity # %s: %s nodes for %2.0f:%s hours " \
-                    #% (opportunity, collective_node,hour,string.zfill(minute,2))
-                    opportunity+=1
-                    print "      %s=%s:  %s nodes for %2.0f:%s hrs" % (current_time,legit_class,collective_node,hour,string.zfill(minute,2))
-                    # if not the last entry in the dict
+                        collective_node += dict_total_time[legit_class][dur]
+                        #print "      Opportunity # %s: %s nodes for %2.0f:%s hours " \
+                        #% (opportunity, collective_node,hour,string.zfill(minute,2))
+                        opportunity+=1
+                        print "      %s=%s:  %s nodes for %2.0f:%s hrs" % (current_time,legit_class,collective_node,hour,string.zfill(minute,2))
+                        # if not the last entry in the dict
                    
-                #end of for
-
+                    #end of for
+                #enf of if
             #end of if
+            else:
+                #added 7/16/2007 by mmargo
+                # if size is non-zero print it out
+                if len(dict_total_time[legit_class]) > 0 :
+                    for dur in reverse_sort_dict(dict_total_time[legit_class]) :
+                        hour = math.floor(dur/3600)
+                        minute = ((dur - (hour *3600))/60.0)
+                        
+                        #convert the floor of the minute float, convert to string, 
+                        #strip the last 2 characters(=.0) from the minute
+                        minute = str(math.floor(minute))[0:-2]
+                        
+                        print "      %s=normal,%s:  %s nodes for %2.0f:%s hrs" % (current_time,legit_class,dict_total_node[legit_class],hour,string.zfill(minute,2))
+                    #end of for
+                #end of if
+           
         #end of big if
            
     # end of for loop
