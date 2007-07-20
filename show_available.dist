@@ -86,7 +86,13 @@ for existing_reservation in existing_reservations :
             #print "existing_reservation['end_time_float'] (%s)" % (existing_reservation['end_time_float'],)
             pass
 
-print "Available node-seconds (%s)" % (alimit_int - used_node_seconds)
+
+availseconds = int(alimit_int - used_node_seconds)
+availdays, leftoverseconds = divmod(availseconds, (24 * 3600))
+#print "availdays (%s) leftoverseconds (%s)" % (availdays, leftoverseconds)
+nseconds = time.strftime("%H:%M:%S",time.gmtime(leftoverseconds))
+print "Available node-seconds (days:hours:minutes:seconds) (%s:%s)" % (availdays,nseconds)
+#print "Available node-seconds (%s)" % (availseconds)
 
 # release lock, close the file
 Catalina.close_ro_db(reservations_db_handle)
