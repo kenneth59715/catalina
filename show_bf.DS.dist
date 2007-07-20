@@ -1,6 +1,6 @@
 #!___PYTHON_PATH_PLACEHOLDER___
 
-# ./show_free 
+# ./show_bf
 # create a fake job with the requested characteristics
 # create ignore list for reservations in which the job can run
 # using the ignore list, create a reservation with earliest_start now, no resource amount specified,
@@ -46,7 +46,7 @@ def reverse_sort_dict(dict) :
     
 usage_string = \
 """
-Usage: show_free 
+Usage: show_bf 
                [--?]
                [--start=<mm/dd/yyyy_hh:mm>] | [--offset=<seconds to begin window]
                [--help]

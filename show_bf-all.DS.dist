@@ -102,9 +102,14 @@ if argdict.has_key('--start'):
     start_list[8] = -1 #list is mutable, tuple is not, we have to change TZ
     start_tuple = tuple(start_list)
     start_epoch=time.mktime(start_tuple) - Catalina.Now_float
-    
+    if start_epoch < 0 :
+        print "Error. Couldn't see opportunities in the past, specify --start in the future"
+        sys.exit(-2)
 elif argdict.has_key('--offset') :
     start_epoch=float(argdict['--offset'])
+    if start_epoch < 0 :
+        print "Error. Couldn't see opportunities in the past, specify --offset in the future"
+        sys.exit(-2)
 else :
     print usage_string
     sys.exit(0)
@@ -342,6 +347,9 @@ for time_window in range(num_of_days*24):
     collective_cpu = 0
     collective_node = 0
     collective_memory = 0 
+    collective_mem16 = 0
+    collective_mem32 = 0
+   
     ## Now we iterate through our legit queue class dictionary and print them out
     
     ## I need to make sure ordering is correct. Nancy wanted the normal queue be displayed first
@@ -407,7 +415,7 @@ for time_window in range(num_of_days*24):
                     #end of for
                 #enf of if
             #end of if
-            else:
+            elif legit_class == 'MEM16':
                 #added 7/16/2007 by mmargo
                 # if size is non-zero print it out
                 if len(dict_total_time[legit_class]) > 0 :
@@ -419,10 +427,25 @@ for time_window in range(num_of_days*24):
                         #strip the last 2 characters(=.0) from the minute
                         minute = str(math.floor(minute))[0:-2]
                         
-                        print "      %s=normal,%s:  %s nodes for %2.0f:%s hrs" % (current_time,legit_class,dict_total_node[legit_class],hour,string.zfill(minute,2))
+                        
+                        collective_mem16 += dict_total_time[legit_class][dur]
+                        print "      %s=normal,%s:  %s nodes for %2.0f:%s hrs" % (current_time,legit_class,collective_mem16,hour,string.zfill(minute,2))
                     #end of for
                 #end of if
-           
+            elif legit_class == 'MEM32':
+                if len(dict_total_time[legit_class]) > 0:
+                    for dur in reverse_sort_dict(dict_total_time[legit_class]) :
+                        hour = math.floor(dur/3600)
+                        minute = ((dur - (hour *3600))/60.0)
+                        
+                        #convert the floor of the minute float, convert to string
+                        #strip the last 2 characters(.0) from the minute
+                        minute = str(math.floor(minute))[0:-2]
+                        
+                        collective_mem32 += dict_total_time[legit_class][dur]
+                        print "      %s=normal,%s:  %s nodes for %2.0f:%s hrs" % (current_time,legit_class,collective_mem32,hour,string.zfill(minute,2))
+                    #end of for
+                #end of if
         #end of big if
            
     # end of for loop

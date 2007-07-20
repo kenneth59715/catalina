@@ -1,6 +1,6 @@
 #!___PYTHON_PATH_PLACEHOLDER___
 
-# ./show_free 
+# ./show_bf
 # create a fake job with the requested characteristics
 # create ignore list for reservations in which the job can run
 # using the ignore list, create a reservation with earliest_start now, no resource amount specified,
@@ -46,7 +46,7 @@ def reverse_sort_dict(dict) :
     
 usage_string = \
 """
-Usage: show_free 
+Usage: show_bf 
                [--?]
                [--start=<mm/dd/yyyy_hh:mm>] | [--offset=<seconds to begin window]
                [--help]
@@ -90,9 +90,14 @@ if argdict.has_key('--start'):
     start_list[8] = -1 #list is mutable, tuple is not, we have to change TZ
     start_tuple = tuple(start_list)
     start_epoch=time.mktime(start_tuple) - Catalina.Now_float
-    
+    if start_epoch < 0 :
+        print "Error. Couldn't see opportunities in the past"
+        sys.exit(-2)
 elif argdict.has_key('--offset') :
     start_epoch=float(argdict['--offset'])
+    if start_epoch < 0 :
+        print "Error. Couldn't see opportunities in the past"
+        sys.exit(-2)
 else :
     print usage_string
     sys.exit(0)
