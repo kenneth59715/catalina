@@ -103,8 +103,8 @@ if argdict.has_key('--start'):
     start_tuple = tuple(start_list)
     start_epoch=time.mktime(start_tuple) - Catalina.Now_float
     if start_epoch < 0 :
-        print "Error. Couldn't see opportunities in the past, specify --start in the future"
-        sys.exit(-2)
+        #bug 805
+        print "Warning! You specified start time in the past. You may get unexpected value""
 elif argdict.has_key('--offset') :
     start_epoch=float(argdict['--offset'])
     if start_epoch < 0 :
@@ -309,8 +309,8 @@ for time_window in range(num_of_days*24):
                     minute=str(math.floor(minute))[0:-2]
                     
                     collective_cpu += dict_total_cpu[legit_class][dur]
-                   
-                    print "      %s=%s:  %s CPUs for %2.0f:%s hrs" % (current_time,legit_class,collective_cpu,hour,string.zfill(minute,2))
+                    # bug 805 
+                    #print "      %s=%s:  %s CPUs for %2.0f:%s hrs" % (current_time,legit_class,collective_cpu,hour,string.zfill(minute,2))
                     #print "      Opportunity # %s: %s CPUs for %2.0f:%s hours " \
                     #% (opportunity, collective_cpu, hour,string.zfill(minute,2))
                     opportunity +=1

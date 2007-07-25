@@ -55,7 +55,7 @@ static char	arg_pattern[] = "^[_:/a-zA-Z0-9]*$";
 
 #define TOOLONG 17
 /* ARGCOUNT doesn't change the execle args */
-#define ARGCOUNT 2
+#define ARGCOUNT 25
 
 main(int argc, char *argv[])
 {
