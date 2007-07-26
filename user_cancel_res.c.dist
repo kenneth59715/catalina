@@ -51,12 +51,12 @@ static char *env[] = {
 
 
 static char	program[] = "___USER_CANCEL_RES_PLACEHOLDER___";
-static char	arg_pattern[] = "^[_:/a-zA-Z0-9]*$";
-
-#define TOOLONG 17
+static char	arg_pattern[] = "^[_:/a-zA-Z0-9,]*$";
+/* bug 806 */
+#define TOOLONG 425
 /* ARGCOUNT doesn't change the execle args */
 #define ARGCOUNT 25
-
+#define MINARGCOUNT 2
 main(int argc, char *argv[])
 {
 char	*arg0;
@@ -68,13 +68,13 @@ regex_t	re;
 
 /* Check for right number of arguments */
 /* 1-account, 2-nodes, 3-duration, 4-start_time */
-if ( argc != ARGCOUNT ) {
+if ( argc <  MINARGCOUNT ) {
 	printf("res_id argument required\n");
 	exit(2);
 }
 
 /* Check for length of each argument */
-for ( i=1; i < ARGCOUNT ; i++ ) {
+for ( i=1; i < argc ; i++ ) {
 	if ( strlen(argv[i]) > TOOLONG ) {
 		printf("argument exceeds limit\n");
 		exit(2);
@@ -88,7 +88,7 @@ if (regcomp(&re, arg_pattern, REG_NEWLINE) != 0 ) {
 	printf("argument checking (pattern compile) failed\n");
 	exit(2);
 }
-for ( i=1; i < ARGCOUNT ; i++ ) {
+for ( i=1; i < argc ; i++ ) {
 	if (regexec(&re, argv[i], (size_t) 0, NULL, 0) != 0 ) {
 		printf("argument checking (regexec) failed\n");
 		exit(2);
