@@ -105,6 +105,7 @@ if argdict.has_key('--start'):
     if start_epoch < 0 :
         # bug 805
         print "Warning! You specified start time in the past. You may get unexpected value"
+        start_epoch = 0
 elif argdict.has_key('--offset') :
     start_epoch=float(argdict['--offset'])
     if start_epoch < 0 :
