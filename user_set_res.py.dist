@@ -13,6 +13,54 @@ import signal
 import getopt
 import copy
 
+# new function to check for valid accounts #
+def allocation_check(username,account,feature=[]) :
+    """A function to check if the user has enough allocation. Uses SDSC accounting tools"""
+    
+    
+    try:
+        validate_script = Catalina.RESLIST_CMD
+    except : 
+        #this doesn't exist, use dummy
+        validate_script = "/usr/local/apps/JobLogLoader/bin/validate_job.pl"
+    
+    try:
+        queue = Catalina.DEFAULT_JOB_CLASS
+    except :
+        #this doesn't exist, use dummy variable
+        queue = "normal"
+    
+    if queue == "dque" :
+        machine_name = "sdsc_teragrid"
+    elif queue == "normal":
+        machine_name = "sdsc_datastar"
+    else:
+        machine_name = "unknown"
+
+    #check if the user wants a non-default queue for their reservation. This is only applicable
+    #to datastar. The typical case if it uses feature batch32 instead of batch
+    if features :
+        #Because the list is nonempty, let's check for batch32
+        if 'batch32' in features :
+            queue = "normal32"
+            
+
+
+    #check if the program validate_job.pl exist, otherwise just warn the users
+    if os.path.exists(validate_script) and os.path.isfile(validate_script) :
+        prep_arg_tuple = (machine_name,username,account,queue)
+        rc_status_tuple = forksleep(validate_script, prep_arg_tuple, 30) #sleep 30 secs
+        if rc_status_tuple[1] == 0 :
+            return 0 
+        else :
+            return 1
+
+    else :
+        print "Warning! I didn't check for allocation. Script validate_job.pl doesn't exist. Your reservation will be created"
+        return 0
+
+
+
 # From the Python book:
 # Only one pipe, child out to parent in
 def forksleep (prog, args, timeout) :
@@ -473,26 +521,15 @@ else :
     print "No PROC_CHARGE in catalina.config!"
     sys.exit(1)
 
-if nodes_int != None :
-    su = nodes_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
-elif max_resource_int != None :
-    su = max_resource_int * (duration_float / 3600) * class_priority_dict[res_class] * PROC_CHARGE
-else :
-    raise "SUCalculationFailed"
 
 username_string = pwd.getpwuid(os.getuid())[0]
 
-resargs_tuple = ('username=' + username_string, 'account=' + account_string, 'su=' + "%s" % su)
+return_code = allocation_check(username_string,account_string,features)
 
-# This may be insecure...
-return_tuple = forksleep(RESLIST_CMD, resargs_tuple, 30)
-
-if return_tuple[1] == 0 :
-    print "reslist request approved"
-elif return_tuple[1] > 1 or return_tuple[1] < 0 :
-    print "reslist failure"
+if return_code == 0 :
+    print "allocation check passed"
 else :
-    print "reslist request denied"
+    print "allocation check failed"
     sys.exit(1)
 
 signal.signal(signal.SIGTSTP,signal.SIG_IGN)
