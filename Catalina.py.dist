@@ -982,10 +982,17 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                 #Kenneth patch leaking reservation. 7/24/06
                 for allocated_dict in allocated_dict_list:
                     if allocated_dict.has_key('type') and allocated_dict['type'] == 'node_exclusive' and allocated_dict.has_key('nodename'):
-                        if resources_dict[allocated_dict['nodename']].has_key('ConsumableCpus'):
-                            allocated_dict['cpu'] = resources_dict[allocated_dict['nodename']]['ConsumableCpus']
-                        if resources_dict[allocated_dict['nodename']].has_key('ConsumableMemory'):
-                            allocated_dict['memory'] = resources_dict[allocated_dict['nodename']]['ConsumableMemory']
+                        #if not resources_dict.has_key(allocated_dict['nodename']) :
+                        #    print "resources_dict does not have (%s)" % (allocated_dict['nodename'],)
+                        #    sys.exit(1)
+                        if resources_dict.has_key(allocated_dict['nodename']) :
+                            if resources_dict[allocated_dict['nodename']].has_key('ConsumableCpus'):
+                                allocated_dict['cpu'] = resources_dict[allocated_dict['nodename']]['ConsumableCpus']
+                            if resources_dict[allocated_dict['nodename']].has_key('ConsumableMemory'):
+                                allocated_dict['memory'] = resources_dict[allocated_dict['nodename']]['ConsumableMemory']
+                        else :
+                                allocated_dict['cpu'] = 0
+                                allocated_dict['memory'] = 0
                 #end of patch
 
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
