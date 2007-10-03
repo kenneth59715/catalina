@@ -151,8 +151,8 @@ while ( (state == 'running' or state == 'suspended') and
             Catalina.move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle)
             print "moving old reservations"
             Catalina.move_old_reservations(events_db_handle, reservations_db_handle, old_reservations_db_handle)
-            print "refreshing node dictionary"
-            Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
+            #print "refreshing node dictionary"
+            #Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
             print "rolling logs"
             try :
                 Catalina.roll_logs(events_db_handle, old_jobs_db_handle, old_reservations_db_handle)

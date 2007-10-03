@@ -371,6 +371,9 @@ for job_step in running_starting_jobs :
                 remaining_seconds = job_step['wall_clock_limit'] - job_step['wall_clock_used']
             else :
                 remaining_seconds = (job_step['Dispatch_Time'] + job_step['wall_clock_limit'] - Catalina.Now_float)
+            if remaining_seconds < 0 :
+                print "Negative remaining time (%s) for (%s).  Using Dispatch Time - Now, instead!" % (job_step['name'], remaining_seconds)
+                remaining_seconds = (job_step['Dispatch_Time'] + job_step['wall_clock_limit'] - Catalina.Now_float)
             if job_step['state'] in ['Preempted'] :
                 for reservation in reservations :
                     if reservation['job_runID'] == job_step['name'] :
