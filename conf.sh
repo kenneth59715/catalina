@@ -718,7 +718,7 @@ ${ECHO} "" >> Makefile
 ${ECHO} "PRODUCTION_FILES = \$(CATALINA) \$(CATALINA_RM) \$(TESTJOB_FILES) \\" >> Makefile
 ${ECHO} "	\$(EXECUTABLE_FILES) \$(POLICY_FILES)" >> Makefile
 ${ECHO} "" >> Makefile
-${ECHO} "all: MACH_SPECIFIC PYSUB KSHSUB TESTJOBS \$(C_EXECUTABLE_FILES)" >> Makefile
+${ECHO} "all: PYSUB KSHSUB TESTJOBS \$(C_EXECUTABLE_FILES)" >> Makefile
 ${ECHO} "" >> Makefile
 ${ECHO} "install: all" >> Makefile
 ${ECHO} "	# Need to also create the initial dbs with the correct" >> Makefile
@@ -847,10 +847,6 @@ ${ECHO} "" >> Makefile
 ${ECHO} "#\$(USERSETWRAP).o: \$(USERSETWRAP).c" >> Makefile
 ${ECHO} "#	\$(CC) -c \$(CATUSERCFLAGS) \$(USERSETWRAP).c" >> Makefile
 ${ECHO} "" >> Makefile
-
-${ECHO} "MACH_SPECIFIC:" >> Makefile
-${ECHO} "	\$(CP) -f \$(SHOWBF).\$(CLUSTER_NAME).dist \$(SHOWBF).dist" >> Makefile
-${ECHO} "	\$(CP) -f \$(SHOWBFALL).\$(CLUSTER_NAME).dist \$(SHOWBFALL).dist" >> Makefile
 
 ${ECHO} "TESTJOBS: " >> Makefile
 ${ECHO} "	for i in \$(TESTJOB_FILES) ; do \\" >> Makefile

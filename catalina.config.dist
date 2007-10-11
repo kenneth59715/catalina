@@ -375,6 +375,12 @@ USER_SET_LIMITS_DICT_STRING = {
 # a user reservation
 CLASS_PRIORITY_DICT_STRING = ___CLASS_PRIORITY_DICT_STRING_STRING_PLACEHOLDER___
 
+# list of classes/queues to report in show_bf
+SHOWBFCLASSLIST_STRING = [{'normal' : 'normal/high'},
+                          {'normal32' : 'normal32/high32'},]
+SHOWBFREPORTLIST_STRING = ['normal32',]
+SHOWBFPROPERTYDICT_STRING = { 'MEM16' : { 'class' : 'normal'}, 'MEM32' : { 'class' : 'normal'}}
+
 # user_set_res uses this class to compute charge
 DEFAULT_RES_CLASS = ___DEFAULT_RES_CLASS_PLACEHOLDER___
 # user_set_res uses this proc count to compute charge

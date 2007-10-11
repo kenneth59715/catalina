@@ -48,22 +48,55 @@ usage_string = \
 """
 Usage: show_free 
                [--?]
+               [--start=<mm/dd/yyyy_hh:mm>] | [--offset=<seconds to begin window]
                [--help]
 """
 options = [ 
             '?',
+            'start=',
+            'offset=',
             'help'
            ]
            
+default_argdict = {
+            '--offset' : 0
+}
 args = sys.argv[1:]
-argdict = {}
-optlist, lineargs = getopt.getopt(args, '', options)
-for pair in optlist:
-        argdict[pair[0]] = pair[1]
 
+if len(args) == 0 :
+    argdict= default_argdict
+else :
+    argdict={}
+    try :
+        optlist, lineargs = getopt.getopt(args, '', options)
+    except :
+        print usage_string
+        sys.exit(0)
+    for pair in optlist:
+        argdict[pair[0]] = pair[1]
+    
+if argdict.has_key('--offset') and argdict.has_key('--start') :
+    print usage_string
+    sys.exit(0)
 if argdict.has_key('--?') or argdict.has_key('--help') :
     print usage_string
     sys.exit(0)
+
+
+#calculate the beginning of time window (now = 0), 1 hour from now = 3600
+if argdict.has_key('--start'):
+    start_tuple = time.strptime(argdict['--start'],"%m/%d/%Y_%H:%M")
+    start_list = list(start_tuple)
+    start_list[8] = -1 #list is mutable, tuple is not, we have to change TZ
+    start_tuple = tuple(start_list)
+    start_epoch=time.mktime(start_tuple) - Catalina.Now_float
+    
+elif argdict.has_key('--offset') :
+    start_epoch=float(argdict['--offset'])
+else :
+    print usage_string
+    sys.exit(0)
+
 
 node_restriction_code = Catalina.NODERESTCODE
 conflict_policy = None
@@ -128,7 +161,7 @@ for node in accepted_nodes :
 
 open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res, blocking_reservations_list, resources_db_handle)
 
-now_windows = filter( lambda window : window[0] <= Catalina.Now_float <= window[1], open_windows_list )
+now_windows = filter( lambda window : window[0] <= (Catalina.Now_float + start_epoch) < window[1], open_windows_list )
 
 if len(now_windows) == 0 :
     #if Catalina.DEBUG != None :
@@ -151,13 +184,40 @@ now_windows.sort(by_node_name)
 # 2 new dictionaries, 1 to keep track of time, and others to keep track
 # of how many nodes found so far
 
-dict_total_node={'___DEFAULT_JOB_CLASS_PLACEHOLDER___':0}
-dict_total_time={'___DEFAULT_JOB_CLASS_PLACEHOLDER___':{}}
-dict_total_cpu={'___DEFAULT_JOB_CLASS_PLACEHOLDER___':{}}
+# [ {<classname> : <label> },]
+# [ {'normal32' : 'normal32/high32'}, {'normal' : 'normal/high'}]
+#if Catalina.__dict__.vars().has_key('SHOWBFCLASSLIST_STRING') :
+#if sys.__dict__['modules']['Catalina'].__dict__.has_key('SHOWBFCLASSLIST_STRING') :
+if Catalina.__dict__.has_key('SHOWBFCLASSLIST_STRING') :
+    exec('showbfclasslist = ' + Catalina.SHOWBFCLASSLIST_STRING)
+else :
+    print "no SHOWBFCLASSLIST_STRING in catalina.config!"
+    print "using Catalina.DEFAULT_JOB_CLASS!"
+    showbfclasslist = [ {Catalina.DEFAULT_JOB_CLASS : Catalina.DEFAULT_JOB_CLASS},]
+
+#dict_total_node={'normal':0,'normal32':0}
+#dict_total_time={'normal':{},'normal32':{}}
+#dict_total_cpu={'normal':{},'normal32':{}}
+dict_total_node={}
+dict_total_time={}
+dict_total_cpu={}
+for classdict in showbfclasslist :
+    dict_total_node[classdict.keys()[0]] = 0
+    dict_total_time[classdict.keys()[0]] = {}
+    dict_total_cpu[classdict.keys()[0]] = {}
 
 
 set_legit_class = set(dict_total_node.keys())
-set_legit_cpu_class = set(['normal32'])
+if Catalina.__dict__.has_key('SHOWBFREPORTLIST_STRING') :
+    exec('showbfreportlist = ' + Catalina.SHOWBFREPORTLIST_STRING)
+else :
+    print "no SHOWBFREPORTLIST_STRING in catalina.config!"
+    print "using Catalina.DEFAULT_JOB_CLASS!"
+    showbfreportlist = [Catalina.DEFAULT_JOB_CLASS,]
+# SHOWBFREPORTLIST:
+# [ 'normal32', ]
+#set_legit_cpu_class = set(['normal32'])
+set_legit_cpu_class = set(showbfreportlist)
 
 ## oh by the way, we discard any window smaller than 15 minutes.
 minimum_time_considered_in_seconds= 900
@@ -174,7 +234,7 @@ print "Node Backfill window:"
 for window in now_windows :
     
     if window[2].has_key('node') :
-        duration = window[1] - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
         #if duration > 18 hours, set it to 18 hours (max time avail)
         if duration > max_time :
             duration=max_time        
@@ -185,7 +245,7 @@ for window in now_windows :
 
 
         for jobclass in intersection :
-        	# increment total number of nodes found for this specified class
+            # increment total number of nodes found for this specified class
             dict_total_node[jobclass] += 1
             # update the time too
             # we only update dict_total_time if the time found is less than
@@ -198,10 +258,10 @@ for window in now_windows :
                     #I have seen this class before, update it
                     dict_total_time[jobclass][duration] += 1
         
-        	
+        
         
     if window[2].has_key('cpu') :
-        duration = window[1] - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        duration = window[1] - Catalina.Now_float - start_epoch- Catalina.FUDGE_FACTOR
         # if duration is greater than 18 hours, set it to 18 hours, that's the max time avail
         if duration > max_time :
             duration = max_time
@@ -219,6 +279,7 @@ for window in now_windows :
                     #empty dictionary
                     dict_total_cpu[jobclass][duration] = window[2]['cpu']
                 else :
+                    #I have seen this CPU before, add it.
                     dict_total_cpu[jobclass][duration] += window[2]['cpu']
             
     
@@ -239,7 +300,10 @@ for legit_class in displayorder :
     
     if legit_class in set_legit_cpu_class :
         # need to print CPU info too
-        print legit_class
+        for classdict in showbfclasslist :
+            if legit_class == classdict.keys()[0] :
+                print(classdict[legit_class])
+        #print "high32/normal32" 
         if len(dict_total_cpu[legit_class]) > 0 :
             for dur in reverse_sort_dict(dict_total_cpu[legit_class]):
                 hour = math.floor(dur/3600)
@@ -262,7 +326,10 @@ for legit_class in displayorder :
         #end of if
     else :
         # no need to print CPU info
-        print legit_class
+        #print "high/normal"
+        for classdict in showbfclasslist :
+            if legit_class == classdict.keys()[0] :
+                print(classdict[legit_class])
         if len(dict_total_time[legit_class]) > 0 :
             for dur in reverse_sort_dict(dict_total_time[legit_class]) :
                 hour = math.floor(dur/3600)
