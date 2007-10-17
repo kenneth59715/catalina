@@ -1,0 +1,90 @@
+s@___NODERESTCODE_STRING_PLACEHOLDER___@\
+ import string\
+ resource = input_tuple[0]\
+ if resource["State"] == "Down" : result = "Down"\
+ elif resource["State"] == "Drain" : result = "Drain"\
+ elif resource["State"] == "Drained" : result = "Drained"\
+ elif resource["State"] == "None" : result = "None"\
+ elif resource["State"] == None : result = None\
+ elif resource["State"] == "Unknown" : result = "Unknown"\
+ elif resource["Max_Starters"] == 0 : result = "Max_Starters=0"\
+ else : result = 0@g
+s@___RESLIST_CMD_PLACEHOLDER___@/work/kenneth/dev/catalina/install/reslist@g
+s#___MAIL_RECIPIENT_PLACEHOLDER___#kenneth#g
+s#___USER_SET_RECIPIENT_PLACEHOLDER___#kenneth#g
+s#___PROLOGUE_RES_PLACEHOLDER___#/work/kenneth/dev/catalina/install/prologue.res#g
+s#___EPILOGUE_RES_PLACEHOLDER___#/work/kenneth/dev/catalina/install/prologue.res#g
+s@___MAILX_PLACEHOLDER___@/usr/bin/mailx@g
+s@___LOGGER_PLACEHOLDER___@/usr/bin/logger@g
+s@___LOGGER_FACILITY_PLACEHOLDER___@daemon@g
+s#___TEST_MAIL_RECIPIENT_PLACEHOLDER___#kenneth@ds001#g
+s@___TESTACCOUNT_PLACEHOLDER___@sys200@g
+s@___ECHO_PLACEHOLDER___@/bin/echo@g
+s@___FORCETZ_PLACEHOLDER___@PST8PDT1@g
+s@___CAT_LOCK_OWNER_PLACEHOLDER___@kenneth@g
+s@___CAT_LOCK_GROUP_PLACEHOLDER___@catalina@g
+s@___INSTALLDIR_PLACEHOLDER___@/work/kenneth/dev/catalina/install@g
+s@___DBDIR_PLACEHOLDER___@/work/kenneth/dev/catalina/db@g
+s@___ARCHIVEDIR_PLACEHOLDER___@/work/kenneth/dev/catalina/archive@g
+s@___JOB_START_TIME_LIMIT_PLACEHOLDER___@900.0@g
+s@___DB_WARN_LIMIT_PLACEHOLDER___@3@g
+s@___JOB_START_WARN_LIMIT_PLACEHOLDER___@3@g
+s@___RESOURCE_DOWN_TIME_LIMIT_PLACEHOLDER___@900.0@g
+s@___LOST_JOB_LIMIT_PLACEHOLDER___@1800@g
+s@___LOST_JOB_WARN_PLACEHOLDER___@TRUE@g
+s@___SUBMITCMD_PLACEHOLDER___@/usr/local/bin/llsubmit@g
+s@___CANCELCMD_PLACEHOLDER___@/usr/local/bin/llcancel@g
+s@___TEST_JOB_PLACEHOLDER___@testjob.LL@g
+s@___TEST_JOB_RUN_AT_RISK_PLACEHOLDER___@testjob.run_at_risk.LL@g
+s#___USERNAMESUFFIX_PLACEHOLDER___##g
+s@___LOADL_ADMIN_FILE_PLACEHOLDER___@/users/loadl/LoadL_admin.DataStar@g
+s@___RM_TO_CAT_RESOURCE_DICT_STRING_PLACEHOLDER___@{\
+  "None" : "None",\
+  "Idle" : "Idle",\
+  "Down" : "Down",\
+  "Drain" : "Drain",\
+  "Draining" : "Draining",\
+  "Busy" : "Running",\
+  "Running" : "Running",\
+  "Starting" : "Running"\
+  }@g
+s@___RM_TO_CAT_JOB_DICT_STRING_PLACEHOLDER___@{\
+  "submittime" : "Submit_Time",\
+  "Running" : "Running",\
+  "Canceled" : "Canceled",\
+  "Completed" : "Completed",\
+  "Removed" : "Removed",\
+  "Remove_Pending" : "Running",\
+  "Starting" : "Running",\
+  "Preempted" : "Preempted",\
+  "Preempt_Pending" : "Preempted",\
+  "Resume_Pending" : "Running",\
+  "Hold" : "Hold",\
+  "Idle" : "Idle"\
+  }@g
+s@___CLASS_PRIORITY_DICT_STRING_STRING_PLACEHOLDER___@{\
+  "interactive" : 1.8,\
+  "premium" : 1.0,\
+  "express" : 1.8,\
+  "high" : 1.8,\
+  "normal" : 1.0,\
+  "standard" : 1.0,\
+  "low" : 0.5,\
+  "standby" : 0.0,\
+  "legion" : 0.0,\
+  "WH" : 0.0,\
+  "Diag" : 0.0,\
+  "Diag0" : 0.0,\
+  "Diag1" : 0.0,\
+  "Diag2" : 0.0,\
+  "Diag3" : 0.0,\
+  "Diag4" : 0.0,\
+  "Diag5" : 0.0,\
+  "Diag6" : 0.0,\
+  "Diag7" : 0.0,\
+  "Diag8" : 0.0,\
+  "Diag9" : 0.0\
+  }@g
+s@___DEFAULT_RES_CLASS_PLACEHOLDER___@express@g
+s@___DEFAULT_PROC_CHARGE_PLACEHOLDER___@8@g
+s@___DEFAULT_JOB_CLASS_PLACEHOLDER___@normal@g
