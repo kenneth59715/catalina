@@ -6007,6 +6007,12 @@ def filter_out_down_nodes(broken_node_list,jobs_db_handle):
             if object_list[job]['state'] == 'Running' :
                 continue
             
+            #if job has no resource_dict_list, then don't need to
+            # delete broken node
+            if not object_list[job].has_key('resource_dict_list') or \
+              not type(object_list[job]['resource_dict_list']) == list :
+                continue
+            
             #for every resource_list in each job 
             for res_list in range(len(object_list[job]['resource_dict_list'])) :
                 

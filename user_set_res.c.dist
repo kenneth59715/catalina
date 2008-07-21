@@ -51,7 +51,7 @@ static char	tz_pattern[] = "^[A-Z0-9]*$";
 
 #define TOOLONG 100
 /* ARGCOUNT doesn't change the execle args */
-#define MAXARGCOUNT 10
+#define MAXARGCOUNT 11
 #define MINARGCOUNT 7
 
 main(int argc, char *argv[])
@@ -66,10 +66,10 @@ regex_t	re;
 regex_t	tz_re;
 
 /* Check for right number of arguments */
-/* 1-account, 2-nodes, 3-duration, 4-start_time, 5-end_time, 6-email, 7-sharedmap */
+/* 1-account, 2-nodes, 3-duration, 4-start_time, 5-end_time, 6-email, 7-sharedmap, 8-comment */
 if ( argc < MINARGCOUNT || argc > MAXARGCOUNT ) {
 	printf("Wrong argument count!\n");
-	printf("Usage: user_set_res --account=<account> --nodes=<number of nodes>|--maxmodes=<max number of nodes> --duration=<duration(sec)> --earliest_start=<earliest start time(HH:MM_mm/dd/yyyy or epoch seconds)> --latest_end=<latest end time(HH:MM_mm/dd/yyyy or epoch seconds)> --email=<email address> [--sharedmap=<1#type:node_shared#cpu:1+memory:1>] [--featurelist=<comma-delimited list of node features>] [--qoslist=<comma-delimited list of allowed QOS>]\n");
+	printf("Usage: user_set_res --account=<account> --nodes=<number of nodes>|--maxmodes=<max number of nodes> --duration=<duration(sec)> --earliest_start=<earliest start time(HH:MM_mm/dd/yyyy or epoch seconds)> --latest_end=<latest end time(HH:MM_mm/dd/yyyy or epoch seconds)> --email=<email address> [--sharedmap=<1#type:node_shared#cpu:1+memory:1>] [--featurelist=<comma-delimited list of node features>] [--qoslist=<comma-delimited list of allowed QOS>] [--comment=<text>]\n");
 	exit(2);
 }
 
@@ -103,6 +103,7 @@ arg0 = program;
 timezone = getenv("TZ");
 if ( timezone == NULL ) {
 	setenv("TZ", "GMT0", 1);
+	printf("No TZ env variable; setting TZ to GMT0\n");
 }
 if ( strnlen(getenv("TZ"), TOOLONG + 1) > TOOLONG ) {
 	printf("TZ exceeds limit of %d characters\n",TOOLONG);
@@ -142,6 +143,9 @@ if (chdir("/") != 0) {
 /*
  * Execute the command.  On success execle() does not return.
  */
+if (argc == 11) {
+	status = execle(program, arg0, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9], argv[10], (char *)NULL, env);
+}
 if (argc == 10) {
 	status = execle(program, arg0, argv[1], argv[2], argv[3], argv[4], argv[5], argv[6], argv[7], argv[8], argv[9], (char *)NULL, env);
 }

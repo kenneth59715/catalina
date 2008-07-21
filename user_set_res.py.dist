@@ -297,6 +297,7 @@ options = [
   'sharedmap=',
   'featurelist=',
   'qoslist=',
+  'comment=',
   ]
 
 usage_string = \
@@ -306,6 +307,7 @@ usage_string = \
                        --earliest_start=<HH:MM_mm/dd/YYYY>
                        --latest_end=<HH:MM_mm/dd/YYYY>
                        --email=<email address>
+                       [ --comment=<text> ]
                        [ --sharedmap=<1#type:node_shared#cpu:1+memory:1> ]
                        [ --featurelist=<comma-delimited list of node features> ]
                        [ --qoslist=<comma-delimited list of QOS allowed> ]"""
@@ -356,6 +358,10 @@ if argdict.has_key('--featurelist') :
     featurelist_string = argdict['--featurelist']
 if argdict.has_key('--qoslist') :
     qoslist_string = argdict['--qoslist']
+if argdict.has_key('--comment') :
+    comment_string = argdict['--comment']
+else :
+    comment_string = ''
 
 account_reo = re.compile(r"\S+")
 nodes_reo = re.compile(r"^\d+$")
@@ -679,7 +685,7 @@ if Catalina.USERNAMESUFFIX != None and Catalina.USERNAMESUFFIX != '@IGNORE' :
     restricted_username = username_string + Catalina.USERNAMESUFFIX
 else :
     restricted_username = username_string
-comment_string = "set by user (%s);" % username_string
+comment_string = "set by user (%s) (%s);" % (username_string, comment_string)
 if len(qoss) == 0 :
     job_restriction = "if input_tuple[0]['user'] == '" + restricted_username + "' : result = 0"
 else :

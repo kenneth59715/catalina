@@ -51,6 +51,8 @@ STATE_PREEMPTED, STATE_PREEMPT_PENDING,
 	int ll_nodemininstances, ll_stepstate;
 	int nodeinstancecounter;
 	char *job_user, *job_group, *machine_name, *timachine_name;
+	char *trash;
+	size_t trashcount;
 
 	struct initiatornode {
 		int nodeinitiators;
@@ -283,8 +285,26 @@ AdapterReq LL_AdapterReqUsage      int*   A pointer to the integer indicating th
 					/* get req instances each machine */
 					rc = ll_get_data(adreq_element, LL_AdapterReqInstances, &adreqinstances);
 					if (rc == 0) {
-						new_job_ptr->adreqmap = (char *)realloc(new_job_ptr->adreqmap, strlen(new_job_ptr->adreqmap) + strlen(itoa(adreqinstances)) + 1);
-						strcat(new_job_ptr->adreqmap, itoa(adreqinstances));
+						/*new_job_ptr->adreqmap = (char *)realloc(new_job_ptr->adreqmap, strlen(new_job_ptr->adreqmap) + strlen(itoa(adreqinstances)) + 1);*/
+						trashcount = snprintf(trash, 0, "%d", adreqinstances);
+						if (trashcount < 0) {
+							printf("count of adreqinstances failed!");
+							exit(trashcount);
+						}
+						trash = (char *)malloc(trashcount + 1);
+						if ( trash == NULL ) {
+							printf("malloc of trash failed!");
+							exit(1);
+						}
+						rc = snprintf(trash, trashcount+1, "%d", adreqinstances);
+						/*printf("trash (%s) trashcount (%d)", trash, trashcount);*/
+						if (rc < 0) {
+							printf("conversion of adreqinstances failed!");
+							exit(trashcount);
+						}
+						new_job_ptr->adreqmap = (char *)realloc(new_job_ptr->adreqmap, strlen(new_job_ptr->adreqmap) + trashcount + 1);
+						strcat(new_job_ptr->adreqmap, trash);
+						free(trash);
 					}
 					/* print separator '#cat_sep#' */
 					new_job_ptr->adreqmap = (char *)realloc(new_job_ptr->adreqmap, strlen(new_job_ptr->adreqmap) + strlen("#cat_sep#") + 1);
@@ -450,8 +470,25 @@ AdapterReq LL_AdapterReqUsage      int*   A pointer to the integer indicating th
 							new_job_ptr->taskinstanceadapterwindowmap = (char *)realloc(new_job_ptr->taskinstanceadapterwindowmap, strlen(new_job_ptr->taskinstanceadapterwindowmap) + strlen("@") + 1);
 							strcat(new_job_ptr->taskinstanceadapterwindowmap, "@");
 							rc = ll_get_data(adapter_usage_element, LL_AdapterUsageWindow, &window_name);
-							new_job_ptr->taskinstanceadapterwindowmap = (char *)realloc(new_job_ptr->taskinstanceadapterwindowmap, strlen(new_job_ptr->taskinstanceadapterwindowmap) + strlen(itoa(window_name)) + 1);
-							strcat(new_job_ptr->taskinstanceadapterwindowmap, itoa(window_name));
+							trashcount = snprintf(trash, 0, "%d", window_name);
+							if (trashcount < 0) {
+								printf("count of window_name failed!");
+								exit(trashcount);
+							}
+							trash = (char *)malloc(trashcount + 1);
+							if ( trash == NULL ) {
+								printf("malloc of trash failed!");
+								exit(1);
+							}
+							rc = snprintf(trash, trashcount+1, "%d", window_name);
+							/*printf("trash (%s) trashcount (%d)", trash, trashcount);*/
+							if (rc < 0) {
+								printf("conversion of window_name failed!");
+								exit(trashcount);
+							}
+							new_job_ptr->taskinstanceadapterwindowmap = (char *)realloc(new_job_ptr->taskinstanceadapterwindowmap, strlen(new_job_ptr->taskinstanceadapterwindowmap) + trashcount + 1);
+							strcat(new_job_ptr->taskinstanceadapterwindowmap, trash);
+							free(trash);
 /*
 							rc = ll_get_data(adapter_usage_element, LL_AdapterUsageWindowMemory, &window_memory);
 							new_job_ptr->taskinstanceadapterwindowmemorymap = (char *)realloc(new_job_ptr->taskinstanceadapterwindowmemorymap, strlen(new_job_ptr->taskinstanceadapterwindowmemorymap) + strlen(itoa(window_memory)) + 1);
@@ -569,10 +606,19 @@ AdapterReq LL_AdapterReqUsage      int*   A pointer to the integer indicating th
 						strcpy(jobnode->stateptr,stepstates[STATE_REMOVED]);
 						
 						/* Assume that job's wall clock used ptr is full wallclock */
+						/*
+						Move this up...
 						int zero = 0;
 						int * zeroptr = zero;
-						
 						jobnode->wall_clock_usedptr= zeroptr;
+						*/
+						jobnode->wall_clock_usedptr = malloc(1);
+						if (jobnode->wall_clock_usedptr == NULL) {
+							printf("malloc of wall_clock_usedptr of 1 failed!");
+							exit(1);
+						}
+						*(jobnode->wall_clock_usedptr) = 0;
+						
 						
 						
 						jobnode = jobnode->next_ptr;
@@ -651,8 +697,25 @@ AdapterReq LL_AdapterReqUsage      int*   A pointer to the integer indicating th
 		jobnode->requirementsmap = (char *)malloc(strlen("") + 1);
 		strcpy(jobnode->requirementsmap,"");
 		while ( initiatorcounter != NULL ) {
-			jobnode->initiatormap = (char *)realloc(jobnode->initiatormap, strlen(jobnode->initiatormap) + sizeof(itoa(initiatorcounter->nodeinitiators)) + 1);
-			strcat(jobnode->initiatormap, itoa(initiatorcounter->nodeinitiators));
+			trashcount = snprintf(trash, 0, "%d", initiatorcounter->nodeinitiators);
+			if (trashcount < 0) {
+				printf("count of initiatorcounter->nodeinitiators failed!");
+				exit(trashcount);
+			}
+			trash = (char *)malloc(trashcount + 1);
+			if ( trash == NULL ) {
+				printf("malloc of trash failed!");
+				exit(1);
+			}
+			rc = snprintf(trash, trashcount+1, "%d", initiatorcounter->nodeinitiators);
+			if (rc < 0) {
+				printf("conversion of initiatorcounter->nodeinitiators failed!");
+				exit(trashcount);
+			}
+			/*printf("trash (%s) trashcount (%d)", trash, trashcount);*/
+			jobnode->initiatormap = (char *)realloc(jobnode->initiatormap, strlen(jobnode->initiatormap) + trashcount + 1);
+			strcat(jobnode->initiatormap, trash);
+			free(trash);
 			jobnode->requirementsmap = (char *)realloc(jobnode->requirementsmap, strlen(jobnode->requirementsmap) + strlen(initiatorcounter->noderequirementsptr) + 1);
 			strcat(jobnode->requirementsmap, initiatorcounter->noderequirementsptr);
 			initiatorcounter = initiatorcounter->next_ptr;

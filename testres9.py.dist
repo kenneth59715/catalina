@@ -435,7 +435,7 @@ start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 3600))
 end_time = time.strftime ('%H:%M_%m/%d/%Y',time.localtime(epoch_now + Catalina.TEST_USERRES_END))
 email = Catalina.TEST_EMAIL
 output = r"""user reservation \((?P<res_name>\d+)\) created with %s nodes at (?P<readable_time>.*) \((?P<res_time>\S*) epoch\)""" % Catalina.TEST_USERRES_AMOUNT
-cmd_string = cmd + ' --account=' + account + ' --nodes=' + resource_amount + ' --duration=' + duration + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --email=' + email
+cmd_string = cmd + ' --account=' + account + ' --nodes=' + resource_amount + ' --duration=' + duration + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --email=' + email + ' --comment=madebytestres9'
 print "# create user reservation"
 returnstring = os.popen(cmd_string).read()
 so = re.search(output, returnstring)
@@ -1172,7 +1172,7 @@ cmd_string = cmd
 returnstring = os.popen(cmd_string).read()
 
 # check show_bf command
-returnstring = os.popen(HOMEDIR + '/show_bf | ___GREP_PLACEHOLDER___ available').read()
+returnstring = os.popen(HOMEDIR + '/show_bf | ___GREP_PLACEHOLDER___ pportunit').read()
 print "# check show_bf command"
 if returnstring != '' :
     print "ok"

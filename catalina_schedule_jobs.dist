@@ -10,6 +10,7 @@ import socket
 import traceback
 import string
 import types
+import copy
 
 RESOURCES_DB = 'resource'
 JOBS_DB = 'jobs'
@@ -24,6 +25,7 @@ EVENTS_DB = 'events'
 options = [
   'debugjob=',
   'iterate',
+  'shortcut',
   'startcount=',
   'endcount='
 ]
@@ -67,12 +69,22 @@ elif not argdict.has_key('--iterate') :
     endcount = startcount
 if argdict.has_key('--debugjob') :
     Catalina.DEBUGJOB = argdict['--debugjob']
+if argdict.has_key('--shortcut') :
+    SHORTCUT = 1
+else :
+    SHORTCUT = 0
 
 start_time = time.clock()
 state = 'running'
 count = startcount
 failed_count = 0
 log_warn_count = 0
+jobs_list = []
+reservations_list = []
+resources_list = []
+old_jobs_list = []
+old_reservations_list = []
+old_resources_list = []
 while ( (state == 'running' or state == 'suspended') and
   (argdict.has_key('--iterate') or count <= endcount) ) :
     cfg_resources_db_handle = None
@@ -183,7 +195,129 @@ while ( (state == 'running' or state == 'suspended') and
             Catalina.update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle)
             Catalina.reload_job_resource_lists(events_db_handle,jobs_db_handle,resources_db_handle)
             
-        Catalina.schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle, cfg_resources_db_handle, standing_reservations_db_handle )
+        #print "update_resources and filter out bad nodes from job list"
+        #Catalina.update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle)
+        print "update_job_info"
+        Catalina.update_job_info(jobs_db_handle)
+        print "cancel_overrun_jobs"
+        Catalina.cancel_overrun_jobs(events_db_handle, jobs_db_handle)
+        print "cancel_bad_jobs"
+        Catalina.cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle)
+        print "update_job_resource_lists"
+        Catalina.update_job_resource_lists(jobs_db_handle, resources_db_handle)
+        print "update_resource_usability"
+        Catalina.set_resource_usability(resources_db_handle, jobs_db_handle)
+        print "update_job_speculative_system_queue_time"
+        Catalina.update_job_speculative_system_queue_time(jobs_db_handle)
+        print "update_job_priorities"
+        Catalina.update_job_priorities(jobs_db_handle)
+        print "get_eligible_and_running_jobs"
+        (eligible_jobs, runningstarting_jobs) = Catalina.get_eligible_and_running_jobs(jobs_db_handle,
+            resources_db_handle, reservations_db_handle)
+        print "update_running_reservations"
+        Catalina.update_running_reservations(runningstarting_jobs, reservations_db_handle, resources_db_handle, jobs_db_handle, events_db_handle)
+        print "updating standing reservations"
+        Catalina.update_standing_reservations(
+          events_db_handle=events_db_handle,
+          jobs_db_handle=jobs_db_handle,
+          resources_db_handle=resources_db_handle,
+          reservations_db_handle=reservations_db_handle,
+          standing_reservations_db_handle=standing_reservations_db_handle)
+        print "migrating shortpools"
+        Catalina.migrate_shortpools(jobs_db_handle, resources_db_handle, reservations_db_handle)
+        #print "update_max_pushback"
+        #update_max_pushback(jobs_db_handle, reservations_db_handle, resources_db_handle)
+        # only schedule_jobs, if something has changed:
+        # prioritized job list
+        # any job status
+        # any resource status
+        # any reservation status
+        generate_schedule = 0
+        jobs_list = []
+        for job_name in jobs_db_handle[0].keys() :
+            jobs_list.append((jobs_db_handle[0][job_name]['priority'],\
+              jobs_db_handle[0][job_name]['state'],\
+              job_name))
+        jobs_list.sort()
+        reservations_list = []
+        for reservation_name in reservations_db_handle[0].keys() :
+            reservations_list.append((reservation_name,\
+              reservations_db_handle[0][reservation_name]['node_list'],\
+              reservations_db_handle[0][reservation_name]['start_time_float'],\
+              reservations_db_handle[0][reservation_name]['end_time_float'],\
+              ))
+        reservations_list.sort()
+        resources_list = []
+        for resource_name in resources_db_handle[0].keys() :
+            resources_list.append((resource_name,\
+              resources_db_handle[0][resource_name]['properties_list'],\
+              resources_db_handle[0][resource_name]['State'],\
+              ))
+        resources_list.sort()
+        if len(jobs_list) == len(old_jobs_list) :
+            for job_index in range(len(jobs_list)) :
+                if jobs_list[job_index][1] != old_jobs_list[job_index][1] \
+                  or jobs_list[job_index][2] != old_jobs_list[job_index][2] :
+                    print "jobs (%s,%s) differ" % (jobs_list[job_index],\
+                      old_jobs_list[job_index])
+                    generate_schedule = 1
+                    break
+        else :
+            print "len(jobs_list) (%s) != len(old_jobs_list) (%s)" % \
+              (len(jobs_list), len(old_jobs_list))
+            generate_schedule = 1
+        if generate_schedule == 0 :
+            if len(reservations_list) == len(old_reservations_list) :
+                for reservation_index in range(len(reservations_list)) :
+                    if reservations_list[reservation_index][1] != old_reservations_list[reservation_index][1] \
+                      or reservations_list[reservation_index][2] != old_reservations_list[reservation_index][2] \
+                      or reservations_list[reservation_index][3] != old_reservations_list[reservation_index][3] :
+                        print "(%s,%s)" % (
+                          reservations_db_handle[0][reservations_list[reservation_index][0]],\
+                          reservations_db_handle[0][old_reservations_list[reservation_index][0]])
+                        print "reservations (%s,%s) differ" % (
+                          reservations_list[reservation_index],\
+                          old_reservations_list[reservation_index])
+                        generate_schedule = 1
+                        break
+            else :
+                print "len(reservations_list) (%s) != len(old_reservation_list) (%s)" % \
+                  (len(reservations_list), len(old_reservations_list))
+                generate_schedule = 1
+        if generate_schedule == 0 :
+            if len(resources_list) == len(old_resources_list) :
+                for resource_index in range(len(resources_list)) :
+                    if resources_list[resource_index][1] != old_resources_list[resource_index][1] \
+                      or resources_list[resource_index][2] != old_resources_list[resource_index][2] :
+                        print "resourcess (%s,%s) differ" % (resources_list[resource_index][2],\
+                          old_resources_list[resource_index][2])
+                        generate_schedule = 1
+                        break
+            else :
+                print "len(resources_list) (%s) != len(old_resource_list) (%s)" % \
+                  (len(resources_list), len(old_resources_list))
+                generate_schedule = 1
+            
+        if SHORTCUT == 0 or generate_schedule == 1 :
+            print "create_job_reservations"
+            Catalina.create_job_reservations(eligible_jobs, resources_db_handle,
+                reservations_db_handle, jobs_db_handle, events_db_handle)
+            old_jobs_list = copy.deepcopy(jobs_list)
+            old_reservations_list = copy.deepcopy(reservations_list)
+            old_resources_list = copy.deepcopy(resources_list)
+        print "cancel run-at-risk jobs"
+        #cancel_risk_jobs(reservations_db_handle=reservations_db_handle,
+        #                 jobs_db_handle=jobs_db_handle,
+        #                 events_db_handle=events_db_handle
+        #                 resources_db_handle=resources_db_handle)
+        Catalina.cancel_risk_reservations(reservations_db_handle=reservations_db_handle,
+                         jobs_db_handle=jobs_db_handle,
+                         events_db_handle=events_db_handle,
+                         resources_db_handle=resources_db_handle)
+        print "run_jobs"
+        Catalina.run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle)
+        #Catalina.schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle, cfg_resources_db_handle, standing_reservations_db_handle )
+
         failed_count = 0
         count = count + 1
         print "elapsed (%s)" % (time.time() - Catalina.Now_float,)
