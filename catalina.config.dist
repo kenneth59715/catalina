@@ -31,6 +31,9 @@ CAT_LOCK_GROUP=___CAT_LOCK_GROUP_PLACEHOLDER___
 # of from a real resource manager.
 SERVERMODE=TEST
 
+# Cancel jobs in NORMAL mode?
+NORMALMODECANCELJOB=yes
+
 # Feature 669
 # Allows administrator to set the interval between reload_job_resource_lists()
 # function call. minimum is 1. Greater value speeds up Catalina in the expense

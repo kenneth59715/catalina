@@ -3195,8 +3195,17 @@ def cancel_overrun_jobs(events_db_handle, jobs_db_handle) :
                     # Martin W. Margo 11/30/2005 10:58 AM
                     # I will give cancel_job more information, namely the reason
                     # why I want to cancel the job.
-                        cancel_job(job_step, events_db_handle, \
-                            "Reason: Job killed because it exceeds wallclock time." )
+                        if NORMALMODECANCELJOB != None and NORMALMODECANCELJOB == 'yes' :
+                            cancel_job(job_step, events_db_handle, \
+                              "Reason: Job killed because it exceeds wallclock time." )
+                        else :
+                            event = {
+                              'name' : 'cancel_job',
+                              'cmd' : "llcancel %s not actually run, NORMALMODECANCELJOB != 'yes'" % job_step['name'],
+                              'return_string' : ''
+                              }
+                            log_event(event, events_db_handle)
+                            
                     except 'CancelJobFailure', failed_job_step :
                         print "cancel of %s failed" % \
                           failed_job_step['name']
