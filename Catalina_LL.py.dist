@@ -156,10 +156,12 @@ def cancel_job(job_step, events_db_handle, message=None) :
     cmd_string = Catalina.CANCELCMD + ' ' + job_step['name']
     output = 'llcancel: Cancel command has been sent to the central manager.'
     if Catalina.SERVERMODE == 'NORMAL' :
-        return_string = os.popen(cmd_string).read()
-        mo = re.match(output, return_string)
-        if mo == None :
-            raise 'CancelJobFailure', job_step
+        #return_string = os.popen(cmd_string).read()
+        #mo = re.match(output, return_string)
+        #if mo == None :
+        #    raise 'CancelJobFailure', job_step
+        print cmd_string
+        return_string = 'llcancel not actually run (LoadL bug workaround)'
     else :
         print cmd_string
         return_string = ''
