@@ -213,7 +213,8 @@ if Catalina.__dict__.has_key('SHOWBFREPORTLIST_STRING') :
 else :
     print "no SHOWBFREPORTLIST_STRING in catalina.config!"
     print "using Catalina.DEFAULT_JOB_CLASS!"
-    showbfreportlist = [Catalina.DEFAULT_JOB_CLASS,]
+    #showbfreportlist = [Catalina.DEFAULT_JOB_CLASS,]
+    showbfreportlist = []
 # SHOWBFREPORTLIST:
 # [ 'normal32', ]
 #set_legit_cpu_class = set(['normal32'])
@@ -223,7 +224,10 @@ set_legit_cpu_class = set(showbfreportlist)
 minimum_time_considered_in_seconds= 900
 
 ## and we set the max duration to 18 hours = 64800
-max_time = 64800
+if Catalina.__dict__.has_key('SHOWBFREPORTMAXTIME_STRING') :
+    exec('max_time = ' + Catalina.SHOWBFREPORTMAXTIME_STRING)
+else :
+    max_time = 64800
 
 # added by mmargo
 # print a header to show simplified output
@@ -240,10 +244,11 @@ for window in now_windows :
             duration=max_time        
         #now we see if the node is part of our keys in dict_total_node
         # do it via Python intersection of sets
-        set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
-        intersection = set_class & set_legit_class
-
-
+        #set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+        #intersection = set_class & set_legit_class
+ 
+        set_class = set_legit_class
+        intersection = set_legit_class
         for jobclass in intersection :
             # increment total number of nodes found for this specified class
             dict_total_node[jobclass] += 1
@@ -257,8 +262,6 @@ for window in now_windows :
                 else :
                     #I have seen this class before, update it
                     dict_total_time[jobclass][duration] += 1
-        
-        
         
     if window[2].has_key('cpu') :
         duration = window[1] - Catalina.Now_float - start_epoch- Catalina.FUDGE_FACTOR
@@ -331,6 +334,7 @@ for legit_class in displayorder :
             if legit_class == classdict.keys()[0] :
                 print(classdict[legit_class])
         if len(dict_total_time[legit_class]) > 0 :
+            collective_node = 0
             for dur in reverse_sort_dict(dict_total_time[legit_class]) :
                 hour = math.floor(dur/3600)
                 minute = ((dur - (hour * 3600))/60.0)

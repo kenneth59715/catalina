@@ -383,6 +383,7 @@ SHOWBFCLASSLIST_STRING = [{'normal' : 'normal/high'},
                           {'normal32' : 'normal32/high32'},]
 SHOWBFREPORTLIST_STRING = ['normal32',]
 SHOWBFPROPERTYDICT_STRING = { 'MEM16' : { 'class' : 'normal'}, 'MEM32' : { 'class' : 'normal'}}
+SHOWBFREPORTMAXTIME_STRING = 64800
 
 # user_set_res uses this class to compute charge
 DEFAULT_RES_CLASS = ___DEFAULT_RES_CLASS_PLACEHOLDER___
