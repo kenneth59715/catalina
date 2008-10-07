@@ -201,11 +201,12 @@ else :
 dict_total_node={}
 dict_total_time={}
 dict_total_cpu={}
+dict_total_memory = {}
 for classdict in showbfclasslist :
     dict_total_node[classdict.keys()[0]] = 0
     dict_total_time[classdict.keys()[0]] = {}
     dict_total_cpu[classdict.keys()[0]] = {}
-
+    dict_total_memory[classdict.keys()[0]] = {}
 
 set_legit_class = set(dict_total_node.keys())
 if Catalina.__dict__.has_key('SHOWBFREPORTLIST_STRING') :
@@ -219,6 +220,21 @@ else :
 # [ 'normal32', ]
 #set_legit_cpu_class = set(['normal32'])
 set_legit_cpu_class = set(showbfreportlist)
+
+if Catalina.__dict__.has_key('SHOWBFPROPERTYDICT_STRING') :
+    exec('showbfproperty_dict = ' + Catalina.SHOWBFPROPERTYDICT_STRING)
+else :
+    print "no SHOWBFPROPERTYDICT_STRING in catalina.config!"
+    print "setting showbfproperty_dict to empty dict!"
+    showbfproperty_dict = {}
+# SHOWBFPROPERTYDICT:
+# { 'MEM16' : { 'count' : <count>, 'class' : <associated class>}, }
+set_legit_property = set(showbfproperty_dict.keys())
+for property in showbfproperty_dict.keys() :
+    dict_total_node[property] = 0
+    dict_total_time[property] = {}
+    dict_total_cpu[property] = {}
+    dict_total_memory[property] = {}
 
 ## oh by the way, we discard any window smaller than 15 minutes.
 minimum_time_considered_in_seconds= 900
@@ -247,14 +263,25 @@ for window in now_windows :
         #set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
         #intersection = set_class & set_legit_class
  
-        set_class = set_legit_class
-        intersection = set_legit_class
-        for jobclass in intersection :
+        #print "set_class (%s)" % (set_class,)
+        #print "set_legit_class (%s)" % (set_legit_class,)
+        #print "intersection (%s)" % (set_class & set_legit_class,)
+        #set_class = set_legit_class
+        #intersection = set_legit_class
+        classes_list = []
+        properties_list = resources_db_handle[0][window[2]['nodename']]['properties_list']
+        for property in showbfproperty_dict :
+            if property in properties_list :
+                if not showbfproperty_dict[property]['class'] in classes_list :
+                    classes_list.append(showbfproperty_dict[property]['class'])
+        #for jobclass in intersection :
+        for jobclass in classes_list :
             # increment total number of nodes found for this specified class
             dict_total_node[jobclass] += 1
             # update the time too
             # we only update dict_total_time if the time found is less than
             if duration > minimum_time_considered_in_seconds :
+                #print "adding (%s) to (%s) dict_total_time" % (window,jobclass)
             
                 if not dict_total_time[jobclass].has_key(duration):
                 #never seen a open window from this class before
@@ -297,6 +324,9 @@ collective_node = 0
 ## I need to make sure ordering is correct. Nancy wanted the normal queue be displayed first
 displayorder = dict_total_node.keys()
 displayorder.sort()
+
+#print "dict_total_cpu (%s)" % (dict_total_cpu,)
+#print "dict_total_time (%s)" % (dict_total_time,)
 
 for legit_class in displayorder :
     opportunity = 1

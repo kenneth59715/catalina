@@ -1,5 +1,6 @@
 #!___PYTHON_PATH_PLACEHOLDER___
 # ./show_free [--user=<username>] [--account=<account>] [--group=<group>] [--class=<job class>] [--QOS=<QOS>] [--duration=<wallclocklimit>]
+#./show_free --class=normal32 --runID=fakejob --debug --requirementsmap='Feature == "CPUs32"'
 # create a fake job with the requested characteristics
 # create ignore list for reservations in which the job can run
 # using the ignore list, create a reservation with earliest_start now, no resource amount specified,
@@ -11,6 +12,7 @@ import getopt
 import fcntl
 import string
 import Catalina
+import Catalina____RESOURCEMANAGER_PLACEHOLDER___
 import time
 import getpass
 
@@ -39,7 +41,7 @@ Usage: show_free [--user=<username>]
                [--qos=<QOS>]
                [--duration=<wallclocklimit>]
                [--runID=<job name>]
-               [--Requirements=<job requirements>]
+               [--requirementsmap=<job requirements>]
                [--Adapter=<job adapter requirement>]
                [--initiatormap=<job task map>]
                [--debug]"""
@@ -52,7 +54,7 @@ options = [ 'user=',
             'account=',
             'group=',
             'class=',
-            'Requirements=',
+            'requirementsmap=',
             'Adapter=',
             'initiatormap=',
             'qos=',
@@ -100,24 +102,30 @@ else :
 if argdict.has_key('--class') :
     fake_job['job_class'] = argdict['--class']
 else :
-    print "Defaulting job class to '%s'" % Catalina.DEFAULT_JOB_CLASS
-    fake_job['job_class'] = Catalina.DEFAULT_JOB_CLASS
+    #print "Defaulting job class to '%s'" % Catalina.DEFAULT_JOB_CLASS
+    #fake_job['job_class'] = Catalina.DEFAULT_JOB_CLASS
+    fake_job['job_class'] = ""
+#print "fake_job['job_class'] (%s)" % (fake_job['job_class'],)
+#print "argdict['--class'] (%s)" % (argdict['--class'],)
 if argdict.has_key('--qos') :
     fake_job['QOS'] = argdict['--qos']
 else :
     fake_job['QOS'] = '0'
-if argdict.has_key('--Requirements') :
-    fake_job['requirements'] = argdict['--Requirements']
-else :
-    fake_job['requirements'] = ''
 if argdict.has_key('--Adapter') :
     fake_job['adapter'] = argdict['--Adapter']
 else :
     fake_job['adapter'] = ''
 if argdict.has_key('--initiatormap') :
     fake_job['initiatormap'] = argdict['--initiatormap']
+    fake_job['resourcemap_list'] = string.split(argdict['--initiatormap'], '+')
 else :
     fake_job['initiatormap'] = '1'
+    fake_job['resourcemap_list'] = ['1',]
+if argdict.has_key('--requirementsmap') :
+    fake_job['requirementsmap'] = argdict['--requirementsmap']
+    print "argdict['--requirementsmap'] (%s)" % (argdict['--requirementsmap'],)
+else :
+    fake_job['requirementsmap'] = ['',]
 if argdict.has_key('--duration') :
     fake_job['wall_clock_limit'] = string.atof(argdict['--duration'])
 else :
@@ -125,6 +133,7 @@ else :
     fake_job['wall_clock_limit'] = 3600.0
 if argdict.has_key('--debug') :
     Catalina.DEBUG = 'TRUE'
+    Catalina.DEBUGJOB = job_name
 
 res_name = Catalina.get_new_db_key(reservations_db_handle)
 fake_res = Catalina.initialize_reservation(res_name)
@@ -165,7 +174,24 @@ accepted_nodes = Catalina.get_accepted_nodes_list(node_restriction_code, resourc
 # this doesn't work with large duration, with the standard nonconflicting conflict_policy
 # may need to write one that does not depend on duration...
 #resource_list = Catalina.get_resource_list(fake_job, resources_db_handle)
+# need to create req_dict_list here, with requirementsmap
+# for PBS, something like:
+# 2:hippi:ppn=2:fat
+# tg-c002:ppn=1:compute+tg-c003
+# tg-c002:ppn=1:compute+tg-c003+2:compute
+# for LoadLeveler, something like:
+#(Arch == "R6000") && (OpSys == "AIX52")+(Arch == "R6000") &&
+#(OpSys == "AIX52")+(Arch == "R6000") && (OpSys == "AIX52")+
+#(Arch == "R6000") && (OpSys == "AIX52")+(Arch == "R6000") &&
+#(OpSys == "AIX52")+(Arch == "R6000") && (OpSys == "AIX52")+...
+#requirementsmap_list = string.split(fake_job['requirementsmap'],'+')
+#fake_job['requirements'] = requirementsmap_list[0]
+#fake_job['requirementsmap'] = requirementsmap
+fake_job['cat_requirements_string'] = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_requirements_string(fake_job)
+fake_job['req_dict_list'] = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_req_dict_list(fake_job)
+print "fake_job['req_dict_list'] (%s)" % (fake_job['req_dict_list'],)
 resource_dict_list = Catalina.get_resource_dict_list(fake_job, resources_db_handle)
+#print "resource_dict_list (%s)" % (resource_dict_list,)
 screened_resource_name_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), accepted_nodes)
 #if Catalina.DEBUG != None :
 #    print "len(resource_list) is (%s)" % len(resource_list)

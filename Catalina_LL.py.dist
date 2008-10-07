@@ -320,6 +320,19 @@ def get_job_step_state(job_step) :
     else :
         return 'OTHER'
 
+def get_req_dict_list(job) :
+    if job.has_key('resourcemap_list') :
+        req_dict_list = []
+        for resourcemap in job['resourcemap_list'] :
+            req_dict_list.append({'amount_int' : string.atoi(resourcemap),
+                             'this_req_string' : job['cat_requirements_string']})
+    else :
+        print "job (%s) has no resourcemap_list.  Using 1 node, no restriction!"% (job['name'],)
+        req_dict_list = [{'amount_int' : job['resource_amount_int'],
+                          'this_req_string' : ''
+                        }]
+    return req_dict_list
+
 def get_job_steps_dict() :
     runjob_dict = get_runjob_dict()
     if Catalina.SERVERMODE == 'SIM' :
@@ -384,6 +397,7 @@ def get_job_steps_dict() :
             new_job_step['group'] = runjob_dict[job_step_id]['group']
             requirements_map = runjob_dict[job_step_id]['requirementsmap']
             single_requirements_list = string.split(requirements_map, '+')
+            new_job_step['requirementsmap'] = single_requirements_list
             new_job_step['requirements'] = single_requirements_list[0]
             new_job_step['adapter'] = llq_job_step_adapter
             new_job_step['fromhost'] = runjob_dict[job_step_id]['fromhost']
@@ -445,6 +459,7 @@ def get_job_steps_dict() :
                             new_job_step['run_at_risk_int'] = 1
             new_job_step['initiatormap'] = runjob_dict[job_step_id]['initiatormap']
             resourcemap_list = string.split(new_job_step['initiatormap'], '+')
+            new_job_step['resourcemap_list'] = resourcemap_list
             # For some reason, initiatormap is reversed 
             #resourcemap_list.reverse()
             if runjob_dict[job_step_id].has_key('node_usage') :
@@ -540,11 +555,14 @@ def get_job_steps_dict() :
                 #print "1. restricted_req_string (%s)" % restricted_req_string
                 restricted_req_string = preempted_machines_string + ' ' + restricted_req_string
                 #print "2. restricted_req_string (%s)" % restricted_req_string
-                new_job_step['cat_requirements_string'] = get_requirements_string(restricted_req_string)
+                #new_job_step['cat_requirements_string'] = get_requirements_string(restricted_req_string)
+                new_job_step['requirements'] = restricted_req_string
+                new_job_step['requirementsmap'] = string.split('restricted_req_string','+')
+                new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step)
             else :
-                new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step['requirements'])
+                #new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step['requirements'])
+                new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step)
             resourcereq_dict_dict_list = []
-            req_dict_list = []
             for resourcemap in resourcemap_list :
                 resourcereq_dict_dict = {'type' : node_dict_type}
                 req_list = []
@@ -565,13 +583,14 @@ def get_job_steps_dict() :
                 resourcereq_dict_dict['req_list'] = req_list
                 resourcereq_dict_dict_list.append(resourcereq_dict_dict)
 
-                req_dict_list.append(
-                  { 'amount_int' : string.atoi(resourcemap),
-                    'this_req_string' : new_job_step['cat_requirements_string']
-                  }
-                  )
+                #req_dict_list.append(
+                #  { 'amount_int' : string.atoi(resourcemap),
+                #    'this_req_string' : new_job_step['cat_requirements_string']
+                #  }
+                #  )
+            new_job_step['req_dict_list'] = get_req_dict_list(job=new_job_step)
             new_job_step['requested_resource_list'] = resourcereq_dict_dict_list
-            new_job_step['req_dict_list'] = req_dict_list
+            #new_job_step['req_dict_list'] = req_dict_list
         else :
             print "job_step_id (%s) not found in runjob_dict!" % \
             line_job_id
@@ -699,7 +718,8 @@ def get_resources_list() :
         raise 'IncompleteQM'
     return resources
 
-def get_requirements_string(old_requirements_string) :
+#def get_requirements_string(old_requirements_string) :
+def get_requirements_string(job) :
     # requirements line from getinitmap:
     # (Memory >= 4086) && (Machine == {"tf226i.sdsc.edu" "tf227i.sdsc.edu" "tf228i.sdsc.edu" }) && (Feature == "SDSC") && (Arch == "R6000") && (OpSys == "AIX43")
     # An expression could be constructed from this.  Substitute
@@ -719,6 +739,9 @@ def get_requirements_string(old_requirements_string) :
     # Feature == "SDSC" substituted to
     # re.search(" SDSC ",resource.get_Feature())
     #print "starting with old_requirements_string (%s)" % old_requirements_string
+    #old_requirements_string = job['requirements']
+    #old_requirements_string = string.split(job['requirementsmap'],'+')[0]
+    old_requirements_string = job['requirementsmap'][0]
     Memory_reo = re.compile(r"Memory")
     new_requirements_string = Memory_reo.sub(r"resource['Memory']", old_requirements_string)
     old_requirements_string = new_requirements_string
@@ -889,6 +912,7 @@ def get_resource_dict_list(job_step, resources_db_handle) :
             if not key in nrq_matches :
                 continue
             job_class_requirement = job_step['job_class']
+            #print "job_step['job_class'] (%s)" % (job_step['job_class'],)
             #step_initiatormap = job_step['initiatormap']
             #initiators_list = string.split(step_initiatormap, '+')
             #job_initiator_per_node_int = 0
@@ -906,14 +930,14 @@ def get_resource_dict_list(job_step, resources_db_handle) :
                 print "passed ConfiguredClass test"
             matched_classes_list = []
             for prospective_class in resource['ConfiguredClasses_list'] :
-                if prospective_class == job_class_requirement :
+                if job_class_requirement == "" or prospective_class == job_class_requirement :
                     matched_classes_list.append(prospective_class)
             #matched_classes_list = filter(lambda x, job_class_requirement=job_class_requirement : \
             #  job_class_requirement == x, resource['ConfiguredClasses_list'])
             if len(matched_classes_list) == 0 :
                 # resource does not have this class at all
                 if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
-                    print "no class match (%s)" % (matched_classes_list,)
+                    print "no class match (%s) (%s) (%s)" % (matched_classes_list,resource['ConfiguredClasses_list'], job_class_requirement)
                 continue
             elif len(matched_classes_list) < job_initiator_per_node_int :
                 # The resource has the class, but fewer initiators for that

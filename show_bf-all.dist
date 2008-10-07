@@ -5,6 +5,19 @@
 # create ignore list for reservations in which the job can run
 # using the ignore list, create a reservation with earliest_start now, no resource amount specified,
 # if start_time_float is Now, report the number of resources found, else report none available now
+#There are two parts into this:
+#1) parsing the output from show_bf-all: the pattern is:
+#        Pattern pStr = Pattern.compile("^(\\d+)=([\\w\\,]+): +(\\d+) +\\w+
+#+for +(.+) +hrs");
+#        examples:
+#        200707230640=dque,compute:  77 nodes for  1:14 hrs
+#        200707230640=dque:  216 nodes for  1:14 hrs
+#
+#2) in the reservation configuration file, "dque" and "dque,compute" are
+#configured for number of cpus per node:
+#        dque.node_factor=2
+#        dque,compute.node_factor=2
+
 
 import sys
 sys.path.append('___HOMEDIR_PLACEHOLDER___')
@@ -51,13 +64,15 @@ Usage: show_bf-all
                [--start=<mm/dd/yyyy_hh:mm>] | [--offset=<seconds to begin window]
                [--days=n]
                [--help]
+               [--debug]
 """
 options = [ 
             '?',
             'start=',
             'offset=',
             'days=',
-            'help'
+            'help',
+            'debug'
            ]
            
 default_argdict = {
@@ -70,11 +85,12 @@ if len(args) == 0 :
     argdict= default_argdict
 else :
     argdict={}
-    try :
-        optlist, lineargs = getopt.getopt(args, '', options)
-    except :
-        print usage_string
-        sys.exit(0)
+    #try :
+    #    optlist, lineargs = getopt.getopt(args, '', options)
+    #except :
+    #    print usage_string
+    #    sys.exit(0)
+    optlist, lineargs = getopt.getopt(args, '', options)
     for pair in optlist:
         argdict[pair[0]] = pair[1]
     
@@ -92,7 +108,12 @@ if argdict.has_key('--days'):
         print "unable to read --days"
         print usage_string
         sys.exit(0)
-    
+else :
+    num_of_days = 2
+if argdict.has_key('--debug'):
+    DEBUG = 1
+else :
+    DEBUG = 0
     
 
 #calculate the beginning of time window (now = 0), 1 hour from now = 3600
@@ -112,8 +133,9 @@ elif argdict.has_key('--offset') :
         print "Error. Couldn't see opportunities in the past, specify --offset in the future"
         sys.exit(-2)
 else :
-    print usage_string
-    sys.exit(0)
+    #print usage_string
+    #sys.exit(0)
+    start_epoch=0.0
 
 
 node_restriction_code = Catalina.NODERESTCODE
@@ -182,7 +204,8 @@ open_windows_list = Catalina.get_open_windows_list(screened_nodes_list, fake_res
 absolute_start_epoch = start_epoch
 increment = 3600 # one hour
 for time_window in range(num_of_days*24):
-    #print "for time window %d ==========" %(time_window*increment)
+    if DEBUG == 1 :
+        print "for time window %d ==========" %(time_window*increment)
     start_epoch= absolute_start_epoch + (time_window*increment)
     current_time =  time.strftime("%Y%m%d%H%M",time.localtime(start_epoch+Catalina.Now_float))
     
@@ -281,11 +304,21 @@ for time_window in range(num_of_days*24):
     for window in now_windows :
         
         nodename = resources_db_handle[0][window[2]['nodename']]['name']
+        if DEBUG == 1 :
+            print "window (%s)" % (window,)
         set_property = set(resources_db_handle[0][window[2]['nodename']]['properties_list'])
         property = " ".join(set_property & set_legit_property) #convert the intersection of the two sets into a string property
-            
+        properties_list = resources_db_handle[0][window[2]['nodename']]['properties_list']
+        classes_list = []
+        for property in showbfproperty_dict :
+            if property in properties_list :
+                if not showbfproperty_dict[property]['class'] in classes_list :
+                    classes_list.append(showbfproperty_dict[property]['class'])
+        set_class = set(classes_list)
             
         if window[2].has_key('node') :
+            if DEBUG == 1 :
+                print "node window..."
             duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
             #if duration > 18 hours, set it to 18 hours (max time avail)
             if duration > max_time :
@@ -294,11 +327,13 @@ for time_window in range(num_of_days*24):
             # do it via Python intersection of sets
             
             
-            set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+            #set_class  = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
             intersection = set_class & set_legit_class
     
     
             for jobclass in intersection :
+                if DEBUG == 1 :
+                    print "doing jobclass (%s)" % (jobclass,)
                 # increment total number of nodes found for this specified class
                 dict_total_node[jobclass] += 1
                 
@@ -308,11 +343,15 @@ for time_window in range(num_of_days*24):
                 
                     if not dict_total_time[jobclass].has_key(duration):
                     #never seen a open window from this class before
+                        if DEBUG == 1 :
+                            print "starting dict_total_time[%s][%s] at 1" % (jobclass,duration)
                         dict_total_time[jobclass][duration] = 1
                         
                     else :
                         #I have seen this class before, update it
                         dict_total_time[jobclass][duration] += 1
+                        if DEBUG == 1 :
+                            print "incrementing dict_total_time[%s][%s] to (%s)" % (jobclass,duration,dict_total_time[jobclass][duration])
                     
                     
                     
@@ -323,7 +362,7 @@ for time_window in range(num_of_days*24):
             if duration > max_time :
                 duration = max_time
      
-            set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+            #set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
             intersection = set_class & set_legit_cpu_class
             
             
@@ -345,7 +384,7 @@ for time_window in range(num_of_days*24):
             if duration > max_time:
                 duration = max_time
                 
-            set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+            #set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
             intersection = set_class & set_legit_memory_class
             
             
@@ -409,6 +448,10 @@ for time_window in range(num_of_days*24):
     ## I need to make sure ordering is correct. Nancy wanted the normal queue be displayed first
     displayorder = dict_total_node.keys()
     displayorder.sort()
+
+
+    #print "dict_total_node (%s)" % (dict_total_node,)
+    #print "displayorder (%s)" % (displayorder,)
     
     for legit_class in displayorder :
         opportunity = 1
