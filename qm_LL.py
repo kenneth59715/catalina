@@ -97,6 +97,11 @@ while pyloadl.PyCObjValid(machine_ptr) :
         sys.stdout.write("AdapterName%s:%s;" % (adapter_index,pyloadl.ll_get_data(adapter_ptr,pyloadl.LL_AdapterName),))
         sys.stdout.write("AdapterTotalWindowCount:%s;" % (pyloadl.ll_get_data(adapter_ptr,pyloadl.LL_AdapterTotalWindowCount),))
         sys.stdout.write("AdapterAvailWindowCount:%s" % (pyloadl.ll_get_data(adapter_ptr,pyloadl.LL_AdapterAvailWindowCount),))
+        # Trying to get this info results in 
+#ds001:/work/kenneth/test/catalina/pyloadl)./qm_LL.py
+#cat_delim#Machine:ds395#cat_delim#Arch:R6000#cat_delim#OpSys:AIX52#cat_delim#Disk:195576#cat_delim#Pool:1#cat_delim#ConfiguredClasses:Diag+Diag+Diag+Diag+Diag+Diag+Diag+Diag+special+special+special+special+special+special+special+special+special+special+special+special+special+special+special+special+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+high+high+high+high+high+high+high+high+high+high+high+high+high+high+high+high#cat_delim#AvailableClasses:Diag+Diag+Diag+Diag+Diag+Diag+Diag+Diag+special+special+special+special+special+special+special+special+special+special+special+special+special+special+special+special+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+normal+high+high+high+high+high+high+high+high+high+high+high+high+high+high+high+high#cat_delim#Feature:batch+high+Power4+CPUs8+MEM32+GPFS-WAN#cat_delim#Max_Starters:16#cat_delim#Memory:30464#cat_delim#Cpus:8#cat_delim#resourcesmap:ConsumableMemory#cat_sep#24576#cat_sep#24576+ConsumableCpus#cat_sep#8#cat_sep#8+RDMA#cat_sep#4#cat_sep#4#cat_delim#State:Idle#cat_delim#AdapterName1:networks;AdapterTotalWindowCount:16;AdapterAvailWindowCount:16IOT/Abort trap(coredump)
+#ds001:/work/kenneth/test/catalina/pyloadl)
+        #sys.stdout.write("AdapterCommInterface:%s" % (pyloadl.ll_get_data(adapter_ptr,pyloadl.LL_AdapterCommInterface),))
         adapter_ptr = pyloadl.ll_get_data(machine_ptr,pyloadl.LL_MachineGetNextAdapter)
         first_element = 0
     print ""

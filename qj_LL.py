@@ -74,7 +74,7 @@ while pyloadl.PyCObjValid(job) :
             adreq_string = adreq_string + '#cat_sep#'
             adreqmode = pyloadl.ll_get_data(adreq_element,pyloadl.LL_AdapterReqMode)
             adreq_string = adreq_string + adreqmode
-            adreq_string = adreq_string + '#cat_sep#'
+            #adreq_string = adreq_string + '#cat_sep#'
             adreq_element = pyloadl.ll_get_data(step_element,pyloadl.LL_StepGetNextAdapterReq)
             firstelement = 0
         new_step['adreq_string'] = adreq_string
