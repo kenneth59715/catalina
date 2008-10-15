@@ -49,7 +49,7 @@ def allocation_check(username,account,feature=[]) :
     #check if the program validate_job.pl exist, otherwise just warn the users
     if os.path.exists(validate_script) and os.path.isfile(validate_script) :
         prep_arg_tuple = (machine_name,username,account,queue)
-        rc_status_tuple = forksleep(validate_script, prep_arg_tuple, 30) #sleep 30 secs
+        rc_status_tuple = Catalina.timedrun((validate_script,) + prep_arg_tuple, 30) #sleep 30 secs
         if rc_status_tuple[1] == 0 :
             return 0 
         else :
@@ -58,35 +58,6 @@ def allocation_check(username,account,feature=[]) :
     else :
         print "Warning! I didn't check for allocation. Script validate_job.pl doesn't exist. Your reservation will be created"
         return 0
-
-
-
-# From the Python book:
-# Only one pipe, child out to parent in
-def forksleep (prog, args, timeout) :
-    pipe1 = os.pipe()
-    pid = os.fork()
-    if pid :
-        os.close(pipe1[1])
-        os.dup2(pipe1[0], 0)
-        iterations = 0
-        while iterations < timeout :
-            return_tuple = os.waitpid( pid, os.WNOHANG )
-            if return_tuple[0] == pid :
-                return_out = sys.stdin.read()
-                exit_number = return_tuple[1]
-                exit_status = exit_number >> 8
-                return_data = (return_out, exit_status)
-                break
-            else :
-                time.sleep(1)
-        return (return_data)
-    else :
-        os.close(pipe1[0])
-        os.dup2(pipe1[1], 1)
-        print "child running (%s) with args (%s)" % (prog, args)
-        childargs = (prog,) + args
-        os.execv(prog, childargs)
 
 def get_blocking(duration_float,window,alimit_int,requested_resource_seconds,res_list) :
     #if Catalina.DEBUG == 'user_set' :

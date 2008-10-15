@@ -49,6 +49,7 @@
 
 import fcntl
 import traceback
+import subprocess
 from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_job_steps_dict
 from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_resources_list
 from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_configured_resources_list
@@ -470,6 +471,27 @@ result = windows
 """
 
 username_string = pwd.getpwuid(os.getuid())[0]
+
+def timedrun(command,timeout) :
+    child_obj = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    returncode = None
+    iterations = 0
+    while returncode == None and iterations <= timeout :
+        returncode = child_obj.poll()
+        if returncode == None :
+            iterations = iterations + 1
+            time.sleep(1)
+        else :
+            break
+    if returncode == None :
+        # child failed to beat timeout
+        print "(%s) failed to return in (%s)!" % (command, timeout)
+        os.kill(child_obj.pid)
+        return "timedrun (%s) failed!" (command,)
+    else :
+        (stdout, stderr) = child_obj.communicate()
+        return (stdout, returncode)
+    #return_tuple = os.waitpid(childpid,os.WNOHANG)
 
 def initialize_reservation(reservation_name) :
     new_reservation = {}
