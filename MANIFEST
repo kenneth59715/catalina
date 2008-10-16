@@ -53,6 +53,7 @@ rj_PBS.c.dist
 scratchtest.py.dist
 set_config.dist
 set_res.dist
+show_available.dist
 show_bf.dist
 show_bf-all.dist
 show_bf.DS.dist
