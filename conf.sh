@@ -104,6 +104,7 @@ LL)
 	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS--L/usr/lpp/LoadL/full/lib}" >> Makefile ;
 	${ECHO} "RMINCDIRS=${CATALINA_RMINCDIRS--I/usr/lpp/LoadL/full/include}" >> Makefile ;
 	${ECHO} "RMLIBS=-lllapi -lm" >> Makefile ;
+	RMAPI='python' ;
 	RMSERVER_DEFAULT='' ;
 	JOB_START_TIME_LIMIT=900.0 ;
 	DB_WARN_LIMIT=3 ;
@@ -172,6 +173,7 @@ PBS)
 	RESOURCE_DOWN_TIME_LIMIT=900.0 ;
 	LOST_JOB_LIMIT=0 ;
 	LOST_JOB_WARN=FALSE ;
+	RMAPI='c' ;
 	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
 	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
 	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
@@ -225,6 +227,7 @@ TORQUE)
 	RESOURCE_DOWN_TIME_LIMIT=900.0 ;
 	LOST_JOB_LIMIT=0 ;
 	LOST_JOB_WARN=FALSE ;
+	RMAPI='c' ;
 	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
 	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
 	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
@@ -270,6 +273,7 @@ DISK)
 	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS--L/usr/local/lib}" >> Makefile ;
 	${ECHO} "RMINCDIRS=${CATALINA_RMINCDIRS--I/usr/local/include}" >> Makefile ;
 	${ECHO} "RMLIBS=" >> Makefile ;
+	RMAPI='c' ;
 	USERNAMESUFFIX='' ;
 	JOB_START_TIME_LIMIT=5.0 ;
 	DB_WARN_LIMIT=3 ;
@@ -449,7 +453,7 @@ case $? in
 0)	${ECHO} chmod works... ;;
 *)	${ECHO} ERROR chmod failed! ; exit 1 ;;
 esac
-echo "CHMOD=${CHMOD}" >> Makefile
+${ECHO} "CHMOD=${CHMOD}" >> Makefile
 WHOAMI=`get_first_exe whoami` || bailout 'Could not find whoami' 1
 CHOWN=`get_first_exe chown` || bailout 'Could not find chown' 1
 ${CHOWN} `${WHOAMI}` test.$$
@@ -457,35 +461,35 @@ case $? in
 0)	${ECHO} chown works... ;;
 *)	${ECHO} ERROR chown failed! ; exit 1 ;;
 esac
-echo "CHOWN=${CHOWN}" >> Makefile
+${ECHO} "CHOWN=${CHOWN}" >> Makefile
 MKDIR=`get_first_exe mkdir` || bailout 'Could not find mkdir' 1
 ${MKDIR} testdir.$$
 case $? in
 0)	${ECHO} mkdir works... ;;
 *)	${ECHO} ERROR mkdir failed! ; exit 1 ;;
 esac
-echo "MKDIR=${MKDIR}" >> Makefile
+${ECHO} "MKDIR=${MKDIR}" >> Makefile
 SED=`get_first_exe sed` || bailout 'Could not find sed' 1
 ${SED} 's/RESOURCEMANAGER/NEW/' test.$$ > /dev/null
 case $? in
 0)	${ECHO} sed works... ;;
 *)	${ECHO} ERROR sed failed! ; exit 1 ;;
 esac
-echo "SED=${SED}" >> Makefile
+${ECHO} "SED=${SED}" >> Makefile
 CAT=`get_first_exe cat` || bailout 'Could not find cat' 1
 ${CAT} test.$$ > /dev/null
 case $? in
 0)	${ECHO} cat works... ;;
 *)	${ECHO} ERROR cat failed! ; exit 1 ;;
 esac
-echo "CAT=${CAT}" >> Makefile
+${ECHO} "CAT=${CAT}" >> Makefile
 FIND=`get_first_exe find` || bailout 'Could not find find' 1
 ${FIND} test.$$ -name test.$$ -print
 case $? in
 0)	${ECHO} find works... ;;
 *)	${ECHO} ERROR find failed! ; exit 1 ;;
 esac
-echo "FIND=${FIND}" >> Makefile #/usr/bin/find
+${ECHO} "FIND=${FIND}" >> Makefile #/usr/bin/find
 MV=`get_first_exe mv` || bailout 'Could not find mv' 1
 ${CAT} Makefile.dist > mv.test
 ${MV} mv.test mv.test.2
@@ -494,6 +498,13 @@ case $? in
 *)	${ECHO} ERROR mv failed! ; exit 1 ;;
 esac
 ${ECHO} "MV=${MV}" >> Makefile
+#TEST=`get_first_exe test` || bailout 'Could not find test' 1
+#${TEST} Makefile.dist
+#case $? in
+#0)	${ECHO} test works... ;;
+#*)	${ECHO} ERROR test failed! ; exit 1 ;;
+#esac
+#${ECHO} "TEST=${TEST}" >> Makefile
 RM=`get_first_exe rm` || bailout 'Could not find rm' 1
 ${RM} test.$$
 case $? in
@@ -688,7 +699,11 @@ ${ECHO} "" >> Makefile
 if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
 	${ECHO} "C_EXECUTABLE_FILES = \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
 else
-	${ECHO} "C_EXECUTABLE_FILES = \$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
+	if [ "${RMAPI}" = "c" ]; then
+		${ECHO} "C_EXECUTABLE_FILES = \$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
+	else
+		${ECHO} "C_EXECUTABLE_FILES = \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
+	fi
 fi
 ${ECHO} "" >> Makefile
 ${ECHO} "KSH_EXECUTABLE_FILES = \$(START)" >> Makefile
@@ -706,6 +721,9 @@ ${ECHO} "	\$(SHOWRESOURCES) \$(DUMP)\\" >> Makefile
 ${ECHO} "	\$(SHOWSTANDING) \$(STOP) \$(TESTRES) \$(UNBINDJOB) \$(UPDATEJOBS) \\" >> Makefile
 ${ECHO} "	\$(UPDATELOCALADMIN) \$(UPDATEPREEMPTION) \\" >> Makefile
 ${ECHO} "	\$(UPDATEPRIORITIES) \$(UPDATEQOS) \$(UPDATERESOURCES) \$(UPDATERUNNING) \\" >> Makefile
+if [ "${RMAPI}" = "python" ]; then
+	${ECHO} "	\$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \\" >> Makefile
+fi
 ${ECHO} "	\$(UPDATESTANDING) \$(RESPROEPI)\\" >> Makefile
 ${ECHO} "	\$(UPDATESYSTEM) \$(USERBINDPY) \$(USERCANCELPY) \$(USERSETPY) \$(USERUNBINDPY) \$(USERBINDJOBPY) \$(USERUNBINDJOBPY)" >> Makefile
 ${ECHO} "" >> Makefile
@@ -773,36 +791,39 @@ ${ECHO} "test:" >> Makefile
 ${ECHO} "	- \$(INSTALLDIR)/\$(TESTRES)" >> Makefile
 ${ECHO} "" >> Makefile
 if [ "${CATALINA_BUILDMODE}" != "SIM" ]; then
-	${ECHO} "\$(QJ): \$(QJ).c" >> Makefile
-	${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(QJ).c \$(RMLIBS)" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(QJ).c: \$(QJ).c.dist" >> Makefile
-	${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(QM): \$(QM).c" >> Makefile
-	${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(QM).c \$(RMLIBS)" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(QM).c: \$(QM).c.dist" >> Makefile
-	${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(RUNJOB): \$(RUNJOB).c" >> Makefile
-	${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(RUNJOB).c \$(RMLIBS)" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(RUNJOB).c: \$(RUNJOB).c.dist" >> Makefile
-	${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(PREEMPTJOB): \$(PREEMPTJOB).c" >> Makefile
-	${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(PREEMPTJOB).c \$(RMLIBS)" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(PREEMPTJOB).c: \$(PREEMPTJOB).c.dist" >> Makefile
-	${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(RESUMEJOB): \$(RESUMEJOB).c" >> Makefile
-	${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(RESUMEJOB).c \$(RMLIBS)" >> Makefile
-	${ECHO} "" >> Makefile
-	${ECHO} "\$(RESUMEJOB).c: \$(RESUMEJOB).c.dist" >> Makefile
-	${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
-	${ECHO} "" >> Makefile
+	if [ "${RMAPI}" = "c" ]; then
+		${ECHO} RMAPI = c... ;
+		${ECHO} "\$(QJ): \$(QJ).c" >> Makefile
+		${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(QJ).c \$(RMLIBS)" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(QJ).c: \$(QJ).c.dist" >> Makefile
+		${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(QM): \$(QM).c" >> Makefile
+		${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(QM).c \$(RMLIBS)" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(QM).c: \$(QM).c.dist" >> Makefile
+		${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(RUNJOB): \$(RUNJOB).c" >> Makefile
+		${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(RUNJOB).c \$(RMLIBS)" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(RUNJOB).c: \$(RUNJOB).c.dist" >> Makefile
+		${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(PREEMPTJOB): \$(PREEMPTJOB).c" >> Makefile
+		${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(PREEMPTJOB).c \$(RMLIBS)" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(PREEMPTJOB).c: \$(PREEMPTJOB).c.dist" >> Makefile
+		${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(RESUMEJOB): \$(RESUMEJOB).c" >> Makefile
+		${ECHO} "	\$(CC) \$(RMCFLAGS) -o \$@ \$(RESUMEJOB).c \$(RMLIBS)" >> Makefile
+		${ECHO} "" >> Makefile
+		${ECHO} "\$(RESUMEJOB).c: \$(RESUMEJOB).c.dist" >> Makefile
+		${ECHO} "	\$(CAT) \$@.dist > \$@" >> Makefile
+		${ECHO} "" >> Makefile
+	fi
 fi
 ${ECHO} "\$(USERBINDWRAP): \$(USERBINDWRAP).c" >> Makefile
 ${ECHO} "	\$(CC) \$(CATUSERCFLAGS) -o \$@ \$(USERBINDWRAP).c" >> Makefile

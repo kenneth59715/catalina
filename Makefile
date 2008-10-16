@@ -1,4 +1,5 @@
 SVN=/usr/local/apps/subversion-1.4.3/bin/svn
+CHMOD=/bin/chmod
 TAR=/bin/tar
 ECHO=/bin/echo
 RM=/bin/rm -f
@@ -34,16 +35,17 @@ dist: clean
 	fi
 	
 	@ $(ECHO) "Downloading files from SVN .."  
-	@ cd $(TEMP_DIR); $(SVN) co $(REPO_LOCATION)
+	@ mkdir -p $(TEMP_DIR)/$(CATALINA); cd $(TEMP_DIR)/$(CATALINA); \
+	$(SVN) cat $(REPO_LOCATION)/MANIFEST > MANIFEST; for i in `$(CAT) MANIFEST`; do $(SVN) cat $(REPO_LOCATION)/$$i > $$i; done; $(CHMOD) ugo+x conf.sh
 	@ $(ECHO) "done"
 
 	@ $(ECHO) "Creating DATESTAMP file .."	
 	@ cd $(TEMP_DIR)/$(CATALINA); $(ECHO) $(TIMESTAMP) > DATESTAMP
 	@ $(ECHO) "done"
 
-	@ $(ECHO) "Creating MANIFEST file .."	
-	@ cd $(TEMP_DIR)/$(CATALINA); $(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^VERSIONHASH$$ > MANIFEST
-	@ $(ECHO) "done"
+	#@ $(ECHO) "Creating MANIFEST file .."	
+	#@ cd $(TEMP_DIR)/$(CATALINA); $(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^VERSIONHASH$$ > MANIFEST
+	#@ $(ECHO) "done"
 	
 	@ $(ECHO) "Creating VERSIONHASH file .."
 	cd $(TEMP_DIR)/$(CATALINA); $(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > VERSIONHASH
