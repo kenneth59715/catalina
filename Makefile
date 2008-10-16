@@ -43,10 +43,6 @@ dist: clean
 	@ cd $(TEMP_DIR)/$(CATALINA); $(ECHO) $(TIMESTAMP) > DATESTAMP
 	@ $(ECHO) "done"
 
-	#@ $(ECHO) "Creating MANIFEST file .."	
-	#@ cd $(TEMP_DIR)/$(CATALINA); $(LS) | grep -v ^MANIFEST$$ | grep -v ^dist.tar$$ | grep -v ^RCS$$  | grep -v ^VERSIONHASH$$ > MANIFEST
-	#@ $(ECHO) "done"
-	
 	@ $(ECHO) "Creating VERSIONHASH file .."
 	cd $(TEMP_DIR)/$(CATALINA); $(CAT) `$(CAT) MANIFEST` | $(MD5SUM) | $(AWK) '{print $$1}' > VERSIONHASH
 	@ $(ECHO) "done"
