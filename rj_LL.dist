@@ -17,7 +17,7 @@ for nodencount in nodencount_list :
     for index in range(string.atoi(count)) :
         node_list.append(nodename)
 
-#rc = pyloadl.ll_start_job(fromhost + '.' + cluster + '.' + proc, node_list)
-#print "rc from ll_start_job is >%s<" % rc
-
+rc = pyloadl.ll_start_job(fromhost + '.' + cluster + '.' + proc, node_list)
 print "(%s) (%s)" % (fromhost + '.' + cluster + '.' + proc, node_list)
+print "rc from ll_start_job is >%s<" % rc
+
