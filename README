@@ -4,6 +4,9 @@ Prerequisites:
 
 1.  LoadLeveler v2.2 or OpenPBS
 
+1a. If LoadLeveler, then PyLoadL is also required.  Download
+    from http://www.gingergeeks.co.uk/ and install.
+
 2. Python v2.4.1+
 
 To extract dist.tar:
