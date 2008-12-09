@@ -20,8 +20,12 @@ if rc != 0 :
     raise "Failure"
 job, job_count, rc = pyloadl.ll_get_objs(query_element,pyloadl.LL_CM,"")
 if rc != 0 :
-    print "rc (%s)" % rc
-    raise "Failure"
+    if job_count == 0 :
+        print "No jobs present!"
+        print "rc (%s)" % rc
+    else :
+        print "rc (%s)" % rc
+        raise "Failure"
 
 while pyloadl.PyCObjValid(job) :
     credential_element = pyloadl.ll_get_data(job,pyloadl.LL_JobCredential)
