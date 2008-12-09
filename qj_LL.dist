@@ -17,11 +17,11 @@ query_element = pyloadl.ll_query(pyloadl.JOBS)
 rc = pyloadl.ll_set_request(query_element,pyloadl.QUERY_ALL,"",pyloadl.ALL_DATA)
 if rc != 0 :
     print "rc (%s)" % rc
-    raise Failure
+    raise "Failure"
 job, job_count, rc = pyloadl.ll_get_objs(query_element,pyloadl.LL_CM,"")
 if rc != 0 :
     print "rc (%s)" % rc
-    raise Failure
+    raise "Failure"
 
 while pyloadl.PyCObjValid(job) :
     credential_element = pyloadl.ll_get_data(job,pyloadl.LL_JobCredential)
