@@ -173,7 +173,7 @@ def cancel_job(job_step, events_db_handle, message=None) :
     Catalina.log_event(event, events_db_handle)
 
 def preempt_job(job_step, events_db_handle) :
-    PREEMPTJOB='___PREEMPTJOB_PLACEHOLDER___'
+    PREEMPTJOB = Catalina.HOMEDIR + '/' + '___PREEMPTJOB_PLACEHOLDER___'
     #cmd_string = PREEMPTJOB + ' ' + job_step['name'] + ' PREEMPT_STEP'
     cmd_string = PREEMPTJOB + ' ' + job_step['name']
     #output = 'llpreempt: Preempt command has been sent to the central manager.'
@@ -557,7 +557,7 @@ def get_job_steps_dict() :
                 #print "2. restricted_req_string (%s)" % restricted_req_string
                 #new_job_step['cat_requirements_string'] = get_requirements_string(restricted_req_string)
                 new_job_step['requirements'] = restricted_req_string
-                new_job_step['requirementsmap'] = string.split('restricted_req_string','+')
+                new_job_step['requirementsmap'] = string.split(restricted_req_string,'+')
                 new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step)
             else :
                 #new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step['requirements'])
@@ -980,7 +980,7 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
     RUNJOB='___RUNJOB_PLACEHOLDER___'
     print "in run_jobs"
     RUNJOB = Catalina.HOMEDIR + '/' + RUNJOB
-    RESUMEJOB='___RESUMEJOB_PLACEHOLDER___'
+    RESUMEJOB = Catalina.HOMEDIR + '/' + '___RESUMEJOB_PLACEHOLDER___'
     # all dbs can be read
     jobs_dict = jobs_db_handle[0]
     resources_dict = resources_db_handle[0]
@@ -1033,10 +1033,13 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
         #    cmd = Catalina.PREEMPTCMD + ' ' + job + ' RESUME_STEP'
         #else :
         #    cmd = RUNJOB + ' ' + run_string
+        # To resume a job, it must be resumed, then run, so
+        # we need both preempt -r and runjob for resumed jobs
         if jobs_dict[job]['state'] == 'Preempted' :
             cmd = RESUMEJOB + ' ' + job
             if Catalina.SERVERMODE == 'NORMAL' :
                 return_string = os.popen(cmd).readlines()
+                print cmd
                 print return_string
             else :
                 print "would run (%s)" % cmd
