@@ -188,8 +188,8 @@ accepted_nodes = Catalina.get_accepted_nodes_list(node_restriction_code, resourc
 #fake_job['requirements'] = requirementsmap_list[0]
 #fake_job['requirementsmap'] = requirementsmap
 fake_job['cat_requirements_string'] = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_requirements_string(fake_job)
-fake_job['req_dict_list'] = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_req_dict_list(fake_job)
-print "fake_job['req_dict_list'] (%s)" % (fake_job['req_dict_list'],)
+#fake_job['req_dict_list'] = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_req_dict_list(fake_job)
+#print "fake_job['req_dict_list'] (%s)" % (fake_job['req_dict_list'],)
 resource_dict_list = Catalina.get_resource_dict_list(fake_job, resources_db_handle)
 #print "resource_dict_list (%s)" % (resource_dict_list,)
 screened_resource_name_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), accepted_nodes)
