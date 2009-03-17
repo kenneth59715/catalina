@@ -2351,7 +2351,10 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
                 if reservation['affinity_calculation'] != None :
                     result = 0
                     reservation_affinity_code = reservation['affinity_calculation']
-                    exec reservation_affinity_code in globals(), locals()
+                    #exec reservation_affinity_code in globals(), locals()
+                    temp_dict = locals()
+                    exec "%s" % reservation_affinity_code in globals(), temp_dict
+                    result = temp_dict['result']
                 else :
                     result = 1
                 affinity = affinity + result
@@ -5735,11 +5738,11 @@ def create_reservation(
                 active_reservations.append(reservation)
             else :
                 active_reservations.append(reservation)
-            if reservation['purpose_type_string'] not in ('job', 'running') \
-              and (reservation['start_time_float'] <= current_start_time_float \
-              < reservation['end_time_float'] or \
-              reservation['start_time_float'] < current_start_time_float + duration_float <= reservation['end_time_float']) :
-                active_reservations.append(reservation)
+            #if reservation['purpose_type_string'] not in ('job', 'running') \
+            #  and (reservation['start_time_float'] <= current_start_time_float \
+            #  < reservation['end_time_float'] or \
+            #  reservation['start_time_float'] < current_start_time_float + duration_float <= reservation['end_time_float']) :
+            #    active_reservations.append(reservation)
     windows_and_reservations_list = []
     if not (purpose_type_string in ['job', 'preempted_job', 'temp_pushback'] or re.match(r"^temp_pushback_for", purpose_type_string) ):
         job_step = initialize_job_step('temp_job_step')
