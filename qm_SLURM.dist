@@ -1,0 +1,107 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+
+import sys
+import string
+import os
+import Catalina
+
+#[root@ken1 bin]# ./scontrol --oneliner show node
+#NodeName=ken1 State=IDLE CPUs=1 AllocCPUs=0 RealMemory=460 TmpDisk=0 Sockets=1 Cores=1 Threads=1 Weight=1 Features=compute,ken1 Reason=(null) Arch=i686 OS=Linux
+#NodeName=ken2 State=IDLE CPUs=1 AllocCPUs=0 RealMemory=460 TmpDisk=0 Sockets=1 Cores=1 Threads=1 Weight=1 Features=compute,ken2 Reason=(null) Arch=i686 OS=Linux
+#[root@ken1 bin]#
+
+#[root@ken1 bin]# ./scontrol --oneliner show partition
+#PartitionName=debug TotalNodes=2 TotalCPUs=2 RootOnly=NO Default=NO Shared=NO Priority=1 State=UP MaxTime=UNLIMITED Hidden=NO MinNodes=1 MaxNodes=UNLIMITED DisableRootJobs=NO AllowGroups=ALL Nodes=ken[1-2] NodeIndices=0-1
+#PartitionName=production TotalNodes=2 TotalCPUs=2 RootOnly=NO Default=YES Shared=NO Priority=1 State=UP MaxTime=UNLIMITED Hidden=NO MinNodes=1 MaxNodes=UNLIMITED DisableRootJobs=NO AllowGroups=ALL Nodes=ken1,ken2 NodeIndices=0-1
+#[root@ken1 bin]#
+
+machine_list = []
+
+#def get_list_string(item_list) :
+#    list_string = ""
+#    first_item = 1
+#    for item in item_list :
+#        if first_item != 1 :
+#            list_string = list_string + '+'
+#        list_string = list_string + "%s" % (item,)
+#        first_item = 0
+#    return list_string
+
+#command = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.QMCMD
+command = Catalina.QMCMD
+nodelines = os.popen(command).readlines()
+nodes_dict = {}
+for nodeline in nodelines:
+    node_dict = {}
+    attribute_list = string.split(nodeline)
+    for attribute in attribute_list:
+        name, value = string.split(attribute, '=')
+        node_dict[name] = value
+    if not node_dict.has_key('Arch'):
+        node_dict['Arch'] = None
+    if not node_dict.has_key('OpSys'):
+        node_dict['OpSys'] = None
+    if not node_dict.has_key('OS'):
+        node_dict['OS'] = None
+    nodes_dict[node_dict['NodeName']] = node_dict
+
+#command = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.QPCMD
+command = Catalina.QPCMD
+partitionlines = os.popen(command).readlines()
+partitions_dict = {}
+for partitionline in partitionlines:
+    partition_dict = {}
+    attribute_list = string.split(partitionline)
+    for attribute in attribute_list:
+        name, value = string.split(attribute, '=')
+        partition_dict[name] = value
+    partitions_dict[partition_dict['PartitionName']] = partition_dict
+
+for partition_name in partitions_dict.keys():
+    nodes_text = partitions_dict[partition_name]['Nodes']
+    #scontrol show hostnames ken[1,2],ken1,ken[1-2]
+    command = Catalina.QHNCMD + ' ' + nodes_text
+    hostnames = os.popen(command).read()
+    hostnames_list = string.split(hostnames)
+    for hostname in hostnames_list:
+        if nodes_dict[hostname].has_key('partitions_list'):
+            if not partition_name in nodes_dict[hostname]['partitions_list']:
+                nodes_dict[hostname]['partitions_list'].append(partition_name)
+        else:
+            nodes_dict[hostname]['partitions_list'] = [partition_name,]
+        if partitions_dict[partition_name]['State'] == 'UP':
+            if nodes_dict[hostname].has_key('apartitions_list'):
+                if not partition_name in nodes_dict[hostname]['apartitions_list']:
+                    nodes_dict[hostname]['apartitions_list'].append(partition_name)
+            else:
+                nodes_dict[hostname]['apartitions_list'] = [partition_name,]
+
+output_template = "#cat_delim#Machine:%s"
+output_template = output_template + "#cat_delim#Arch:%s"
+output_template = output_template + "#cat_delim#OpSys:%s"
+output_template = output_template + "#cat_delim#Disk:%s"
+output_template = output_template + "#cat_delim#ConfiguredClasses:%s"
+output_template = output_template + "#cat_delim#AvailableClasses:%s"
+output_template = output_template + "#cat_delim#Feature:%s"
+output_template = output_template + "#cat_delim#Memory:%s"
+output_template = output_template + "#cat_delim#Cpus:%s"
+output_template = output_template + "#cat_delim#State:%s"
+
+for node in nodes_dict.keys():
+    print output_template % (
+      node,
+      nodes_dict[node]['Arch'],
+      nodes_dict[node]['OS'],
+      nodes_dict[node]['TmpDisk'],
+      string.join(nodes_dict[node]['partitions_list'],'+'),
+      string.join(nodes_dict[node]['apartitions_list'],'+'),
+      string.join(string.split(nodes_dict[node]['Features'],','),'+'),
+      nodes_dict[node]['RealMemory'],
+      nodes_dict[node]['Procs'],
+      nodes_dict[node]['State'],
+      )
+
+#NodeName=ken2 State=IDLE CPUs=1 AllocCPUs=0 RealMemory=460 TmpDisk=0 Sockets=1 Cores=1 Threads=1 Weight=1 Features=compute,ken2 Reason=(null) Arch=i686 OS=Linux
+print "qm FINISHED"
+sys.exit(0)
+

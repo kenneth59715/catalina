@@ -1,0 +1,30 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# rj_SLURM <jobid> <nodelist>
+
+import sys
+import os
+import string
+import Catalina
+
+jobid = sys.argv[1]
+node_list = sys.argv[2:]
+
+#node_list = []
+#for nodencount in nodencount_list :
+#    nodename, count = string.split(nodencount,'#')
+#    for index in range(string.atoi(count)) :
+#        node_list.append(nodename)
+node_string = string.join(node_list,',')
+
+command = Catalina.RUNCMD % (jobid, node_string)
+command_file = os.popen(command)
+return_text = command_file.read()
+rc = command_file.close()
+if rc == None:
+    rc = 0
+#exit_number = return_tuple[1]
+#exit_status = exit_number >> 8
+#rc = command_file.close()[1] >> 8
+print "(%s) (%s)" % (jobid, node_list)
+print "rc from scontrol update is >%s<" % rc
+

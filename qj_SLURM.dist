@@ -1,0 +1,252 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+
+#import pyloadl
+import sys
+import os
+import Catalina
+import re
+import string
+import time
+
+def guessyear(old_tuple, Now_float):
+    Now_tuple = time.localtime(Now_float)
+    new_tuple = (Now_tuple[0],) + old_tuple[1:]
+    new_time = time.mktime(new_tuple)
+    threshold = 9 * 30 * 24 * 3600
+    if new_time > Now_float + threshold:
+        new_tuple = (Now_tuple[0] - 1,) + old_tuple[1:]
+    if new_time < Now_float - threshold:
+        new_tuple = (Now_tuple[0] + 1,) + old_tuple[1:]
+    return new_tuple
+
+#user group account state wall_clock_limit wall_clock_used class node_usage taskinstancemachinemap dispatchtime submittime completiontime initiatormap requirementsmap resourcesreq comment machinemap adreqmap
+output_template = "#cat_delim#name:%s"
+output_template = output_template + "#cat_delim#user:%s"
+output_template = output_template + "#cat_delim#group:%s"
+output_template = output_template + "#cat_delim#account:%s"
+output_template = output_template + "#cat_delim#state:%s"
+output_template = output_template + "#cat_delim#wall_clock_limit:%s"
+output_template = output_template + "#cat_delim#wall_clock_used:%s"
+output_template = output_template + "#cat_delim#class:%s"
+output_template = output_template + "#cat_delim#node_usage:%s"
+output_template = output_template + "#cat_delim#dispatchtime:%s"
+output_template = output_template + "#cat_delim#submittime:%s"
+output_template = output_template + "#cat_delim#requirementsmap:%s"
+output_template = output_template + "#cat_delim#resourcesreq:%s"
+output_template = output_template + "#cat_delim#comment:%s"
+output_template = output_template + "#cat_delim#requestednodes:%s"
+output_template = output_template + "#cat_delim#excludednodes:%s"
+output_template = output_template + "#cat_delim#machinemap:%s"
+output_template = output_template + "#cat_delim#initiatormap:%s"
+
+command = Catalina.QJCMD
+joblines = os.popen(command).readlines()
+jobs_dict = {}
+walltime_pat = r"(?P<days>\d*)-*(?P<hours>\d+):(?P<minutes>\d+):(?P<seconds>\d+)"
+walltime_reo = re.compile(walltime_pat)
+#UserId=tester(501) GroupId=tester(501)
+group_pat = r"(?P<groupname>[\w\.-]+)\((?P<groupid>\d+)\)"
+group_reo = re.compile(group_pat)
+username_pat = r"(?P<username>[\w\.-]+)\((?P<userid>\d+)\)"
+username_reo = re.compile(username_pat)
+attribute_pat = r"(?P<name>.*?)=(?P<value>.*)"
+attribute_reo = re.compile(attribute_pat)
+
+if len(sys.argv) > 1 and sys.argv[1] == '--debug':
+    debug = 1
+else:
+    debug = 0
+for jobline in joblines:
+    if debug > 0:
+        print "jobline (%s)" % (jobline,)
+    sys.stdout.flush()
+    job_dict = {}
+    attribute_list = string.split(jobline)
+    for attribute in attribute_list:
+        attribute_mo = attribute_reo.match(attribute)
+        if attribute_mo != None:
+            name = attribute_mo.group('name')
+            value = attribute_mo.group('value')
+            #name, value = string.split(attribute, '=')
+            job_dict[name] = value
+        #else:
+            #print "Failed to parse (%s) (%s)!" % (attribute,jobline)
+    if not job_dict.has_key('JobId'):
+        continue
+    if job_dict.has_key('Shared'):
+        if job_dict['Shared'] == '1':
+            job_dict['node_usage'] = 'SHARED'
+        else:
+            job_dict['node_usage'] = 'NOT_SHARED'
+    else:
+        job_dict['node_usage'] = 'NOT_SHARED'
+    #EndTime=05/19-11:35:53
+    walltime_mo = walltime_reo.match(job_dict['TimeLimit'])
+    if walltime_mo == None:
+        print "Failed to parse Timelimit (%s) for Job (%s), setting to 24h!" % \
+          (job_dict['TimeLimit'], job_dict['JobId'])
+        walltime_seconds = 24 * 3600
+    else:
+        if walltime_mo.group('days') == '':
+            days = 0
+        else:
+            days = int(walltime_mo.group('days'))
+        if walltime_mo.group('hours') == '':
+            hours = 0
+        else:
+            hours = int(walltime_mo.group('hours'))
+        if walltime_mo.group('minutes') == '':
+            minutes = 0
+        else:
+            minutes = int(walltime_mo.group('minutes'))
+        if walltime_mo.group('seconds') == '':
+            seconds = 0
+        else:
+            seconds = int(walltime_mo.group('seconds'))
+        walltime_seconds = days * 24 * 3600 + hours * 3600 + minutes * 60 + seconds
+    job_dict['wall_clock_limit'] = walltime_seconds
+    if job_dict['SubmitTime'] == 'Unknown':
+        if debug > 0:
+            print "No SubmitTime for (%s) setting to Now_float!" % (jobline,)
+        job_dict['submittime'] = Catalina.Now_float
+    else:
+        submit_tuple = time.strptime(job_dict['SubmitTime'],'%Y-%m-%dT%H:%M:%S')
+        #submit_tuple = guessyear(submit_tuple, Catalina.Now_float)
+        job_dict['submittime'] = time.mktime(submit_tuple)
+    if job_dict['NodeList'] == '(null)':
+        job_dict['NodeList'] = 'null'
+    #if job_dict['Features'] == '(null)':
+    #    job_dict['Features'] = ''
+    if job_dict['JobState'] in ['PENDING',]:
+        job_dict['wall_clock_used'] = 0
+        job_dict['dispatchtime'] = 'None'
+        job_dict['machinemap'] = 'None'
+    elif job_dict['JobState'] in ['RUNNING','COMPLETED','FAILED','CANCELLED']:
+        end_tuple = time.strptime(job_dict['EndTime'],'%Y-%m-%dT%H:%M:%S')
+        #end_tuple = guessyear(end_tuple, Catalina.Now_float)
+        EndTime_epoch = time.mktime(end_tuple)
+        #EndTime_epoch = time.mktime(time.strptime(job_dict['EndTime'],'%m/%d-%H:%M:%S'))
+        job_dict['wall_clock_used'] = walltime_seconds - (EndTime_epoch - Catalina.Now_float)
+        start_tuple = time.strptime(job_dict['StartTime'],'%Y-%m-%dT%H:%M:%S')
+        #start_tuple = guessyear(start_tuple, Catalina.Now_float)
+        job_dict['dispatchtime'] = time.mktime(start_tuple)
+        command = Catalina.QHNCMD + ' ' + job_dict['NodeList']
+        host_list = map(string.strip,os.popen(command).readlines())
+        host_string = string.join(host_list,',')
+        job_dict['machinemap'] = host_string
+    elif job_dict['JobState'] in ['SUSPENDED',]:
+        job_dict['wall_clock_used'] = int(job_dict['PreSusTime'])
+        # need the year to convert to time.  can't get this from
+        # scontrol output, so take a guess.  use time.time().
+        # need to also check for dec jobs in jan.
+        start_tuple = time.strptime(job_dict['StartTime'],'%Y-%m-%dT%H:%M:%S')
+        start_tuple = guessyear(start_tuple, Catalina.Now_float)
+        job_dict['dispatchtime'] = time.mktime(start_tuple)
+        command = Catalina.QHNCMD + ' ' + job_dict['NodeList']
+        host_list = map(string.strip,os.popen(command).readlines())
+        host_string = string.join(host_list,'+')
+        job_dict['machinemap'] = host_string
+    #print job_dict['wall_clock_used']
+    if not job_dict.has_key('wall_clock_used'):
+        job_dict['wall_clock_used'] = 0
+    group_mo = group_reo.match(job_dict['GroupId'])
+    if group_mo == None:
+        print "Failed to parse GroupId (%s) for Job (%s).  Setting to ''!" % \
+          (job_dict['GroupId'], job_dict['JobId'])
+        job_dict['group'] = ''
+    else:
+        job_dict['group'] = group_mo.group('groupname')
+    username_mo = username_reo.match(job_dict['UserId'])
+    if username_mo == None:
+        print "Failed to parse UserId (%s) for Job (%s).  Setting to ''!" % \
+          (job_dict['UserId'], job_dict['JobId'])
+        job_dict['user'] = ''
+    else:
+        job_dict['user'] = username_mo.group('username')
+    min_nodes = int(string.split(job_dict['ReqNodes'],'-')[0])
+    reqprocs = int(job_dict['ReqProcs'])
+    quotient, remainder = divmod(min_nodes, reqprocs)
+    if debug > 0:
+        print "ReqProcs (%s) ReqNodes (%s)" % (job_dict['ReqProcs'], job_dict['ReqNodes'])
+    #print "quotient (%s) remainder (%s)" % (quotient, remainder)
+    node_list = min_nodes * [quotient,]
+    for nodeplace in range(remainder):
+        node_list[nodeplace] = node_list[nodeplace] + 1
+    job_dict['initiatormap'] = string.join(map(lambda x: "%s" % (x,) ,node_list),'+')
+    #MinMemoryNode=450 MinTmpDisk=0 Features=compute
+    requirements_string = 'Features=' + job_dict['Features'] + \
+            '#cat_sep#' + 'MinMemoryNode=' + job_dict['MinMemoryNode'] + \
+            '#cat_sep#' + 'MinTmpDisk=' + job_dict['MinTmpDisk'] + \
+            '#cat_sep#' + 'MinProcs=' + job_dict['MinProcs'] + \
+            '#cat_sep#' + 'MinSockets=' + job_dict['MinSockets'] + \
+            '#cat_sep#' + 'MinCores=' + job_dict['MinCores'] + \
+            '#cat_sep#' + 'MinThreads=' + job_dict['MinThreads']
+    job_dict['requirementsmap'] = min_nodes * [requirements_string,]
+    resources_string = 'MinMemoryNode#cat_sep#' + job_dict['MinMemoryNode'] + \
+            '+' + 'MinTmpDisk#cat_sep#' + job_dict['MinTmpDisk'] + \
+            '+' + 'MinProcs#cat_sep#' + job_dict['MinProcs'] + \
+            '+' + 'MinSockets#cat_sep#' + job_dict['MinSockets'] + \
+            '+' + 'MinCores#cat_sep#' + job_dict['MinCores'] + \
+            '+' + 'MinThreads#cat_sep#' + job_dict['MinThreads']
+    resourcesmap = min_nodes * [resources_string,]
+    for nodeplace in range(min_nodes):
+        resourcesmap[nodeplace] = resourcesmap[nodeplace] + "+Cores#cat_sep#%s" % node_list[nodeplace]
+    job_dict['resourcesreq'] = resourcesmap
+    if not job_dict.has_key('Comment'):
+        job_dict['Comment'] = ''
+    if not job_dict['ReqNodeList'] == '(null)':
+        command = Catalina.QHNCMD + ' ' + job_dict['ReqNodeList']
+        host_list = map(string.strip,os.popen(command).readlines())
+        host_string = string.join(host_list,',')
+        job_dict['requestednodes'] = host_string
+    else:
+        job_dict['requestednodes'] = ''
+    if not job_dict['ExcNodeList'] == '(null)':
+        command = Catalina.QHNCMD + ' ' + job_dict['ExcNodeList']
+        host_list = map(string.strip,os.popen(command).readlines())
+        host_string = string.join(host_list,',')
+        job_dict['excludednodes'] = host_string
+    else:
+        job_dict['excludednodes'] = ''
+
+    print output_template % (
+      job_dict['JobId'],
+      job_dict['user'],
+      job_dict['group'],
+      job_dict['Account'],
+      job_dict['JobState'],
+      job_dict['wall_clock_limit'],
+      job_dict['wall_clock_used'],
+      job_dict['Partition'],
+      job_dict['node_usage'],
+      job_dict['dispatchtime'],
+      job_dict['submittime'],
+      string.join(job_dict['requirementsmap'],'+'),
+      string.join(job_dict['resourcesreq'],'+'),
+      job_dict['Comment'],
+      job_dict['requestednodes'],
+      job_dict['excludednodes'],
+      job_dict['machinemap'],
+      job_dict['initiatormap'],
+      )
+#output_template = "cat_delim#user:%s"
+#output_template = output_template + "#cat_delim#group:%s"
+#output_template = output_template + "#cat_delim#account:%s"
+#output_template = output_template + "#cat_delim#state:%s"
+#output_template = output_template + "#cat_delim#wall_clock_limit:%s"
+#output_template = output_template + "#cat_delim#wall_clock_used:%s"
+#output_template = output_template + "#cat_delim#class:%s"
+#output_template = output_template + "#cat_delim#node_usage:%s"
+#output_template = output_template + "#cat_delim#dispatchtime:%s"
+#output_template = output_template + "#cat_delim#submittime:%s"
+#output_template = output_template + "#cat_delim#requirementsmap:%s"
+#output_template = output_template + "#cat_delim#resourcesreq:%s"
+#output_template = output_template + "#cat_delim#comment:%s"
+
+
+    #jobs_dict[job_dict['JobId']] = job_dict
+
+print "qj FINISHED"
+sys.exit(0)
+    
+

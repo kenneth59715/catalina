@@ -1,0 +1,11 @@
+#!/usr/bin/ksh
+#SBATCH --output=SLURM_out.%j
+#SBATCH --error=SLURM_err.%j
+#SBATCH --time=00:10:00
+#SBATCH --partition=___DEFAULT_JOB_CLASS_PLACEHOLDER___
+#SBATCH --account=___TESTACCOUNT_PLACEHOLDER___
+#SBATCH --nodes=2
+#SBATCH --ntasks-per-node=1
+##SBATCH --comment="Catalina_preempting = 1 ; Catalina_preemptible = 1 ; Catalina_local_admin_priority = 92091 ; Catalina_local_user_priority = -100 ; Catalina_res_bind = testholder ; QOS = ___DEFAULT_JOB_QOS_PLACEHOLDER___ ;"
+#SBATCH --comment="Catalina_preempting=1;Catalina_preemptible=1;Catalina_local_admin_priority=92091;Catalina_local_user_priority=-100;Catalina_res_bind=testholder;QOS= ___DEFAULT_JOB_QOS_PLACEHOLDER___ ;"
+sleep 600

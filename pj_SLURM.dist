@@ -1,0 +1,19 @@
+#!___PYTHON_PATH_PLACEHOLDER___
+# pj_SLURM <jobid>
+
+import sys
+import os
+import string
+import Catalina
+
+jobid = sys.argv[1]
+
+command = Catalina.PREEMPTCMD + ' ' + jobid
+command_file = os.popen(command)
+return_text = command_file.read()
+rc = command_file.close()
+if rc == None:
+    rc = 0
+print "(%s)" % (jobid,)
+print "rc from scontrol suspend is >%s<" % rc
+
