@@ -97,3 +97,12 @@ user_unbind_job.c.dist
 user_unbind_job.py.dist
 user_unbind_res.c.dist
 user_unbind_res.py.dist
+Catalina_SLURM.py.dist
+qj_SLURM.dist
+rj_SLURM.dist
+node_restriction_file.SLURM
+qm_SLURM.dist
+testjob.run_at_risk.SLURM.dist
+pj_SLURM.dist
+resj_SLURM.dist
+testjob.SLURM.dist
