@@ -110,7 +110,7 @@ if argdict.has_key('--runID') :
     job_name = argdict['--runID']
 else :
     job_name = 'FAKEJOB.0'
-fake_job = Catalina.initialize_job_step(job_name)
+fake_job = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.initialize_job_step(job_name)
 if argdict.has_key('--username') :
     fake_job['user'] = argdict['--username']
 else :

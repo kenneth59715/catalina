@@ -50,22 +50,10 @@
 import fcntl
 import traceback
 import subprocess
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_job_steps_dict
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_resources_list
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_configured_resources_list
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_resource_dict_list
-#from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_resource_list
-#from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_resource_name_list
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import run_jobs
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_job_step_state
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import cancel_job
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import preempt_job
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import cancel_bad_jobs
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import initialize_job_step
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import get_scheduler_time
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import JOB_UPDATE_ATTRIBUTE_list
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import JOBSUFFIX
-from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import SUBMIT_OUTPUT_PATTERN
+import Catalina____RESOURCEMANAGER_PLACEHOLDER___
+#from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_job_step_state
+#from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
+#from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
 
 from operator import itemgetter
 import copy
@@ -377,7 +365,7 @@ NODERESTCODE = re.sub("\n ","\n", NODERESTCODE_STRING)
 #    Now_float = float(os.system(TIME_SIM))
 #else :
 #    Now_float = time.time()
-Now_float = get_scheduler_time()
+Now_float = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
 END_OF_SCHEDULING = Now_float + 7776000
 FIRST_AVAILABLE = """
 import string
@@ -472,8 +460,52 @@ result = windows
 
 username_string = pwd.getpwuid(os.getuid())[0]
 
+class InsufficientNodes(Exception):
+    def __init__(self, res):
+        self.res = res
+
+class ResIsNone(Exception):
+    pass
+
+class KeyNotFound(Exception):
+    pass
+
+class FoundJob(Exception):
+    pass
+
+class NameNotInDB(Exception):
+    def __init__(self, name):
+        self.name = name
+
+class CancelJobFailure(Exception):
+    def __init__(self, job):
+        self.job = job
+
+class SchedulerSuspended(Exception):
+    pass
+
+class SchedulerStopped(Exception):
+    pass
+
+class IncompleteQJ(Exception):
+    pass
+
+class IncompleteQM(Exception):
+    pass
+
+class CatalinaDBError(Exception):
+    def __init__(self, detail):
+        self.detail = detail
+
+#class FoundConflict(Exception):
+#    pass
+
+class KeyExists(Exception):
+    def __init__(self, key):
+        self.key = key
+
 def timedrun(command,timeout) :
-    child_obj = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    child_obj = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     returncode = None
     iterations = 0
     while returncode == None and iterations <= timeout :
@@ -487,10 +519,10 @@ def timedrun(command,timeout) :
         # child failed to beat timeout
         print "(%s) failed to return in (%s)!" % (command, timeout)
         os.kill(child_obj.pid)
-        return "timedrun (%s) failed!" (command,)
+        return ("timedrun (%s) failed!" % (command,), -1, '')
     else :
         (stdout, stderr) = child_obj.communicate()
-        return (stdout, returncode)
+        return (stdout, returncode, stderr)
     #return_tuple = os.waitpid(childpid,os.WNOHANG)
 
 def initialize_reservation(reservation_name) :
@@ -1726,7 +1758,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 #print "setting req_list to (%s)" % (requested_resource_list[index]['req_list'],)
                 sized_dict['req_list'] = requested_resource_list[nodeindex]['req_list']
             else :
-                print "ran out of requested_resource_list, setting req_list to []"
+                #print "ran out of requested_resource_list, setting req_list to []"
                 if len(requested_resource_list) >= 1 :
                     sized_dict['req_list'] = requested_resource_list[-1]['req_list']
                 else :
@@ -2613,7 +2645,7 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
 def insert_new_object_with_key(key, new_object, db_handle) :
     dict = db_handle[0]
     if dict.has_key(key) :
-        raise 'KeyExists', key
+        raise KeyExists(key)
     dict[key] = new_object
 
 def insert_new_object(new_object, db_handle) :
@@ -2639,7 +2671,7 @@ def delete_object(name, db_handle) :
         del dict[name]
     else :
         print "name (%s) does not exist!" % name
-        raise 'NameNotInDB', name
+        raise NameNotInDB(name)
 
 def bind_job_to_reservation(job_step_id_string, reservation_name_string, events_db_handle, jobs_db_handle) :
     temp_job_step = get_object(job_step_id_string, jobs_db_handle)
@@ -2693,7 +2725,7 @@ def unbind_reservation_from_job(reservation_id_string, job_step_id_string, event
 def move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle) :
     update_job_info(jobs_db_handle)
     jobs_dict = jobs_db_handle[0]
-    new_job_steps_dict = get_job_steps_dict()
+    new_job_steps_dict = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_job_steps_dict()
     new_job_steps_names_list = new_job_steps_dict.keys()
     job_step_list = get_object_list(jobs_db_handle)
     for job_step in job_step_list :
@@ -2702,8 +2734,8 @@ def move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle) :
             key = get_new_db_key(old_jobs_db_handle)
             try :
                 insert_new_object_with_key(key, job_step, old_jobs_db_handle)
-            except 'KeyExists', key :
-                print "The key (%s) already exists in the db" % key
+            except KeyExists as exc:
+                print "The key (%s) already exists in the db" % exc.key
             except :
                 continue
             else :
@@ -2722,8 +2754,8 @@ def move_old_reservations(events_db_handle, reservations_db_handle, old_reservat
             key = get_new_db_key(old_reservations_db_handle)
             try :
                 insert_new_object_with_key(key, reservation, old_reservations_db_handle)
-            except 'KeyExists', key :
-                print "The key (%s) already exists in the db" % key
+            except KeyExists as exc:
+                print "The key (%s) already exists in the db" % exc.key
             except :
                 continue
             else :
@@ -2734,11 +2766,11 @@ def move_old_reservations(events_db_handle, reservations_db_handle, old_reservat
 
 def update_job_info(jobs_db_handle) :
     dict = jobs_db_handle[0]
-    new_job_steps_dict = get_job_steps_dict()
+    new_job_steps_dict = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_job_steps_dict()
     new_job_ids = new_job_steps_dict.keys()
     old_job_steps_list = get_object_list(jobs_db_handle)
     old_job_ids = get_object_names_list(old_job_steps_list)
-    attribute_list = JOB_UPDATE_ATTRIBUTE_list
+    attribute_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOB_UPDATE_ATTRIBUTE_list
     for new_job_step in new_job_steps_dict.values() :
         if new_job_step['name'] in old_job_ids :
             # Prevent default values in the new job step
@@ -3037,7 +3069,7 @@ def update_job_priorities (jobs_db_handle) :
 #                # Cancel the job
 #                if SERVERMODE == 'NORMAL' :
 #                    try :
-#                        cancel_job(job_step, events_db_handle)
+#                        Catalina____RESOURCEMANAGER_PLACEHOLDER___.cancel_job(job_step, events_db_handle)
 #                    except 'CancelJobFailure', failed_job_step :
 #                        print "cancel of %s failed" % \
 #                          failed_job_step['name']
@@ -3183,13 +3215,13 @@ def cancel_risk_reservations(reservations_db_handle,
                         try :
                             if jobs_dict[risk_res['job_runID']]['preemptible'] == 0 :
                                 #print "not doing preempt_job (%s)" % risk_res['job_runID']
-                                cancel_job(jobs_dict[risk_res['job_runID']], events_db_handle)
+                                Catalina____RESOURCEMANAGER_PLACEHOLDER___.cancel_job(jobs_dict[risk_res['job_runID']], events_db_handle)
                             else :
                                 #print "preempt_job (%s)" % risk_res['job_runID']
-                                preempt_job(jobs_dict[risk_res['job_runID']], events_db_handle)
-                        except 'CancelJobFailure', failed_job_step :
+                                Catalina____RESOURCEMANAGER_PLACEHOLDER___.preempt_job(jobs_dict[risk_res['job_runID']], events_db_handle)
+                        except CancelJobFailure  as exc:
                             print "cancel of %s failed" % \
-                              failed_job_step['name']
+                              exc.failed_job_step['name']
                         except :
                             continue
                     else :
@@ -3221,7 +3253,7 @@ def cancel_overrun_jobs(events_db_handle, jobs_db_handle) :
                     # I will give cancel_job more information, namely the reason
                     # why I want to cancel the job.
                         if NORMALMODECANCELJOB != None and NORMALMODECANCELJOB == 'yes' :
-                            cancel_job(job_step, events_db_handle, \
+                            Catalina____RESOURCEMANAGER_PLACEHOLDER___.cancel_job(job_step, events_db_handle, \
                               "Reason: Job killed because it exceeds wallclock time." )
                         else :
                             event = {
@@ -3231,9 +3263,9 @@ def cancel_overrun_jobs(events_db_handle, jobs_db_handle) :
                               }
                             log_event(event, events_db_handle)
                             
-                    except 'CancelJobFailure', failed_job_step :
+                    except CancelJobFailure as exc:
                         print "cancel of %s failed" % \
-                          failed_job_step['name']
+                          exc.failed_job_step['name']
                     except :
                         continue
                 else :
@@ -3246,8 +3278,9 @@ def reload_job_resource_lists(events_db_handle, jobs_db_handle, resources_db_han
     went out fo the queue or join the queue"""
     jobs_dict = jobs_db_handle[0]
     job_step_list = jobs_dict.values()
+    #print "reloading job resource lists"
     for job_step in job_step_list :
-        job_step_resource_dict_list = get_resource_dict_list(job_step, resources_db_handle)
+        job_step_resource_dict_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_resource_dict_list(job_step, resources_db_handle)
         update_object_attribute('resource_dict_list', job_step_resource_dict_list, job_step, jobs_db_handle)
 
 def update_job_resource_lists(jobs_db_handle, resources_db_handle) :
@@ -3277,7 +3310,7 @@ def update_job_resource_lists(jobs_db_handle, resources_db_handle) :
         
         # if this job is not discovered before and has good resource list
         #print "updating job_resource_lists for (%s)" % key
-        job_step_resource_dict_list = get_resource_dict_list(jobs_dict[key], resources_db_handle)
+        job_step_resource_dict_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_resource_dict_list(jobs_dict[key], resources_db_handle)
         update_object_attribute('resource_dict_list', job_step_resource_dict_list, jobs_dict[key], jobs_db_handle)
 
 def update_job_speculative_system_queue_time(jobs_db_handle) :
@@ -3826,7 +3859,7 @@ def migrate_shortpools(jobs_db_handle, resources_db_handle, reservations_db_hand
                   comment_string=reservation['comment_string'],
                   mode='lookahead'
                 )
-            except 'InsufficientNodes', new_res :
+            except InsufficientNodes:
                 continue
             else :
                 if new_reservation['node_list'] != None :
@@ -3912,9 +3945,9 @@ def update_standing_reservations(
                 try :
                     delete_object(reservation['name'],
                       reservations_db_handle)
-                except 'NameNotInDB', name :
+                except NameNotInDB as exc :
                     print "Standing Reservation to be deleted (%s) not found" % \
-                      name
+                      exc.name
         accepted_nodes_list = get_accepted_nodes_list(standing_reservation['node_restriction'], resources_db_handle)
         if len(accepted_nodes_list) < standing_reservation['resource_amount_int'] :
             print "InsufficientAcceptedNodes"
@@ -4016,7 +4049,7 @@ def update_standing_reservations(
                   accepted_nodes_list=accepted_nodes_list,
                   mode='real'
                 )
-            except 'InsufficientNodes', failed_res :
+            except InsufficientNodes:
                 #print "full size, full duration failed"
                 # grab as many nodes as possible (since it failed
                 # due to insufficient nodes, we should not get more
@@ -4063,7 +4096,7 @@ def update_standing_reservations(
                       ignore_reservations_list=ignore_reservations_list,
                       mode='real'
                     )
-                except 'InsufficientNodes' :
+                except InsufficientNodes :
                     if DEBUG == 'usr' :
                         print "No resource_amount Standing reservation instance failed"
                     print "No resource_amount Standing reservation instance failed"
@@ -4114,7 +4147,7 @@ def update_standing_reservations(
                           ignore_reservations_list=ignore_reservations_list,
                           mode='real'
                         )
-                    except 'InsufficientNodes' :
+                    except InsufficientNodes :
                         # Set duration smaller by FUDGE_FACTOR and try again
                         #duration_float = duration_float - FUDGE_FACTOR
                         print "full, short duration failed"
@@ -4496,24 +4529,30 @@ def create_job_reservation(
     conflict_policy = None
     node_sort_policy = None
     job_restriction = "if input_tuple[0]['name'] == '%s' : result = 0" % job_step['name']
-    new_res = create_reservation(
-      resources_db_handle=resources_db_handle,
-      reservations_db_handle=reservations_db_handle,
-      jobs_db_handle=jobs_db_handle,
-      duration_float=duration_float,
-      resource_amount_int=resource_amount_int,
-      requested_resource_list=requested_resource_list,
-      ignore_reservations_list=preempted_ignore_list,
-      node_sort_policy=node_sort_policy,
-      node_usage=node_dict_type,
-      node_restriction = node_restriction,
-      conflict_policy=conflict_policy,
-      job_runID=job_runID,
-      job_restriction=job_restriction,
-      purpose_type_string=purpose_type_string,
-      job_step=job_step,
-      mode='real'
-      )
+    new_res = None
+    try:
+        new_res = create_reservation(
+          resources_db_handle=resources_db_handle,
+          reservations_db_handle=reservations_db_handle,
+          jobs_db_handle=jobs_db_handle,
+          duration_float=duration_float,
+          resource_amount_int=resource_amount_int,
+          requested_resource_list=requested_resource_list,
+          ignore_reservations_list=preempted_ignore_list,
+          node_sort_policy=node_sort_policy,
+          node_usage=node_dict_type,
+          node_restriction = node_restriction,
+          conflict_policy=conflict_policy,
+          job_runID=job_runID,
+          job_restriction=job_restriction,
+          purpose_type_string=purpose_type_string,
+          job_step=job_step,
+          mode='real'
+          )
+    except InsufficientNodes as exc:
+        message = "job reservation (%s) failed for runID (%s) due to insufficient resources" % ( exc.res['name'], exc.res['job_runID'] )
+        print message
+        catsyslog(message,'notice')
     #if job_step['state'] == 'Preempted' :
     #    # should set start_time_float to Now_float, and duration accordingly
     #    # def update_object_attribute(name, value, object, db_handle) :
@@ -4754,8 +4793,8 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
                 if reservation['purpose_type_string'] == 'job' and \
                   reservation.has_key('job_runID') and \
                   reservation['job_runID'] == job_step['name'] :
-                    raise 'FoundJob'
-        except 'FoundJob' :
+                    raise FoundJob()
+        except FoundJob:
             continue
         try :
             new_res = create_job_reservation(
@@ -4765,6 +4804,9 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
               job_step=job_step,
               events_db_handle=events_db_handle
             )
+            #print "new_res (%s)" % (new_res,)
+            if new_res == None:
+                raise ResIsNone()
             if (Now_float + 1) >= new_res['start_time_float'] and \
               (Now_float - new_res['start_time_float']) <= FUDGE_FACTOR/2 :
                 if running_jobs_per_user.has_key(job_step['user']) :
@@ -4798,14 +4840,15 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
                         active_reservations_per_account_per_qos[job_step['account']][job_step['QOS']] = [job_step['name'],]
                 else :
                     active_reservations_per_account_per_qos[job_step['account']] = { job_step['QOS'] : [job_step['name'],], }
-        except 'InsufficientNodes', new_res :
-            message = "job reservation (%s) failed for runID (%s) due to insufficient resources" % ( new_res['name'], new_res['job_runID'] )
+        except InsufficientNodes as exc:
+            message = "job reservation (%s) failed for runID (%s) due to insufficient resources" % ( exc.res['name'], exc.res['job_runID'] )
             print message
             catsyslog(message,'notice')
         except :
             try :
                 info_tuple = sys.exc_info()
-                print "(%s) (%s) (%s)" % info_tuple
+                #print "(%s) (%s) (%s)" % info_tuple
+                print "unspecified exception (%s) (%s) (%s)" % info_tuple
                 traceback.print_tb(info_tuple[2])
             except :
                 print "print of sys.exc_info() failed"
@@ -4838,9 +4881,9 @@ def update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle
     resource_shelf = resources_db_handle[0]
     old_resources = get_object_list(resources_db_handle)
     old_resources_names = get_object_names_list(old_resources)
-    resource_list = get_resources_list()
+    resource_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_resources_list()
     cfg_resources_shelf = cfg_resources_db_handle[0]
-    cfg_resources_list = get_configured_resources_list(resources_db_handle)
+    cfg_resources_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_configured_resources_list(resources_db_handle)
     cfg_resources_names = get_object_names_list(cfg_resources_list)
     found_resource_dict = {}
     found_resource_names = []
@@ -5036,7 +5079,7 @@ def schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reserva
     print "cancel_overrun_jobs"
     cancel_overrun_jobs(events_db_handle, jobs_db_handle)
     print "cancel_bad_jobs"
-    cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle)
+    Catalina____RESOURCEMANAGER_PLACEHOLDER___.cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle)
     print "update_job_resource_lists"
     update_job_resource_lists(jobs_db_handle, resources_db_handle)
     print "update_resource_usability"
@@ -5074,7 +5117,7 @@ def schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reserva
                      events_db_handle=events_db_handle,
                      resources_db_handle=resources_db_handle)
     print "run_jobs"
-    run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle)
+    Catalina____RESOURCEMANAGER_PLACEHOLDER___.run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle)
 
 # To implement multiple resource scheduling,
 # - get the multiple requirement spec from the RM
@@ -5169,8 +5212,8 @@ def create_reservation(
     # routine won't run while this is going on...this would need to
     # be changed if the db went to a non-locking implementation...
     # Do not delete job reservations here.  Let create_job_reservations
-    # do it.  To prevent run_jobs from running old reservations,
-    # do not run run_jobs, except within schedule_jobs, when the
+    # do it.  To prevent Catalina____RESOURCEMANAGER_PLACEHOLDER___.run_jobs from running old reservations,
+    # do not run Catalina____RESOURCEMANAGER_PLACEHOLDER___.run_jobs, except within schedule_jobs, when the
     # reservations db is locked.
 
     if old_res_id != None :
@@ -5538,11 +5581,11 @@ def create_reservation(
                                             )
                                             #print "after create_reservation (%s) (%s)" % (reservation['job_runID'], pushback_res['name'])
                                             #print "latest_end_float (%s)" % time.asctime(time.localtime(latest_end_float))
-                                        except 'InsufficientNodes', pushback_res :
+                                        except InsufficientNodes as exc:
                                             # pushback reservation failed, so don't
                                             # try to preempt this one
                                             if DEBUGJOB != None :
-                                                print "pushback of preemptible job (%s) not possible due to reservation (%s) blocking!" % (pushback_res['job_runID'], reservation['name'])
+                                                print "pushback of preemptible job (%s) not possible due to reservation (%s) blocking!" % (exc.res['job_runID'], reservation['name'])
                                             #print "pushback of preemptible job (%s) for (%s) not possible due to reservation (%s) blocking!" % (reservation['job_runID'], new_res['job_runID'], reservation['name'])
                                             blocking_reservations.append(reservation)
                                         except :
@@ -5745,7 +5788,7 @@ def create_reservation(
             #    active_reservations.append(reservation)
     windows_and_reservations_list = []
     if not (purpose_type_string in ['job', 'preempted_job', 'temp_pushback'] or re.match(r"^temp_pushback_for", purpose_type_string) ):
-        job_step = initialize_job_step('temp_job_step')
+        job_step = Catalina____RESOURCEMANAGER_PLACEHOLDER___.initialize_job_step('temp_job_step')
     for window in sized_windows_list :
         relevant_reservations_list = []
         for reservation in active_reservations :
@@ -5800,7 +5843,7 @@ def create_reservation(
             for res_key in pushback_res_list :
                 #print "deleting temp_pushback reservations (%s)" % res_key
                 delete_object(res_key, reservations_db_handle)
-        raise 'InsufficientNodes', new_res
+        raise InsufficientNodes(new_res)
     else :
         node_list = []
         for allocated_dict in allocated_dict_list :

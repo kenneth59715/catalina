@@ -20,6 +20,7 @@ import time
 import sys
 import Catalina
 import pwd
+import subprocess
 
 if Catalina.USERNAMESUFFIX != '@IGNORE' :
     username_string = pwd.getpwuid(os.getuid())[0] + Catalina.USERNAMESUFFIX
@@ -332,7 +333,7 @@ if TESTSHARED > 0 :
         shared_res_start_time = so.group('res_time')
         output = r"\S+\s+(?P<res_time>\d+\.?\d*)"
         cmd = HOMEDIR + '/show_res'
-        cmd_string = cmd + ' --res=' + shared_res_id + ' --start' + ' | /usr/bin/grep ' + shared_res_id
+        cmd_string = cmd + ' --res=' + shared_res_id + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + shared_res_id
         returnstring = os.popen(cmd_string).read()
         so = re.search(output, returnstring)
         print "# query for sharedmap resource, 1 hour, earliest_start +1hr, latest_end +3hr"
@@ -408,9 +409,14 @@ else :
 cmd = Catalina.SUBMITCMD
 job = HOMEDIR + '/' + Catalina.TEST_JOB
 # here, should have Makefile sed in the output pattern...
-output = Catalina.SUBMIT_OUTPUT_PATTERN
+output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
 cmd_string = cmd + ' ' + job
-returnstring = os.popen(cmd_string).read()
+print "cmd_string (%s)" % (cmd_string,)
+#returnstring = os.popen(cmd_string).read()
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
+print "stderr_string (%s)" % (stderr_string,)
+print "stdout_string (%s)" % (stdout_string,)
 so = re.search(output, returnstring)
 print "# submit a job"
 if so == None :
@@ -419,7 +425,8 @@ if so == None :
     print cmd_string
 else :
     print "ok"
-    bindjob_id = so.group('job_id') + Catalina.JOBSUFFIX
+    bindjob_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
+    print "bindjob_id (%s)" % (bindjob_id,)
 
 # update job info
 cmd = HOMEDIR + '/update_jobs'
@@ -992,9 +999,11 @@ else :
 cmd = Catalina.SUBMITCMD
 job = HOMEDIR + '/' + Catalina.TEST_JOB
 # here, should have Makefile sed in the output pattern...
-output = Catalina.SUBMIT_OUTPUT_PATTERN
+output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
 cmd_string = cmd + ' ' + job
-returnstring = os.popen(cmd_string).read()
+#returnstring = os.popen(cmd_string).read()
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
 so = re.search(output, returnstring)
 print "# submit a job"
 if so == None :
@@ -1003,14 +1012,16 @@ if so == None :
     print cmd_string
 else :
     print "ok"
-    job_id = so.group('job_id') + Catalina.JOBSUFFIX
+    job_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
 
 # submit a job for test without reservation binding
 cmd = Catalina.SUBMITCMD
 job = HOMEDIR + '/' + Catalina.TEST_JOB
-output = Catalina.SUBMIT_OUTPUT_PATTERN
-cmd_string = cmd + ' ' + job
-returnstring = os.popen(cmd_string).read()
+output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
+#cmd_string = cmd + ' ' + job
+#returnstring = os.popen(cmd_string).read()
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
 so = re.search(output, returnstring)
 print "# submit a job"
 if so == None :
@@ -1019,14 +1030,16 @@ if so == None :
     print cmd_string
 else :
     print "ok"
-    unbound_job_id = so.group('job_id') + Catalina.JOBSUFFIX
+    unbound_job_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
 
 # submit a job for run_at_risk test
 cmd = Catalina.SUBMITCMD
 job = HOMEDIR + '/' + Catalina.TEST_JOB_RUN_AT_RISK
-output = Catalina.SUBMIT_OUTPUT_PATTERN
-cmd_string = cmd + ' ' + job
-returnstring = os.popen(cmd_string).read()
+output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
+#cmd_string = cmd + ' ' + job
+#returnstring = os.popen(cmd_string).read()
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
 so = re.search(output, returnstring)
 print "# submit a run_at_risk job"
 if so == None :
@@ -1035,7 +1048,7 @@ if so == None :
     print cmd_string
 else :
     print "ok"
-    run_at_risk_job_id = so.group('job_id') + Catalina.JOBSUFFIX
+    run_at_risk_job_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
 
 # move old stuff
 cmd = HOMEDIR + '/move_old_stuff'
@@ -1172,10 +1185,14 @@ cmd_string = cmd
 returnstring = os.popen(cmd_string).read()
 
 # check show_bf command
-returnstring = os.popen(HOMEDIR + '/show_bf | ___GREP_PLACEHOLDER___ pportunit').read()
+#returnstring = os.popen(HOMEDIR + '/show_bf | ___GREP_PLACEHOLDER___ pportunit').read()
+cmd_string = HOMEDIR + '/show_bf | ___GREP_PLACEHOLDER___ pportunit'
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
 print "# check show_bf command"
 if returnstring != '' :
     print "ok"
+    print returnstring
 else :
     print "not ok"
     print returnstring

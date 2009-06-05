@@ -9,11 +9,12 @@ CONFIGURED_RESOURCES_DB = 'configured_resources'
 cfg_resources_db_handle = Catalina.open_db(CONFIGURED_RESOURCES_DB,'read')
 resource_db_handle = Catalina.open_db(RESOURCE_DB,'write')
 resource_shelf = resource_db_handle[0]
-resource_list = Catalina.get_resources_list()
+resource_list = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_resources_list()
 cfg_resources_shelf = cfg_resources_db_handle[0]
-cfg_resources_list = Catalina.get_configured_resources_list(resource_db_handle)
+cfg_resources_list = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_configured_resources_list(resource_db_handle)
 
 found_resource_names = []
+#print "resource_list (%s)" % (resource_list,)
 for resource in resource_list :
     print "doing %s" % resource['name']
     if resource['State'] == 'None' :

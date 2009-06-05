@@ -112,7 +112,7 @@ resources_db_handle = Catalina.open_ro_db(RESOURCES_DB, 'read')
 
 
 job_name = None
-fake_job = Catalina.initialize_job_step(job_name)
+fake_job = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.initialize_job_step(job_name)
 fake_job['user'] = getpass.getuser()
 fake_job['account'] = None
 fake_job['group'] = None
@@ -151,7 +151,7 @@ for reservation in existing_reservations :
 accepted_nodes = Catalina.get_accepted_nodes_list(node_restriction_code, resources_db_handle)
 
 
-resource_dict_list = Catalina.get_resource_dict_list(fake_job, resources_db_handle)
+resource_dict_list = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_resource_dict_list(fake_job, resources_db_handle)
 screened_resource_name_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), accepted_nodes)
 
 screened_nodes_list = []

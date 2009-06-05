@@ -161,6 +161,93 @@ LL)
  elif resource[\"Max_Starters\"] == 0 : result = \"Max_Starters=0\"\\
  else : result = 0" ;;
 
+SLURM)
+	${ECHO} "RESOURCEMANAGER=SLURM" >> Makefile ;
+#	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS-}" >> Makefile ;
+#	${ECHO} "RMINCDIRS=${CATALINA_RMINCDIRS-}" >> Makefile ;
+#	${ECHO} "RMLIBS=-lllapi -lm" >> Makefile ;
+	RMAPI='python' ;
+	RMSERVER_DEFAULT='' ;
+	JOB_START_TIME_LIMIT=900.0 ;
+	DB_WARN_LIMIT=3 ;
+	JOB_START_WARN_LIMIT=3 ;
+	RESOURCE_DOWN_TIME_LIMIT=900.0 ;
+	LOST_JOB_LIMIT=1800 ;
+	LOST_JOB_WARN=TRUE ;
+        if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
+		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch_sim`} || bailout 'Could not find sbatch' 1 ;
+		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel_sim`} || bailout 'Could not find scancel' 1 ;
+		PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe scontrol_sim`} || bailout 'Could not find scontrol' 1 ;
+	else
+		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch`} || bailout 'Could not find sbatch' 1 ;
+		RUNCMD=${CATALINA_RUNCMD} || bailout 'Could not find run job command' 1 ;
+		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel`} || bailout 'Could not find scancel' 1 ;
+		PREEMPTCMD=${CATALINA_PREEMPTCMD-'scontrol suspend'} || bailout 'Could not find scontrol' 1 ;
+		RESUMECMD=${CATALINA_RESUMECMD-'scontrol resume'} || bailout 'Could not find scontrol' 1 ;
+		QMCMD=${CATALINA_QMCMD-'scontrol --oneliner show node'} || bailout 'Could not find scontrol' 1 ;
+		QJCMD=${CATALINA_QJCMD-'scontrol --oneliner show job'} || bailout 'Could not find scontrol' 1 ;
+		QPCMD=${CATALINA_QPCMD-'scontrol --oneliner show partition'} || bailout 'Could not find scontrol' 1 ;
+		QHNCMD=${CATALINA_QHNCMD-'scontrol show hostnames'} || bailout 'Could not find scontrol' 1 ;
+	fi
+	TESTJOB=testjob.SLURM ;
+	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.SLURM ;
+	USERNAMESUFFIX= ;
+#	LOADL_ADMIN_FILE=${CATALINA_LOADL_ADMIN_FILE?ERROR: CATALINA_LOADL_ADMIN_FILE not set!} ;
+# node states from man sinfo
+#      -t <states> , --states=<states>
+#              List nodes only having the given state(s).  Multiple states may
+#              be comma separated and  the  comparison  is  case  insensitive.
+#              Possible  values  include (case insensitive): ALLOC, ALLOCATED,
+#              COMP, COMPLETING, DOWN, DRAIN, DRAINED, DRNG,  DRAINING,  FAIL,
+#              FAILING, IDLE, UNK, and UNKNOWN.  By default nodes in the spec-
+#              ified state are reported whether they are  responding  or  not.
+#              The  --dead  and  --responding options may be used to filtering
+#              nodes by the responding flag.
+	RM_TO_CAT_RESOURCE_DICT_STRING="{\\
+  \"None\" : \"None\",\\
+  \"IDLE\" : \"Idle\",\\
+  \"UNKNOWN*\" : \"Down\",\\
+  \"UNKNOWN\" : \"Down\",\\
+  \"UNK\" : \"Down\",\\
+  \"DOWN\" : \"Down\",\\
+  \"FAIL\" : \"Down\",\\
+  \"FAILING\" : \"Down\",\\
+  \"IDLE+DRAIN\" : \"Drain\",\\
+  \"ALLOCATED+DRAIN\" : \"Draining\",\\
+  \"DRNG\" : \"Draining\",\\
+  \"DRAINING\" : \"Draining\",\\
+  \"ALLOCATED\" : \"Running\",\\
+  \"ALLOC\" : \"Running\",\\
+  \"COMP\" : \"Running\",\\
+  \"COMPLETING\" : \"Running\",\\
+  }" ;
+# job states from man squeue
+#PENDING (PD), RUNNING (R), SUSPENDED (S),  COMPLETING  (CG),  COMPLETED
+#(CD),  CANCELLED  (CA), FAILED (F), TIMEOUT (TO), and NODE_FAIL (NF)
+	RM_TO_CAT_JOB_DICT_STRING="{\\
+  \"SubmitTime\" : \"Submit_Time\",\\
+  \"RUNNING\" : \"Running\",\\
+  \"NODE_FAIL\" : \"Canceled\",\\
+  \"CANCELLED\" : \"Canceled\",\\
+  \"COMPLETED\" : \"Completed\",\\
+  \"FAILED\" : \"Canceled\",\\
+  \"TIMEOUT\" : \"Completed\",\\
+  \"COMPLETING\" : \"Running\",\\
+  \"SUSPENDED\" : \"Preempted\",\\
+  \"PENDING\" : \"Idle\"\\
+  }" ;
+	NODERESTCODE_STRING="\\
+ import string\\
+ resource = input_tuple[0]\\
+ if resource[\"State\"] == \"Down\" : result = \"Down\"\\
+ elif resource[\"State\"] == \"Drain\" : result = \"Drain\"\\
+ elif resource[\"State\"] == \"Drained\" : result = \"Drained\"\\
+ elif resource[\"State\"] == \"None\" : result = \"None\"\\
+ elif resource[\"State\"] == None : result = None\\
+ elif resource[\"State\"] == \"Unknown\" : result = \"Unknown\"\\
+ elif resource[\"Max_Starters\"] == 0 : result = \"Max_Starters=0\"\\
+ else : result = 0" ;;
+
 PBS)
 	${ECHO} "RESOURCEMANAGER=PBS" >> Makefile ;
 	${ECHO} "RMLIBDIRS=${CATALINA_RMLIBDIRS--L/usr/local/lib}" >> Makefile ;
@@ -554,7 +641,14 @@ ${ECHO} "s@___RESOURCE_DOWN_TIME_LIMIT_PLACEHOLDER___@${RESOURCE_DOWN_TIME_LIMIT
 ${ECHO} "s@___LOST_JOB_LIMIT_PLACEHOLDER___@${LOST_JOB_LIMIT}@g" >> sedscr
 ${ECHO} "s@___LOST_JOB_WARN_PLACEHOLDER___@${LOST_JOB_WARN}@g" >> sedscr
 ${ECHO} "s@___SUBMITCMD_PLACEHOLDER___@${SUBMITCMD}@g" >> sedscr
+${ECHO} "s@___RUNCMD_PLACEHOLDER___@${RUNCMD}@g" >> sedscr
 ${ECHO} "s@___CANCELCMD_PLACEHOLDER___@${CANCELCMD}@g" >> sedscr
+${ECHO} "s@___PREEMPTCMD_PLACEHOLDER___@${PREEMPTCMD}@g" >> sedscr
+${ECHO} "s@___RESUMECMD_PLACEHOLDER___@${RESUMECMD}@g" >> sedscr
+${ECHO} "s@___QMCMD_PLACEHOLDER___@${QMCMD}@g" >> sedscr
+${ECHO} "s@___QJCMD_PLACEHOLDER___@${QJCMD}@g" >> sedscr
+${ECHO} "s@___QPCMD_PLACEHOLDER___@${QPCMD}@g" >> sedscr
+${ECHO} "s@___QHNCMD_PLACEHOLDER___@${QHNCMD}@g" >> sedscr
 ${ECHO} "s@___TEST_JOB_PLACEHOLDER___@${TESTJOB}@g" >> sedscr
 ${ECHO} "s@___TEST_JOB_RUN_AT_RISK_PLACEHOLDER___@${TESTJOB_RUN_AT_RISK}@g" >> sedscr
 ${ECHO} "s#___USERNAMESUFFIX_PLACEHOLDER___#${USERNAMESUFFIX}#g" >> sedscr

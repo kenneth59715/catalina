@@ -427,7 +427,10 @@ for job_step in running_starting_jobs :
             if argdict.has_key('--fullname') :
                 #parse output from pwd.getpwname( tuple of information)
                 user_fullname = pwd.getpwnam(job_step['user'])[4].split(',')[0]
-                user_org = pwd.getpwnam(job_step['user'])[4].split(',')[1].lower()
+                if len(pwd.getpwnam(job_step['user'])[4].split(',')) > 1:
+                    user_org = pwd.getpwnam(job_step['user'])[4].split(',')[1].lower()
+                else:
+                    user_org = 'None'
                 print_list.append(' ' +  user_fullname + ' (' + user_org + ')')
             print format_string % tuple(print_list)
             #allocated_nodes = allocated_nodes + nodes_length
@@ -581,7 +584,10 @@ for job_step in eligible_jobs :
         if argdict.has_key('--fullname') :
             # parse output from pwd.getpwnam (tuple of information)
             user_fullname = pwd.getpwnam(job_step['user'])[4].split(',')[0]
-            user_org = pwd.getpwnam(job_step['user'])[4].split(',')[1].lower()
+            if len(pwd.getpwnam(job_step['user'])[4].split(',')) > 1:
+                user_org = pwd.getpwnam(job_step['user'])[4].split(',')[1].lower()
+            else:
+                user_org = 'None'
             print_list.append(' ' + user_fullname + ' (' + user_org + ')')
         print format_string % tuple(print_list)
 
@@ -706,14 +712,21 @@ for job_step in ineligible_jobs :
         if argdict.has_key('--fullname') :
             # parse output from pwd.getpwnam (tuple of information)
             user_fullname = pwd.getpwnam(job_step['user'])[4].split(',')[0]
-            user_org = pwd.getpwnam(job_step['user'])[4].split(',')[1].lower()
+            if len(pwd.getpwnam(job_step['user'])[4].split(',')) > 1:
+                user_org = pwd.getpwnam(job_step['user'])[4].split(',')[1].lower()
+            else:
+                user_org = 'None'
             print_list.append(' ' + user_fullname + ' (' + user_org + ')')     
         print format_string % tuple(print_list)
 
+#active_resource = filter(lambda x, translation_dict=Catalina.RM_TO_CAT_RESOURCE_dict, \
+#  def_class=Catalina.DEFAULT_JOB_CLASS : \
+#  x['State'] != None and \
+#  translation_dict[x['State']] in ['Idle', 'Running', 'Busy'] , resource)
 active_resource = filter(lambda x, translation_dict=Catalina.RM_TO_CAT_RESOURCE_dict, \
   def_class=Catalina.DEFAULT_JOB_CLASS : \
   x['State'] != None and \
-  translation_dict[x['State']] in ['Idle', 'Running', 'Busy'] , resource)
+  x['State'] in ['Idle', 'Running', 'Busy'] , resource)
 active_cpu = 0
 for ar in active_resource :
     if ar.has_key('ConsumableCpus') :

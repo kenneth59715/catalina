@@ -100,7 +100,7 @@ while ( (state == 'running' or state == 'suspended') and
         #    Catalina.Now_float = float(os.system(Catalina.TIME_SIM))
         #else :
         #    Catalina.Now_float = time.time()
-        Catalina.Now_float = Catalina.get_scheduler_time()
+        Catalina.Now_float = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
         print "iteration (%s)" % count
         print "Catalina.Now_float (%s)" % time.asctime(time.localtime(Catalina.Now_float))
         print "%s" % time.clock()
@@ -111,13 +111,13 @@ while ( (state == 'running' or state == 'suspended') and
                 print "Scheduler has state 'stopped'.  Exiting..."
                 instance_remove(configuration_db_handle)
                 state = 'stopped'
-                raise 'SchedulerStopped'
+                raise Catalina.SchedulerStopped
             elif configuration_dict['state'] == 'suspended' :
                 print "Scheduler has state 'suspended'.  Sleeping..."
                 time.sleep(30)
                 Catalina.close_db(configuration_db_handle)
                 state = 'suspended'
-                raise 'SchedulerSuspended'
+                raise Catalina.SchedulerSuspended
             elif configuration_dict['state'] == 'running' :
                 state = 'running'
                 if configuration_dict.has_key('server_hosts_pidslist_dict') :
@@ -202,7 +202,7 @@ while ( (state == 'running' or state == 'suspended') and
         print "cancel_overrun_jobs"
         Catalina.cancel_overrun_jobs(events_db_handle, jobs_db_handle)
         print "cancel_bad_jobs"
-        Catalina.cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle)
+        Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle)
         print "update_job_resource_lists"
         Catalina.update_job_resource_lists(jobs_db_handle, resources_db_handle)
         print "update_resource_usability"
@@ -318,18 +318,18 @@ while ( (state == 'running' or state == 'suspended') and
                          events_db_handle=events_db_handle,
                          resources_db_handle=resources_db_handle)
         print "run_jobs"
-        Catalina.run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle)
+        Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle)
         #Catalina.schedule_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations_db_handle, cfg_resources_db_handle, standing_reservations_db_handle )
 
         failed_count = 0
         count = count + 1
         print "elapsed (%s)" % (time.time() - Catalina.Now_float,)
         time.sleep(1)
-    except 'SchedulerSuspended' :
+    except Catalina.SchedulerSuspended :
         print "Scheduler suspended"
-    except 'SchedulerStopped' :
+    except Catalina.SchedulerStopped :
         print "Scheduler stopped"
-    except ('IncompleteQJ','IncompleteQM') :
+    except (Catalina.IncompleteQJ,Catalina.IncompleteQM) :
         try :
             info_tuple = sys.exc_info()
             print "(%s) (%s) (%s)" % info_tuple
@@ -361,10 +361,10 @@ while ( (state == 'running' or state == 'suspended') and
                 Catalina.warn(message, subject, recipient)
         except :
             print "print of sys.exc_info() failed"
-    except 'CatalinaDBError', detail :
+    except Catalina.CatalinaDBError as exc:
         configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
         instance_remove(configuration_db_handle)
-        print "Unrecoverable DB Error (%s)!  Exiting..." % detail
+        print "Unrecoverable DB Error (%s)!  Exiting..." % exc.detail
         try :
             info_tuple = sys.exc_info()
             print "(%s) (%s) (%s)" % info_tuple

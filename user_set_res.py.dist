@@ -706,7 +706,7 @@ try :
       notify_string = email_string,
       job_restriction=job_restriction
       )
-except 'InsufficientNodes' :
+except Catalina.InsufficientNodes :
     print "Insufficient nodes found!"
 else :
     message = """user reservation (%s) created with %d nodes at %s (%s epoch)
