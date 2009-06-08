@@ -49,7 +49,7 @@ def allocation_check(username,account,feature=[]) :
     #check if the program validate_job.pl exist, otherwise just warn the users
     if os.path.exists(validate_script) and os.path.isfile(validate_script) :
         prep_arg_tuple = (machine_name,username,account,queue)
-        rc_status_tuple = Catalina.timedrun((validate_script,) + prep_arg_tuple, 30) #sleep 30 secs
+        rc_status_tuple = Catalina.timedrun([validate_script,] + list(prep_arg_tuple), 30) #sleep 30 secs
         if rc_status_tuple[1] == 0 :
             return 0 
         else :

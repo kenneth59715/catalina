@@ -361,7 +361,7 @@ while ( (state == 'running' or state == 'suspended') and
                 Catalina.warn(message, subject, recipient)
         except :
             print "print of sys.exc_info() failed"
-    except Catalina.CatalinaDBError as exc:
+    except Catalina.CatalinaDBError, exc:
         configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
         instance_remove(configuration_db_handle)
         print "Unrecoverable DB Error (%s)!  Exiting..." % exc.detail

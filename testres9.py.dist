@@ -411,12 +411,12 @@ job = HOMEDIR + '/' + Catalina.TEST_JOB
 # here, should have Makefile sed in the output pattern...
 output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
 cmd_string = cmd + ' ' + job
-print "cmd_string (%s)" % (cmd_string,)
+#print "cmd_string (%s)" % (cmd_string,)
 #returnstring = os.popen(cmd_string).read()
 stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
 returnstring = stdout_string + stderr_string
-print "stderr_string (%s)" % (stderr_string,)
-print "stdout_string (%s)" % (stdout_string,)
+#print "stderr_string (%s)" % (stderr_string,)
+#print "stdout_string (%s)" % (stdout_string,)
 so = re.search(output, returnstring)
 print "# submit a job"
 if so == None :
@@ -519,8 +519,10 @@ else :
 
         print "canceling user_set reservation"
         # cancel user_set reservation
-        cmd = HOMEDIR + '/user_cancel_res ' + bindures_id
-        returnstring = os.popen(cmd).read()
+        cmd_string = HOMEDIR + '/user_cancel_res ' + bindures_id
+        #returnstring = os.popen(cmd).read()
+        stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+        returnstring = stdout_string + stderr_string
         ## check returnstring
         #output = r"Waiting.*lock\n.*lock\n.*lock\n"
         #so = re.search(output, returnstring)

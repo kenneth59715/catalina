@@ -2734,7 +2734,7 @@ def move_old_jobs(events_db_handle, jobs_db_handle, old_jobs_db_handle) :
             key = get_new_db_key(old_jobs_db_handle)
             try :
                 insert_new_object_with_key(key, job_step, old_jobs_db_handle)
-            except KeyExists as exc:
+            except KeyExists, exc:
                 print "The key (%s) already exists in the db" % exc.key
             except :
                 continue
@@ -2754,7 +2754,7 @@ def move_old_reservations(events_db_handle, reservations_db_handle, old_reservat
             key = get_new_db_key(old_reservations_db_handle)
             try :
                 insert_new_object_with_key(key, reservation, old_reservations_db_handle)
-            except KeyExists as exc:
+            except KeyExists, exc:
                 print "The key (%s) already exists in the db" % exc.key
             except :
                 continue
@@ -3219,7 +3219,7 @@ def cancel_risk_reservations(reservations_db_handle,
                             else :
                                 #print "preempt_job (%s)" % risk_res['job_runID']
                                 Catalina____RESOURCEMANAGER_PLACEHOLDER___.preempt_job(jobs_dict[risk_res['job_runID']], events_db_handle)
-                        except CancelJobFailure  as exc:
+                        except CancelJobFailure, exc:
                             print "cancel of %s failed" % \
                               exc.failed_job_step['name']
                         except :
@@ -3263,7 +3263,7 @@ def cancel_overrun_jobs(events_db_handle, jobs_db_handle) :
                               }
                             log_event(event, events_db_handle)
                             
-                    except CancelJobFailure as exc:
+                    except CancelJobFailure, exc:
                         print "cancel of %s failed" % \
                           exc.failed_job_step['name']
                     except :
@@ -3945,7 +3945,7 @@ def update_standing_reservations(
                 try :
                     delete_object(reservation['name'],
                       reservations_db_handle)
-                except NameNotInDB as exc :
+                except NameNotInDB, exc :
                     print "Standing Reservation to be deleted (%s) not found" % \
                       exc.name
         accepted_nodes_list = get_accepted_nodes_list(standing_reservation['node_restriction'], resources_db_handle)
@@ -4549,7 +4549,7 @@ def create_job_reservation(
           job_step=job_step,
           mode='real'
           )
-    except InsufficientNodes as exc:
+    except InsufficientNodes, exc:
         message = "job reservation (%s) failed for runID (%s) due to insufficient resources" % ( exc.res['name'], exc.res['job_runID'] )
         print message
         catsyslog(message,'notice')
@@ -4840,7 +4840,7 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
                         active_reservations_per_account_per_qos[job_step['account']][job_step['QOS']] = [job_step['name'],]
                 else :
                     active_reservations_per_account_per_qos[job_step['account']] = { job_step['QOS'] : [job_step['name'],], }
-        except InsufficientNodes as exc:
+        except InsufficientNodes, exc:
             message = "job reservation (%s) failed for runID (%s) due to insufficient resources" % ( exc.res['name'], exc.res['job_runID'] )
             print message
             catsyslog(message,'notice')
@@ -5581,7 +5581,7 @@ def create_reservation(
                                             )
                                             #print "after create_reservation (%s) (%s)" % (reservation['job_runID'], pushback_res['name'])
                                             #print "latest_end_float (%s)" % time.asctime(time.localtime(latest_end_float))
-                                        except InsufficientNodes as exc:
+                                        except InsufficientNodes, exc:
                                             # pushback reservation failed, so don't
                                             # try to preempt this one
                                             if DEBUGJOB != None :
