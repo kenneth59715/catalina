@@ -716,8 +716,8 @@ if TESTSHARED > 0 :
     # create reservation, with earliest_start and resource_amount specified,
     # --ppn (procs per node), --mpn (MB per node)
     cmd = HOMEDIR + '/set_res'
-    start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400))
-    end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400 + 7 * 24 * 3600))
+    start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14 * 24 * 3600))
+    end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14 * 24 * 3600 + 3600))
     resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
     mode = 'real'
     output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT
@@ -725,10 +725,10 @@ if TESTSHARED > 0 :
     print "# create --ppn --mpn reservation"
     firstreturnstring = os.popen(cmd_string).read()
     ppnso = re.search(output, firstreturnstring)
-    print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr, --ppn=1 --mpn=1"
+    print "# %s resource, 1 hour, earliest_start +1hr, latest_end +24hr, --ppn=1 --mpn=1" % (resource_amount,)
     if ppnso == None :
         print "not ok shared"
-        print "returnstring is (%s)" % returnstring
+        print "firstreturnstring is (%s)" % firstreturnstring
         print cmd_string
         #continue_var = raw_input('continue? ')
     else :
@@ -1315,7 +1315,7 @@ Catalina.close_ro_db(jobs_db_handle)
 # check for same start_time for bound reservation and job
 output = r"\S+\s+(?P<res_time>\S+)\s+(?P<runID>.*)"
 cmd = HOMEDIR + '/show_res'
-cmd_string = cmd + ' --full --job' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
+cmd_string = cmd + ' --job' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
 returnstring = os.popen(cmd_string).read()
 so = re.search(output, returnstring)
 print "# start_time (%s) check for reservation_binding (%s) in job (%s)" % ( bind_res_start_time, bind_res_id, job_step_name)
