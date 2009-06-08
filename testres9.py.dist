@@ -717,7 +717,7 @@ if TESTSHARED > 0 :
     # --ppn (procs per node), --mpn (MB per node)
     cmd = HOMEDIR + '/set_res'
     start_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400))
-    end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400 + 3600))
+    end_time = time.strftime('%H:%M_%m/%d/%Y',time.localtime(epoch_now + 14400 + 7 * 24 * 3600))
     resource_amount = "%s" % Catalina.TEST_USERRES_AMOUNT
     mode = 'real'
     output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?P<res_time>.*) for duration (?P<duration>.*)""" % Catalina.TEST_USERRES_AMOUNT

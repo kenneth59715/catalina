@@ -262,7 +262,7 @@ try :
       affinity_calculation=affinity_calculation,
       mode=mode
     )
-except 'InsufficientNodes', new_res :
+except Catalina.InsufficientNodes, new_res :
     print "Insufficient nodes found! "
     Catalina.close_db(reservations_db_handle)
     Catalina.close_db(resources_db_handle)
