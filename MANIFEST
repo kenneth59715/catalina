@@ -12,6 +12,7 @@ check.py.dist
 configure.sh
 conf.sh
 COPYRIGHT
+LICENSE
 create_res.dist
 create_standing_res.dist
 create_system_res.dist
