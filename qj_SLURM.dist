@@ -8,6 +8,9 @@ import re
 import string
 import time
 
+#24. Can SLURM time output format include the year?
+#The default SLURM time format output is MM/DD-HH:MM:SS. Define "ISO8601" at SLURM build time to get the time format YYYY-MM-DDTHH:MM:SS. Note that this change in format will break anything that parses SLURM output expecting the old format (e.g. LSF, Maui or Moab). 
+
 def guessyear(old_tuple, Now_float):
     Now_tuple = time.localtime(Now_float)
     new_tuple = (Now_tuple[0],) + old_tuple[1:]
