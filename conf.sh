@@ -264,7 +264,8 @@ PBS)
 	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
 	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
 	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
-	PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe qstat`} || bailout 'Could not find qstat' 1 ;
+	PREEMPTCMD=${CATALINA_PREEMPTCMD-'qsig -s suspend'} || bailout 'Could not find qstat' 1 ;
+	RESUMECMD=${CATALINA_RESUMECMD-'qsig -s resume'} || bailout 'Could not find scontrol' 1 ;
 	TESTJOB=testjob.PBS ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.PBS ;
 	LOADL_ADMIN_FILE= ;
@@ -286,7 +287,7 @@ PBS)
   \"E\" : \"Running\",\\
   \"H\" : \"Hold\",\\
   \"Q\" : \"Idle\",\\
-  \"S\" : \"Hold\",\\
+  \"S\" : \"Preempted\",\\
   \"T\" : \"Hold\",\\
   \"W\" : \"Hold\"\\
   }" ;
@@ -318,7 +319,8 @@ TORQUE)
 	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
 	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
 	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
-	PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe qstat`} || bailout 'Could not find qstat' 1 ;
+	PREEMPTCMD=${CATALINA_PREEMPTCMD-'qsig -s suspend'} || bailout 'Could not find qstat' 1 ;
+	RESUMECMD=${CATALINA_RESUMECMD-'qsig -s resume'} || bailout 'Could not find scontrol' 1 ;
 	TESTJOB=testjob.PBS ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.PBS ;
 	LOADL_ADMIN_FILE= ;
@@ -340,7 +342,7 @@ TORQUE)
   \"E\" : \"Running\",\\
   \"H\" : \"Hold\",\\
   \"Q\" : \"Idle\",\\
-  \"S\" : \"Hold\",\\
+  \"S\" : \"Preempted\",\\
   \"T\" : \"Hold\",\\
   \"W\" : \"Hold\"\\
   }" ;
@@ -794,7 +796,11 @@ if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
 	${ECHO} "C_EXECUTABLE_FILES = \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
 else
 	if [ "${RMAPI}" = "c" ]; then
-		${ECHO} "C_EXECUTABLE_FILES = \$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
+		if [ "${RESOURCEMANAGER}" = "TORQUE" -o "${RESOURCEMANAGER}" = "PBS" ]; then
+			${ECHO} "C_EXECUTABLE_FILES = \$(QJ) \$(QM) \$(RUNJOB) \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
+		else
+			${ECHO} "C_EXECUTABLE_FILES = \$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
+		fi
 	else
 		${ECHO} "C_EXECUTABLE_FILES = \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile
 	fi
@@ -817,6 +823,9 @@ ${ECHO} "	\$(UPDATELOCALADMIN) \$(UPDATEPREEMPTION) \\" >> Makefile
 ${ECHO} "	\$(UPDATEPRIORITIES) \$(UPDATEQOS) \$(UPDATERESOURCES) \$(UPDATERUNNING) \\" >> Makefile
 if [ "${RMAPI}" = "python" ]; then
 	${ECHO} "	\$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \\" >> Makefile
+fi
+if [ "${RESOURCEMANAGER}" = "TORQUE" -o "${RESOURCEMANAGER}" = "PBS" ]; then
+	${ECHO} "	\$(PREEMPTJOB) \$(RESUMEJOB) \\" >> Makefile
 fi
 ${ECHO} "	\$(UPDATESTANDING) \$(RESPROEPI)\\" >> Makefile
 ${ECHO} "	\$(UPDATESYSTEM) \$(USERBINDPY) \$(USERCANCELPY) \$(USERSETPY) \$(USERUNBINDPY) \$(USERBINDJOBPY) \$(USERUNBINDJOBPY)" >> Makefile

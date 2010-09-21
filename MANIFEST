@@ -34,7 +34,7 @@ node_restriction_file.LL
 node_restriction_file.PBS
 nonconflicting
 pj_LL.dist
-pj_PBS.c.dist
+pj_PBS.dist
 prologue.res.dist
 qj_LL.dist
 qj_PBS.c.dist
@@ -45,7 +45,7 @@ README
 redump.py.dist
 release.dist
 resj_LL.dist
-resj_PBS.c.dist
+resj_PBS.dist
 reslist.dist
 resproepi.dist
 res_status.dist

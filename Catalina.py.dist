@@ -2771,7 +2771,9 @@ def update_job_info(jobs_db_handle) :
     old_job_steps_list = get_object_list(jobs_db_handle)
     old_job_ids = get_object_names_list(old_job_steps_list)
     attribute_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOB_UPDATE_ATTRIBUTE_list
+    altered_jobs_list = []
     for new_job_step in new_job_steps_dict.values() :
+        job_altered = 0
         if new_job_step['name'] in old_job_ids :
             # Prevent default values in the new job step
             # from overwriting the old info, for certain
@@ -2782,7 +2784,28 @@ def update_job_info(jobs_db_handle) :
             temp_job_step = copy.copy(old_job_step)
             for key in attribute_list :
                 if new_job_step.has_key(key) :
+                    print "updating (%s) (%s) for (%s)" % (key, new_job_step[key], temp_job_step['name'])
                     temp_job_step[key] = new_job_step[key]
+                    if key == 'requested_resource_list' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'wall_clock_limit' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'reservation_binding' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'QOS' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'preemptible' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'preempting' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'run_at_risk_int' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'local_admin_priority_string' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if key == 'local_user_priority_string' and new_job_step[key] != old_job_step[key]:
+                        job_altered = 1
+                    if job_altered == 1:
+                        altered_jobs_list.append(new_job_step['name'])
             temp_job_step['last_seen_time_float'] = Now_float
             update_object_attributes( temp_job_step, old_job_step,
               jobs_db_handle)
@@ -2794,6 +2817,10 @@ def update_job_info(jobs_db_handle) :
           and new_job_steps_dict[old_job_step['name']]['state'] == "Hold" :
             if DEBUGJOB != None and old_job_step['name'] == DEBUGJOB :
                 print "setting system_queue_time to None for job (%s)" % old_job_step['name']
+            update_object_attribute('system_queue_time', None, old_job_step,
+              jobs_db_handle)
+
+        if old_job_step['name'] in altered_jobs_list:
             update_object_attribute('system_queue_time', None, old_job_step,
               jobs_db_handle)
             
@@ -3124,8 +3151,11 @@ def cancel_risk_reservations(reservations_db_handle,
     risk_reservations = map(get_reservation_from_tuple, priority_risk_reservations)
     nonrisk_reservations = filter(approaching_nonrisky, reservations_list)
     retained_risk_reservations = []
+    print "reservations_list (%s)" % (reservations_list,)
+    print "job_steps_list (%s)" % (job_steps_list,)
+    print "risk_reservations (%s)" % (risk_reservations,)
     for risk_res in risk_reservations :
-        #print "adding risk_res (%s) purpose (%s) runID (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
+        print "adding risk_res (%s) purpose (%s) runID (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
         atrisk_res_dict = {}
         # add up cpu and memory by node for all at_risk reservations
         for node in risk_res['node_list'] :
@@ -3148,12 +3178,24 @@ def cancel_risk_reservations(reservations_db_handle,
         # conflict
         nonrisk_res_dict = {}
         for nonrisk_res in nonrisk_reservations + retained_risk_reservations :
-            #print "(%s) nonrisk_res_dict.keys() (%s)" % (nonrisk_res['name'],nonrisk_res_dict.keys(),)
+            print "(%s) nonrisk_res_dict.keys() (%s)" % (nonrisk_res['name'],nonrisk_res_dict.keys(),)
+            # skip if nonrisk priority lower than risk priority
+            if nonrisk_res.has_key('job_runID')  \
+              and nonrisk_res.has_key('job_runID') \
+              and risk_res.has_key('job_runID') \
+              and jobs_db_handle[0][nonrisk_res['job_runID']]['priority'] < \
+              jobs_db_handle[0][risk_res['job_runID']]['priority'] \
+              :
+                print "skipping (%s) (%s) for lower priority than (%s) (%s)" \
+                  % (nonrisk_res['name'], nonrisk_res['job_runID'], risk_res['name'], risk_res['job_runID'])
+                continue
+            
             if nonrisk_res['start_time_float'] <= \
               Now_float + RUN_AT_RISK_CLEANUP_TIME and \
               ( nonrisk_res['start_time_float'] < risk_res['end_time_float'] <= nonrisk_res['end_time_float'] or \
               nonrisk_res['start_time_float'] <= risk_res['start_time_float'] < nonrisk_res['end_time_float'] ) :
-                #print "adding resources for nonrisk_res (%s)" % nonrisk_res
+
+                print "adding resources for nonrisk_res (%s)" % nonrisk_res
                 input_tuple = ( jobs_dict[risk_res['job_runID']], )
                 result = apply_policy_code(
                   nonrisk_res['job_restriction'],
@@ -3187,11 +3229,18 @@ def cancel_risk_reservations(reservations_db_handle,
                         else :
                             nonrisk_res_dict[nonrisknode] = { 'cpu' : resources_dict[nonrisknode]['ConsumableCpus'], 'memory' : resources_dict[nonrisknode]['ConsumableMemory'] }
                     #print "nonrisk_res_dict[nonrisknode]['cpu'] (%s), nonrisk_res_dict[nonrisknode]['memory'] (%s)" % (nonrisk_res_dict[nonrisknode]['cpu'], nonrisk_res_dict[nonrisknode]['memory'])
+            else:
+                print "nonrisk_res['start_time_float'] (%s)" % (nonrisk_res['start_time_float'],)
+                print "Now_float (%s)" % (Now_float,)
+                print "Now_float + RUN_AT_RISK_CLEANUP_TIME (%s)" % (Now_float + RUN_AT_RISK_CLEANUP_TIME,)
+                print "risk_res['start_time_float'] (%s)" % (risk_res['start_time_float'],)
         found_conflict = 0
-        #print "nonrisk_res_dict.keys() (%s)" % (nonrisk_res_dict.keys(),)
+        print "nonrisk_res_dict.keys() (%s)" % (nonrisk_res_dict.keys(),)
         for node in nonrisk_res_dict.keys() :
-            #print "checking nonrisk node (%s)" % node
+            print "checking nonrisk node (%s)" % node
             if atrisk_res_dict.has_key(node) and resources_dict.has_key(node) :
+                print "cpu conflict check %s %s %s" % (nonrisk_res_dict[node]['cpu'], atrisk_res_dict[node]['cpu'], resources_dict[node]['ConsumableCpus'])
+                print "memory conflict check %s %s %s" % (nonrisk_res_dict[node]['memory'], atrisk_res_dict[node]['memory'], resources_dict[node]['ConsumableMemory'])
                 if nonrisk_res_dict[node]['cpu'] + atrisk_res_dict[node]['cpu'] > resources_dict[node]['ConsumableCpus'] :
                     #print "found cpu conflict %s %s %s" % (nonrisk_res_dict[node]['cpu'], atrisk_res_dict[node]['cpu'], resources_dict[node]['ConsumableCpus'])
                     found_conflict = 1
@@ -3199,25 +3248,33 @@ def cancel_risk_reservations(reservations_db_handle,
                     #print "found memory conflict %s %s %s" % (nonrisk_res_dict[node]['memory'], atrisk_res_dict[node]['memory'], resources_dict[node]['ConsumableMemory'])
                     found_conflict = 1
             if found_conflict == 0 :
-                #print "not deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
+                print "not deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
                 retained_risk_reservations.append(risk_res)
             else :
                 if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
                     print "deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
                 # for preempted_job reservations, need to push these back,
                 # instead of deleting.  maybe pushback is getting deleted?
-                #print "deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
+                print "deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
                 if reservations_db_handle[0].has_key(risk_res['name']) :
-                    #print "should delete (%s)" % risk_res['name']
+                    print "should delete (%s)" % risk_res['name']
                     delete_object(risk_res['name'], reservations_db_handle)
+                else:
+                    print "could not find (%s) in reservations_db" % risk_res['name']
+                print "risk_res['purpose_type_string'] (%s)" % risk_res['purpose_type_string']
                 if risk_res['purpose_type_string'] == 'running' :
+                    print "SERVERMODE (%s)" % (SERVERMODE,)
                     if SERVERMODE == 'NORMAL' :
+                        print "deleting risk_res['name'] (%s)" % (risk_res['name'],)
                         try :
+                            print "in try..."
+                            print "jobs_dict[risk_res['job_runID']]['preemptible'] (%s)" % (jobs_dict[risk_res['job_runID']]['preemptible'],)
+                            print "jobs_dict[risk_res['job_runID']]['preemptible'] (%s)" % (jobs_dict[risk_res['job_runID']]['preemptible'],)
                             if jobs_dict[risk_res['job_runID']]['preemptible'] == 0 :
-                                #print "not doing preempt_job (%s)" % risk_res['job_runID']
+                                print "not doing preempt_job (%s)" % risk_res['job_runID']
                                 Catalina____RESOURCEMANAGER_PLACEHOLDER___.cancel_job(jobs_dict[risk_res['job_runID']], events_db_handle)
                             else :
-                                #print "preempt_job (%s)" % risk_res['job_runID']
+                                print "preempt_job (%s)" % risk_res['job_runID']
                                 Catalina____RESOURCEMANAGER_PLACEHOLDER___.preempt_job(jobs_dict[risk_res['job_runID']], events_db_handle)
                         except CancelJobFailure, exc:
                             print "cancel of %s failed" % \
@@ -3362,6 +3419,8 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
             elif state == 'Running' or state == 'Starting' or state == 'Preempted' :
                 #if state == 'Preempted' :
                 #    idle_jobs.append(job)
+                if state == 'Preempted' :
+                    print "appending runningstarting (%s)" % (job['name'],)
                 runningstarting_jobs.append(job)
                 if running_jobs_per_user.has_key(user) :
                     running_jobs_per_user[user] = \
@@ -4211,6 +4270,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
     existing_reservations = get_object_list(reservations_db_handle)
     save_jobs_list = []
     runningstarting_names_list = get_object_names_list(runningstarting_jobs)
+    #print "runningstarting_names_list (%s)" % (runningstarting_names_list,)
     for reservation in existing_reservations :
         if reservation['purpose_type_string'] in ['running', 'preempted_job'] :
             delete_object(reservation['name'], reservations_db_handle)
@@ -4227,6 +4287,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
     # resources_requested_list?
     preempted_jobs_list = []
     for job in runningstarting_jobs :
+        print "updating res for job (%s)" % (job,)
         if job['state'] == 'Running' :
             purpose_type_string = 'running'
         elif job['state'] == 'Preempted' :
@@ -4235,6 +4296,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
         else :
             purpose_type_string = job['state']
             continue
+        print "setting SubmitTime"
         submit_time = job['SubmitTime']
         new_res_name = `int(submit_time)`
         while reservations_db_handle[0].has_key(new_res_name) :
@@ -4276,9 +4338,13 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
         unknown_hosts = 0
         for allocated_host in allocated_hosts :
             if not resources_db_handle[0].has_key(allocated_host) :
+                print "failed to find allocated host (%s)" % (allocated_host,)
                 unknown_hosts = unknown_hosts + 1
         if unknown_hosts > 0 :
+            print resources_db_handle[0].keys()
             continue
+        print "after getting allocated_hosts"
+        print "allocated_hosts (%s)" % (allocated_hosts,)
         node_list = allocated_hosts
         resource_amount_int = job['resource_amount_int']
         new_res['duration_float'] = duration_float
@@ -4370,9 +4436,10 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                                  }
                 allocated_dict_list.append(allocated_dict)
         new_res['allocated_dict_list'] = allocated_dict_list
+        print "new running res (%s)" % (new_res,)
         insert_new_object(new_res, reservations_db_handle)
     for preempted_job in preempted_jobs_list :
-        #print "creating preempted_job reservation for (%s)" % preempted_job['name']
+        print "creating preempted_job reservation for (%s)" % preempted_job['name']
         #def create_job_reservation(
           #resources_db_handle,
           #reservations_db_handle,
@@ -4389,7 +4456,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                                events_db_handle
                                )
         if new_res != None :
-            #print "preempted_job reservation succeeded for (%s)" % preempted_job['name']
+            print "preempted_job reservation succeeded for (%s)" % preempted_job['name']
             del_pushback_list = []
             for res_key in reservations_db_handle[0].keys() :
                 if reservations_db_handle[0][res_key]['purpose_type_string'] == "pushback" and reservations_db_handle[0][res_key]['job_runID'] == preempted_job['name'] :
@@ -4398,8 +4465,8 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                 #print "deleting pushback res (%s)" % pushback_key
                 delete_object(pushback_key, reservations_db_handle)
         else :
-            pass
-            #print "preempted_job reservation failed for (%s)" % preempted_job['name']
+            #pass
+            print "preempted_job reservation failed for (%s)" % preempted_job['name']
             
 
 def get_open_windows_for_reservation_list(reservations, nodes) :
@@ -4892,6 +4959,7 @@ def update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle
         found_resource_names.append(resource['name'])
         if resource_shelf.has_key(resource['name']) :
             for key in resource.keys() :
+                print "checking resource key (%s) (%s)" % (key, resource[key])
                 # This is kind of convoluted...
                 if key == 'State_Change_Time' :
                     continue
@@ -4931,6 +4999,7 @@ def update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle
                     #        if Now_float - resource_shelf[resource['name']]['State_Change_Time'] > LOST_NODE_LIMIT :
                     #            update_object_attribute(key, resource[key], resource_shelf[resource['name']], resources_db_handle)
                 else :
+                    print "updating resource key (%s) (%s)" % (key, resource[key])
                     update_object_attribute(key, resource[key], resource_shelf[resource['name']], resources_db_handle)
         else :
             insert_new_object(resource, resources_db_handle)
@@ -5491,7 +5560,7 @@ def create_reservation(
                            job_step['preempting'] >= 1 and \
                           jobs_dict[reservation['job_runID']].has_key('preemptible') and \
                           jobs_dict[reservation['job_runID']]['preemptible'] >= 1)) :
-                            #print "checking run_at_risk/preemptible reservation (%s) with job (%s) for non-run_at_risk job (%s)" % (reservation['name'], reservation['job_runID'], job_step['name'])
+                            print "checking run_at_risk/preemptible reservation (%s) with job (%s) for non-run_at_risk job (%s)" % (reservation['name'], reservation['job_runID'], job_step['name'])
                             #temp_res = copy.deepcopy(reservation)
                             temp_res = initialize_reservation(reservation['name'] + '.temp')
                             temp_res['node_list'] = copy.deepcopy(reservation['node_list'])
@@ -5507,7 +5576,7 @@ def create_reservation(
                               :
                                 for node_name in reservation['node_list'] :
                                     if node_name in preempted_nodes_list :
-                                        #print "node_name (%s) in preempted_nodes_list (%s)" % (node_name, preempted_nodes_list)
+                                        print "node_name (%s) in preempted_nodes_list (%s)" % (node_name, preempted_nodes_list)
                                         existing_preempted_job = 1
                             if ((reservation['purpose_type_string'] in ['running', ] or \
                               (reservation['purpose_type_string'] == 'job' and \
@@ -5517,11 +5586,11 @@ def create_reservation(
                               jobs_dict[reservation['job_runID']]['start_count_int'] >= 1)) and \
                               existing_preempted_job == 0) or \
                               reservation['purpose_type_string'] in ['preempted_job', 'pushback'] :
-                                #print "checking running/job reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
+                                print "checking running/job reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
                                 if job_step.has_key('preempting') and job_step['preempting'] >= 1 and jobs_dict[reservation['job_runID']].has_key('preemptible') and jobs_dict[reservation['job_runID']]['preemptible'] >= 1 :
                                     if job_step['priority'] > jobs_dict[reservation['job_runID']]['priority'] \
                                       and reservation['end_time_float'] - Now_float > PREEMPT_MIN_RUNTIME :
-                                        #print "checking preemptible reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
+                                        print "checking preemptible reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
                                         # additional check for preemptible jobs.
                                         # if new_res is for a preempting job,
                                         # check to see if wallclock limit would
@@ -5579,14 +5648,14 @@ def create_reservation(
                                               resource_amount_int = len(jobs_dict[reservation['job_runID']]['requested_resource_list']),
                                               requested_resource_list = jobs_dict[reservation['job_runID']]['requested_resource_list']
                                             )
-                                            #print "after create_reservation (%s) (%s)" % (reservation['job_runID'], pushback_res['name'])
-                                            #print "latest_end_float (%s)" % time.asctime(time.localtime(latest_end_float))
+                                            print "after create_reservation (%s) (%s)" % (reservation['job_runID'], pushback_res['name'])
+                                            print "latest_end_float (%s)" % time.asctime(time.localtime(latest_end_float))
                                         except InsufficientNodes, exc:
                                             # pushback reservation failed, so don't
                                             # try to preempt this one
                                             if DEBUGJOB != None :
                                                 print "pushback of preemptible job (%s) not possible due to reservation (%s) blocking!" % (exc.res['job_runID'], reservation['name'])
-                                            #print "pushback of preemptible job (%s) for (%s) not possible due to reservation (%s) blocking!" % (reservation['job_runID'], new_res['job_runID'], reservation['name'])
+                                            print "pushback of preemptible job (%s) for (%s) not possible due to reservation (%s) blocking!" % (reservation['job_runID'], new_res['job_runID'], reservation['name'])
                                             blocking_reservations.append(reservation)
                                         except :
                                             #print "some other pushback res exception occurred"
@@ -5618,9 +5687,9 @@ def create_reservation(
                                             temp_res['end_time_float'] = Now_float + RUN_AT_RISK_CLEANUP_TIME
                                             # seemed to work without this...
                                             blocking_reservations.append(pushback_res)
-                                        #print "after try of pushback of (%s) (%s) (%s) res" % (reservation['purpose_type_string'], reservation['job_runID'], reservation['name'])
+                                        print "after try of pushback of (%s) (%s) (%s) res" % (reservation['purpose_type_string'], reservation['job_runID'], reservation['name'])
                                     else :
-                                        #print "priority not overriding or PREEMPT_MIN_RUNTIME too small"
+                                        print "priority not overriding or PREEMPT_MIN_RUNTIME too small"
                                         blocking_reservations.append(reservation)
                                 else :
                                     #print "not preemptible reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
@@ -5631,7 +5700,7 @@ def create_reservation(
                                     #    print "jobs_dict[reservation['job_runID']].has_key('preemptible')"
                                     #if jobs_dict[reservation['job_runID']]['preemptible'] >= 1 :
                                     #    print "jobs_dict[reservation['job_runID']]['preemptible'] >= 1"
-                                    #print "job_step['preempting'] (%s), job_step['priority'] (%s), jobs_dict[reservation['job_runID']]['priority'] (%s), jobs_dict[reservation['job_runID']]['preemptible']" % (job_step['preempting'], job_step['priority'], jobs_dict[reservation['job_runID']]['priority'], jobs_dict[reservation['job_runID']]['preemptible'])
+                                    print "job_step['preempting'] (%s), job_step['priority'] (%s), jobs_dict[reservation['job_runID']]['priority'] (%s), jobs_dict[reservation['job_runID']]['preemptible']" % (job_step['preempting'], job_step['priority'], jobs_dict[reservation['job_runID']]['priority'], jobs_dict[reservation['job_runID']]['preemptible'])
                                     #blocking_reservations.append(reservation)
                                     temp_res['start_time_float'] = Now_float + RUN_AT_RISK_CLEANUP_TIME
                                     temp_res['end_time_float'] = Now_float + RUN_AT_RISK_CLEANUP_TIME

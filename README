@@ -24,6 +24,13 @@ AuthKey=3857
     Since Catalina uses scontrol to start jobs, the SchedulerPort
     and AuthKey are not actually used.
 
+ 1b. If OpenPBS/Torque:
+    - http://www.clusterresources.com/products/mwm/docs/pbsintegration.shtml
+    - qmgr -c 'set server keep_completed = 300'
+    - qmgr -c 'set server scheduling=True'
+    - make sure pbs_sched daemon does not start
+    - disable the qalter command
+
 2. Python v2.4.1+
 
 To extract dist.tar:

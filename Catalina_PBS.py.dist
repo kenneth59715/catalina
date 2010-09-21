@@ -28,10 +28,34 @@ JOB_UPDATE_ATTRIBUTE_list = [
   'node_usage',
   'allocated_hosts',
   'resource_dict_list',
+  'preemptible',
+  'preempting',
+  'wall_clock_used',
+  'requested_resource_list',
+  'initiatormap',
+  'wall_clock_limit',
+  'node_spec_string',
+  'resource_amount_int',
+  'requirements_string',
+  'cat_requirements_string',
   'req_dict_list'
   ]
 
 start_job_returncode_reo = re.compile("^rc from pbs_asyrunjob is >(?P<code>\d+)<$", re.MULTILINE)
+
+pmem_reo = re.compile("(?P<amount>\d+)(?P<multiplier>[a-z]*)")
+pmem_mult = {
+  'b' : 1,
+  'w' : 1,
+  'kb' : 1024,
+  'kw' : 1024,
+  'mb' : 1048576,
+  'mw' : 1048576,
+  'gb' : 1073741824,
+  'gw' : 1073741824,
+  'tb' : 1099511627776,
+  'tw' : 1099511627776,
+  }
 
 def get_scheduler_time() :
     if Catalina.SERVERMODE == 'SIM' :
@@ -132,23 +156,25 @@ def get_runjob_dict() :
 
 def preempt_job(job_step, events_db_handle) :
     # job preemption not implemented for PBS, yet.
-    raise 'PreemptJobFailure', job_step
+    #raise 'PreemptJobFailure', job_step
     #cmd_string = Catalina.PREEMPTCMD + ' ' + job_step['name']
-    #output = 'llpreempt: Preempt command has been sent to the central manager.'
-    #if Catalina.SERVERMODE == 'NORMAL' :
-    #    return_string = os.popen(cmd_string).read()
-    #    mo = re.match(output, return_string)
-    #    if mo == None :
-    #        raise 'PreemptJobFailure', job_step
-    #else :
-    #    print cmd_string
-    #    return_string = ''
-    #event = {
-    #  'name' : 'preempt_job',
-    #  'cmd' : cmd_string,
-    #  'return_string' : return_string
-    #  }
-    #Catalina.log_event(event, events_db_handle)
+    PREEMPTJOB = Catalina.HOMEDIR + '/' + '___PREEMPTJOB_PLACEHOLDER___'
+    cmd_string = PREEMPTJOB + ' ' + job_step['name']
+    output = ''
+    if Catalina.SERVERMODE == 'NORMAL' :
+        return_string = os.popen(cmd_string).read()
+        mo = re.match(output, return_string)
+        if mo == None :
+            raise 'PreemptJobFailure', job_step
+    else :
+        print cmd_string
+        return_string = ''
+    event = {
+      'name' : 'preempt_job',
+      'cmd' : cmd_string,
+      'return_string' : return_string
+      }
+    Catalina.log_event(event, events_db_handle)
 
 ## Martin W. Margo
 ## 11/30/2005 10:30 AM
@@ -216,7 +242,7 @@ failure.""" % \
                   (job['name'], job['user'])
                 recipient = Catalina.MAIL_RECIPIENT + ' ' + job['user']
                 Catalina.warn(message, subject, recipient)
-        if job['state'] in ['Starting', 'Running'] :
+        if job['state'] in ['Starting', 'Running', 'Preempted'] :
             down_hosts_list = []
             for host in job['allocated_hosts'] :
                 if resources_dict.has_key(host) and \
@@ -335,13 +361,15 @@ def get_job_steps_dict() :
             node_spec_string = runjob_dict[job_step_id]['Resource_List']['nodes']
         node_spec_global_tuple = string.split(node_spec_string, '#')
         node_spec_list = string.split(node_spec_global_tuple[0], '+')
-        node_usage = 'node_exclusive'
+        #node_usage = 'node_exclusive'
+        node_usage = 'node_shared'
         if len(node_spec_global_tuple) > 1 :
             for global_attribute in node_spec_global_tuple[1:] :
                 if global_attribute == 'shared' :
                     node_usage = 'node_shared'
                 for node_spec in node_spec_list :
                     node_spec = node_spec + ':' + global_attribute
+        print "node_usage (%s)" % (node_usage,)
         new_job_step['node_usage'] = node_usage
         #spec_list = string.split(node_spec_string, '+')
         spec_list = node_spec_list
@@ -359,7 +387,17 @@ def get_job_steps_dict() :
         #initiatormap = string.join(initiator_list,'+')
         initiator_list = []
         req_dict_list = []
+        resourcereq_dict_dict_list = []
+        pmem_mo = None
+        if runjob_dict[job_step_id]['Resource_List'].has_key('pmem'):
+            pmem_mo = pmem_reo.match(runjob_dict[job_step_id]['Resource_List']['pmem'])
+            if pmem_mo.group('multiplier') in pmem_mult.keys():
+                memory_per_task = int(pmem_mo.group('amount')) * pmem_mult[pmem_mo.group('multiplier')]
+        else: 
+            memory_per_task = 0
         for spec_index in range(len(spec_list)) :
+            # assume 1 cpu per task
+            resourcereq_dict = { 'cpu' : 1, 'memory' : memory_per_task }
             spec = spec_list[spec_index]
             spec_elements = string.split(spec, ':')
             this_req_dict = {'found_ppn' : 0}
@@ -385,6 +423,11 @@ def get_job_steps_dict() :
                         this_req_list.append("'" + spec_elements[index] + "'" + " in resource['properties_list'] ")
             if this_req_dict['found_ppn'] == 0 :
                 this_req_dict['ppn_int'] = 1
+            for this_node_index in range(this_req_dict['amount_int']):
+                resourcereq_dict_dict = { 'type' : node_usage , 'req_list' : []}
+                for this_cpu_index in range(this_req_dict['ppn_int']):
+                    resourcereq_dict_dict['req_list'].append(resourcereq_dict)
+                resourcereq_dict_dict_list.append(resourcereq_dict_dict)
             this_req_string = ''
             for req_index in range(len(this_req_list)) :
                 this_req_string = this_req_string + this_req_list[req_index]
@@ -398,10 +441,21 @@ def get_job_steps_dict() :
                 procs_list.append(`dict['ppn_int']`)
         initiatormap = string.join(procs_list,'+')
         new_job_step['req_dict_list'] = req_dict_list
+        new_job_step['requested_resource_list'] = resourcereq_dict_dict_list
+        # resourcereq_dict { 'cpu' : 0, 'memory' : 0 }
+        # resourcereq_dict_dict = {'type' : node_exclusive' or 'node_shared', 'req_list' : resourcereq_dict}
         new_job_step['initiatormap'] = initiatormap
         new_job_step['requirements'] = requirements_string
         new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step['requirements'])
         new_job_step['SubmitTime'] = string.atof(runjob_dict[job_step_id]['qtime'][1])
+        if runjob_dict[job_step_id].has_key('resources_used') and \
+          runjob_dict[job_step_id]['resources_used'].has_key('walltime') :
+            hms_string = runjob_dict[job_step_id]['resources_used']['walltime']
+            hours, min, sec = string.split(hms_string, ':')
+            walltime_sec = string.atof(hours) * 3600 + \
+                           string.atof(min) * 60 + \
+                           string.atof(sec)
+            new_job_step['wall_clock_used'] = walltime_sec
         if new_job_step['state'] == 'Running' :
             if runjob_dict[job_step_id].has_key('comment') :
                 job_comment = runjob_dict[job_step_id]['comment'][1]
@@ -448,12 +502,18 @@ def get_job_steps_dict() :
                 new_job_step['Dispatch_Time'] = string.atof(runjob_dict[job_step_id]['mtime'][1])
             #new_job_step['Dispatch_Time'] = string.atof(runjob_dict[job_step_id]['mtime'][1])
             raw_allocated_hosts = string.split(runjob_dict[job_step_id]['exec_host'][1], '+')
+            print "exec_hosts (%s)" % (runjob_dict[job_step_id]['exec_host'][1],)
+            print "raw_allocated_hosts (%s)" % (raw_allocated_hosts,)
             new_job_step['allocated_hosts'] = []
+            new_job_step['task_hosts'] = []
             for host in raw_allocated_hosts :
-                trimmed_host = host[:-2]
-                new_job_step['allocated_hosts'].append(trimmed_host)
-            new_job_step['task_hosts'] = new_job_step['allocated_hosts']
+                #trimmed_host = host[:-2]
+                trimmed_host = string.split(host,'/')[0]
+                if not trimmed_host in new_job_step['allocated_hosts']:
+                    new_job_step['allocated_hosts'].append(trimmed_host)
+                new_job_step['task_hosts'].append(trimmed_host)
         elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
+        print "elements (%s)" % (elements,)
         for element in elements :
             string.strip(element)
             fields = string.split(element, '=')
@@ -463,6 +523,20 @@ def get_job_steps_dict() :
                 for id in raw_res_ids :
                     res_ids_list.append(string.strip(id))
                 new_job_step['reservation_binding'] =  res_ids_list
+            elif string.strip(fields[0]) == 'Catalina_preemptible' :
+                if len(fields) >= 2 :
+                    preemptible_string = string.strip(fields[1])
+                    if preemptible_string in ['Yes','YES','yes','Y','y','1'] :
+                        new_job_step['preemptible'] = 1
+                else :
+                    new_job_step['preemptible'] =  1
+            elif string.strip(fields[0]) == 'Catalina_preempting' :
+                if len(fields) >= 2 :
+                    preempting_string = string.strip(fields[1])
+                    if preempting_string in ['Yes','YES','yes','Y','y','1'] :
+                        new_job_step['preempting'] = 1
+                else :
+                    new_job_step['preempting'] =  1
             elif string.strip(fields[0]) == 'QOS' :
                 QOS = string.strip(fields[1])
                 try :
@@ -511,12 +585,20 @@ def get_resources_list() :
             continue
         elements_list = string.split(line, '#cat_delim#')
         dict = {}
+        status_dict = {}
         for element in elements_list :
             if element != '' :
                 name_value_list = string.split(element, '#cat_sep#')
                 if len(name_value_list) == 1 :
                     name_value_list.append('')
                 dict[name_value_list[0]] = name_value_list[1:]
+                if name_value_list[0] == 'status':
+                    # generate a status_dict
+                    status_element_list = string.split(name_value_list[2], ',')
+                    for status_element in status_element_list:
+                        status_nv = string.split(status_element, '=')
+                        if len(status_nv) == 2:
+                            status_dict[status_nv[0]] = status_nv[1]
         if not dict.has_key('node_name') :
             continue
         resource_name = dict['node_name'][0]
@@ -526,11 +608,28 @@ def get_resources_list() :
             new_resource['Cpus'] =  string.atoi(dict['np'][1])
         elif dict.has_key('pcpus') :
             new_resource['Cpus'] =  string.atoi(dict['pcpus'][1])
+        elif status_dict.has_key('ncpus') :
+            new_resource['Cpus'] =  string.atoi(status_dict['ncpus'][1])
+        if status_dict.has_key('physmem') :
+            print "physmem (%s)" % (status_dict['physmem'],)
+            pmem_mo = None
+            pmem_mo = pmem_reo.match(status_dict['physmem'])
+            if pmem_mo.group('multiplier') in pmem_mult.keys():
+                pmem_per_node = int(pmem_mo.group('amount')) * pmem_mult[pmem_mo.group('multiplier')]
+                new_resource['Memory'] =  pmem_per_node
+                print "pmem_per_node (%s)" % (pmem_per_node,)
+            else:
+                print "no multiplier key (%s)" % (pmem_mo.group('multiplier'),)
         # OpenPBS does not enforce memory or cpu on slave nodes.
-        new_resource['ConsumableCpus'] = 0
-        new_resource['ConsumableMemory'] = 0
+        #new_resource['ConsumableCpus'] = 0
+        #new_resource['ConsumableMemory'] = 0
+        # maybe do this with cpusets...
+        new_resource['ConsumableCpus'] = new_resource['Cpus']
+        new_resource['ConsumableMemory'] = new_resource['Memory']
+        new_resource['memory'] = new_resource['Memory']
+        new_resource['cpu'] = new_resource['Cpus']
         #new_resource['Cpus'] = 0
-        new_resource['Memory'] = 0
+        #new_resource['Memory'] = 0
         new_resource['ntype_string'] =  dict['ntype'][1]
         if dict.has_key('properties') :
             new_resource['properties_list'] = string.split(dict['properties'][1],',')
@@ -619,33 +718,42 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
     RUNJOB='___RUNJOB_PLACEHOLDER___'
     print "in run_jobs"
     RUNJOB = Catalina.HOMEDIR + '/' + RUNJOB
+    RESUMEJOB = Catalina.HOMEDIR + '/' + '___RESUMEJOB_PLACEHOLDER___'
     # all dbs can be read
     jobs_dict = jobs_db_handle[0]
     resources_dict = resources_db_handle[0]
     reservations_dict = reservations_db_handle[0]
     jobs_to_run = {}
     for reservation in reservations_dict.values() :
-        if reservation['purpose_type_string'] != 'job' :
+        print "found reservation (%s) for start time" % (reservation['name'],)
+        if not reservation['purpose_type_string'] in ['job', 'preempted_job']:
+            print "skipping reservation (%s) (%s)" % (reservation['name'],reservation['purpose_type_string'])
             continue
         start_time_float = reservation['start_time_float']
+        print "checking reservation (%s) for start time" % (reservation['name'],)
         if (Catalina.Now_float + 1) >= start_time_float and (Catalina.Now_float - start_time_float) <= Catalina.FUDGE_FACTOR/2 :
+            print "reservation (%s) has valid start time" % (reservation['name'],)
             if reservation.has_key('start_count_int') and \
               reservation['start_count_int'] >= 1 :
                 continue
             job_stepid = reservation['job_runID']
-            if jobs_dict[job_stepid]['state'] != 'Idle' :
+            #if jobs_dict[job_stepid]['state'] != 'Idle' :
+            if not jobs_dict[job_stepid]['state'] in ['Idle', 'Preempted'] :
                 continue
             node_list = reservation['node_list']
             node_spec_string = jobs_dict[job_stepid]['node_spec_string']
+            print "node_spec_string (%s)" % (node_spec_string,)
             node_spec_global_tuple = string.split(node_spec_string, '#')
             node_spec_list = string.split(node_spec_global_tuple[0], '+')
-            node_usage = 'node_exclusive'
+            #node_usage = 'node_exclusive'
+            node_usage = 'node_shared'
             if len(node_spec_global_tuple) > 1 :
                 for global_attribute in node_spec_global_tuple[1:] :
                     if global_attribute == 'shared' :
                         node_usage = 'node_shared'
                     for node_spec in node_spec_list :
                         node_spec = node_spec + ':' + global_attribute
+            print "node_usage (%s)" % (node_usage,)
             # assume no other properties, besides ppn are present
             node_ppn_list = []
             for node_spec in node_spec_list :
@@ -692,7 +800,8 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
             #            node_list[i]
             runstring = ' ' + job_stepid + ' ' + node_destination_string
             jobs_to_run[job_stepid] = (runstring, reservation)
-            Catalina.update_object_attribute('Dispatch_Time', Catalina.Now_float, jobs_dict[job_stepid], jobs_db_handle)
+            if jobs_dict[job_stepid]['state'] in ['Idle',] :
+                Catalina.update_object_attribute('Dispatch_Time', Catalina.Now_float, jobs_dict[job_stepid], jobs_db_handle)
             # alternatively:
             # jobs_dict[job_stepid]['Dispatch_Time'] = Catalina.Now_float
     print "len(jobs_to_run.keys()) is (%s)" % len(jobs_to_run.keys())
@@ -702,19 +811,35 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
         return_string = None
         cmd = RUNJOB + ' ' + run_string
         if Catalina.SERVERMODE == 'NORMAL' :
-            print "really running job..."
-            return_string = os.popen(cmd).readlines()
-            print return_string
+            if jobs_dict[job]['state'] == 'Preempted' :
+                cmd = RESUMEJOB + ' ' + job
+                return_string = os.popen(cmd).readlines()
+                print cmd
+                print return_string
+                event = {
+                  'name' : 'resume_job',
+                  'cmd' : cmd,
+                  'return_string' : return_string
+                  }
+                Catalina.log_event(event, events_db_handle)
+            else:
+                print "really running job..."
+                return_string = os.popen(cmd).readlines()
+                print return_string
         else :
-            return_string = \
-              [
-              'adding to nodelist (tf183i)\012',
-              'adding to nodelist (tf183i)\012',
-              'adding to nodelist (tf184i)\012',
-              'adding to nodelist (tf184i)\012',
-              'rc from pbs_asyrunjob is >0<\012'
-              ]
-            print "%s" % cmd
+            if jobs_dict[job]['state'] == 'Preempted' :
+                cmd = RESUMEJOB + ' ' + job
+                print "would resume with (%s)" % cmd
+            else:
+                return_string = \
+                  [
+                  'adding to nodelist (tf183i)\012',
+                  'adding to nodelist (tf183i)\012',
+                  'adding to nodelist (tf184i)\012',
+                  'adding to nodelist (tf184i)\012',
+                  'rc from pbs_asyrunjob is >0<\012'
+                  ]
+                print "%s" % cmd
         if return_string != None :
             joined_return_string = string.join(return_string,'\n')
             start_job_returncode_mo = start_job_returncode_reo.search(joined_return_string)
