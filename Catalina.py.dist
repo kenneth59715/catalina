@@ -5543,9 +5543,15 @@ def create_reservation(
             if result != 0 :
                 if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
                     print "appending blocking reservation (%s)" % reservation['name']
+                blockingres_appended = 0
                 if job_step.has_key('run_at_risk_int') and \
                   job_step['run_at_risk_int'] >= 1 :
                     blocking_reservations.append(reservation)
+                    #FIXTHIS
+                    # was getting a double-block from pushback res
+                    # check this kludge to make sure this does not
+                    # leave a double block, nor break a pushback
+                    blockingres_appended = 1
                 else :
                     #print "checking blocking reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
                     # why was there an instance of a job having a
@@ -5657,6 +5663,7 @@ def create_reservation(
                                                 print "pushback of preemptible job (%s) not possible due to reservation (%s) blocking!" % (exc.res['job_runID'], reservation['name'])
                                             print "pushback of preemptible job (%s) for (%s) not possible due to reservation (%s) blocking!" % (reservation['job_runID'], new_res['job_runID'], reservation['name'])
                                             blocking_reservations.append(reservation)
+                                            blockingres_appended = 1
                                         except :
                                             #print "some other pushback res exception occurred"
                                             info_tuple = sys.exc_info()
@@ -5669,6 +5676,7 @@ def create_reservation(
                                             print "message (%s)" % message
 
                                             blocking_reservations.append(reservation)
+                                            blockingres_appended = 1
                                         else :
                                             # in get_chosen, if any of these
                                             # reservations nodes are chosen,
@@ -5687,10 +5695,12 @@ def create_reservation(
                                             temp_res['end_time_float'] = Now_float + RUN_AT_RISK_CLEANUP_TIME
                                             # seemed to work without this...
                                             blocking_reservations.append(pushback_res)
+                                            blockingres_appended = 1
                                         print "after try of pushback of (%s) (%s) (%s) res" % (reservation['purpose_type_string'], reservation['job_runID'], reservation['name'])
                                     else :
                                         print "priority not overriding or PREEMPT_MIN_RUNTIME too small"
                                         blocking_reservations.append(reservation)
+                                        blockingres_appended = 1
                                 else :
                                     #print "not preemptible reservation (%s) for non-run_at_risk job (%s)" % (reservation['name'], job_step['name'])
                                     #if job_step['preempting'] >= 1 and jobs_dict[reservation['job_runID']].has_key('preemptible') and jobs_dict[reservation['job_runID']]['preemptible'] >= 1 :
@@ -5723,10 +5733,12 @@ def create_reservation(
                                 #    temp_res['start_time_float'] = Now_float
                                 #    temp_res['end_time_float'] = Now_float
                             #print "appending temp_res (%s) (%s) (%s)" % (temp_res['name'], temp_res['purpose_type_string'], temp_res['job_runID'])
-                            blocking_reservations.append(temp_res)
+                            if blockingres_appended == 0:
+                                blocking_reservations.append(temp_res)
                         else :
                             #print "appending unmodified reservation (%s)" % reservation['name']
-                            blocking_reservations.append(reservation)
+                            if blockingres_appended == 0:
+                                blocking_reservations.append(reservation)
                         #print "before except"
                     except :
                         #print "in exception after 'before except'"
