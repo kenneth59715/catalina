@@ -135,10 +135,7 @@ fake_res['conflict_policy'] = conflict_policy
 # get all existing reservations
 existing_reservations = Catalina.get_object_list(reservations_db_handle)
 
-
-
 blocking_reservations_list = []
-
 
 for reservation in existing_reservations :
     input_tuple = ( fake_job, )
@@ -146,10 +143,7 @@ for reservation in existing_reservations :
     if result != 0 :
         blocking_reservations_list.append(reservation)
     
-
-
 accepted_nodes = Catalina.get_accepted_nodes_list(node_restriction_code, resources_db_handle)
-
 
 resource_dict_list = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_resource_dict_list(fake_job, resources_db_handle)
 screened_resource_name_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), accepted_nodes)
@@ -176,10 +170,6 @@ else :
 # sort now open_windows by end time
 now_windows.sort(by_end_time)
 now_windows.sort(by_node_name)
-
-
-#window_count = 0
-
 
 # 2 new dictionaries, 1 to keep track of time, and others to keep track
 # of how many nodes found so far
@@ -252,7 +242,13 @@ print "Node Backfill window:"
 #print "  Queue \tNode(Proc)\tTime (HH:MM:SS)"
 
 for window in now_windows :
-    
+    classes_list = []
+    properties_list = resources_db_handle[0][window[2]['nodename']]['properties_list']
+    for property in showbfproperty_dict :
+        if property in properties_list :
+            if not showbfproperty_dict[property]['class'] in classes_list :
+                classes_list.append(showbfproperty_dict[property]['class'])
+
     if window[2].has_key('node') :
         duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
         #if duration > 18 hours, set it to 18 hours (max time avail)
@@ -268,12 +264,6 @@ for window in now_windows :
         #print "intersection (%s)" % (set_class & set_legit_class,)
         #set_class = set_legit_class
         #intersection = set_legit_class
-        classes_list = []
-        properties_list = resources_db_handle[0][window[2]['nodename']]['properties_list']
-        for property in showbfproperty_dict :
-            if property in properties_list :
-                if not showbfproperty_dict[property]['class'] in classes_list :
-                    classes_list.append(showbfproperty_dict[property]['class'])
         #for jobclass in intersection :
         for jobclass in classes_list :
             # increment total number of nodes found for this specified class
@@ -296,11 +286,12 @@ for window in now_windows :
         if duration > max_time :
             duration = max_time
  
-        set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
-        intersection = set_class & set_legit_cpu_class
+        #set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+        #intersection = set_class & set_legit_cpu_class
         
         
-        for jobclass in intersection :
+        #for jobclass in intersection :
+        for jobclass in classes_list :
             ## count cpu
             
             if duration > minimum_time_considered_in_seconds : 
@@ -311,13 +302,37 @@ for window in now_windows :
                 else :
                     #I have seen this CPU before, add it.
                     dict_total_cpu[jobclass][duration] += window[2]['cpu']
+
+    if window[2].has_key('memory') :
+        duration = window[1] - Catalina.Now_float - start_epoch- Catalina.FUDGE_FACTOR
+        # if duration is greater than 18 hours, set it to 18 hours, that's the max time avail
+        if duration > max_time :
+            duration = max_time
+ 
+        #set_class = set(resources_db_handle[0][window[2]['nodename']]['ConfiguredClasses_list'])
+        #intersection = set_class & set_legit_cpu_class
+        
+        
+        #for jobclass in intersection :
+        for jobclass in classes_list :
+            ## count memory
+            
+            if duration > minimum_time_considered_in_seconds : 
+                ## build dictionary that contains memory time for each duration
+                if not dict_total_memory[jobclass].has_key(duration):
+                    #empty dictionary
+                    dict_total_memory[jobclass][duration] = window[2]['memory']
+                else :
+                    #I have seen this CPU before, add it.
+                    dict_total_memory[jobclass][duration] += window[2]['memory']
             
     
 # end of for window in now_windows :
 
 
-collective_cpu = 0
-collective_node = 0
+#collective_cpu = 0
+#collective_memory = 0
+#collective_node = 0
 
 ## Now we iterate through our legit queue class dictionary and print them out
 
@@ -325,10 +340,10 @@ collective_node = 0
 displayorder = dict_total_node.keys()
 displayorder.sort()
 
-#print "dict_total_cpu (%s)" % (dict_total_cpu,)
-#print "dict_total_time (%s)" % (dict_total_time,)
-
 for legit_class in displayorder :
+    collective_cpu = 0
+    collective_memory = 0
+    collective_node = 0
     opportunity = 1
     
     if legit_class in set_legit_cpu_class :
@@ -357,6 +372,25 @@ for legit_class in displayorder :
         else :
             print "  No opportunity available at this time. Please try again later"
         #end of if
+        if len(dict_total_memory[legit_class]) > 0 :
+            for dur in reverse_sort_dict(dict_total_memory[legit_class]):
+                hour = math.floor(dur/3600)
+                minute = ((dur - (hour * 3600) )/60.0)
+                
+                minute=str(math.floor(minute))[0:-2]
+                
+                collective_memory += dict_total_memory[legit_class][dur]
+                print "  Opportunity # %s: %s Memory for %2.0f:%s hours " \
+                % (opportunity, collective_memory, hour,string.zfill(minute,2))
+                opportunity +=1
+                
+                # if not the last entry in the dict
+                if not dur == reverse_sort_dict(dict_total_memory[legit_class])[-1] :
+                    print "  or"
+                    
+            #end of for
+        else :
+            print "  No opportunity available at this time. Please try again later"
     else :
         # no need to print CPU info
         #print "high/normal"

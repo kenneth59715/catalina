@@ -324,9 +324,7 @@ def get_job_steps_dict() :
             new_job_step['state'] = 'Unknown'
         new_job_step['job_class'] = runjob_dict[job_step_id]['queue'][1]
         if runjob_dict[job_step_id]['Resource_List'].has_key('walltime') :
-            #print "job has walltime"
             raw_walltime_string = runjob_dict[job_step_id]['Resource_List']['walltime']
-            #print "raw_walltime_string (%s)" % raw_walltime_string
             (hour, min, sec) = string.split(raw_walltime_string, ':')
             wall_clock_limit = \
               string.atof(hour) * 3600 + \
@@ -369,7 +367,6 @@ def get_job_steps_dict() :
                     node_usage = 'node_shared'
                 for node_spec in node_spec_list :
                     node_spec = node_spec + ':' + global_attribute
-        print "node_usage (%s)" % (node_usage,)
         new_job_step['node_usage'] = node_usage
         #spec_list = string.split(node_spec_string, '+')
         spec_list = node_spec_list
@@ -478,17 +475,15 @@ def get_job_steps_dict() :
                   "Job started on %a %b %d at %H:%M"
                   )
                 job_start_tuple = (Now_year,) + job_start_tuple[1:-1] + (-1,)
-                #print "job_start_tuple (%s)" % (job_start_tuple,)
                 job_start_float = time.mktime(job_start_tuple)
                 # if the guessed year makes the job start time more than
                 # 30 days in the future, assume it should be the previous year
                 if job_start_float > Catalina.Now_float + 30*24*60*60 :
-                    print "job_start_float (%s) > Catalina.Now_float (%s)" % (time.asctime(time.localtime(job_start_float)), time.asctime(time.localtime(Catalina.Now_float)))
+                    #print "job_start_float (%s) > Catalina.Now_float (%s)" % (time.asctime(time.localtime(job_start_float)), time.asctime(time.localtime(Catalina.Now_float)))
                     job_start_tuple = (Now_year - 1,) + job_start_tuple[1:]
                 job_start_float = time.mktime(job_start_tuple)
                 new_job_step['Dispatch_Time'] = job_start_float
             elif catalina_job_start_mo != None :
-                print "Found Catalina start time"
                 new_job_step['Dispatch_Time'] = string.atof(catalina_job_start_mo.group('date'))
             elif runjob_dict[job_step_id].has_key('resources_used') and \
               runjob_dict[job_step_id]['resources_used'].has_key('walltime') :
@@ -502,8 +497,6 @@ def get_job_steps_dict() :
                 new_job_step['Dispatch_Time'] = string.atof(runjob_dict[job_step_id]['mtime'][1])
             #new_job_step['Dispatch_Time'] = string.atof(runjob_dict[job_step_id]['mtime'][1])
             raw_allocated_hosts = string.split(runjob_dict[job_step_id]['exec_host'][1], '+')
-            print "exec_hosts (%s)" % (runjob_dict[job_step_id]['exec_host'][1],)
-            print "raw_allocated_hosts (%s)" % (raw_allocated_hosts,)
             new_job_step['allocated_hosts'] = []
             new_job_step['task_hosts'] = []
             for host in raw_allocated_hosts :
@@ -512,8 +505,10 @@ def get_job_steps_dict() :
                 if not trimmed_host in new_job_step['allocated_hosts']:
                     new_job_step['allocated_hosts'].append(trimmed_host)
                 new_job_step['task_hosts'].append(trimmed_host)
-        elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
-        print "elements (%s)" % (elements,)
+        if runjob_dict[job_step_id].has_key('Variable_List'):
+            elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
+        else:
+            elements = []
         for element in elements :
             string.strip(element)
             fields = string.split(element, '=')
@@ -611,15 +606,14 @@ def get_resources_list() :
         elif status_dict.has_key('ncpus') :
             new_resource['Cpus'] =  string.atoi(status_dict['ncpus'][1])
         if status_dict.has_key('physmem') :
-            print "physmem (%s)" % (status_dict['physmem'],)
             pmem_mo = None
             pmem_mo = pmem_reo.match(status_dict['physmem'])
             if pmem_mo.group('multiplier') in pmem_mult.keys():
                 pmem_per_node = int(pmem_mo.group('amount')) * pmem_mult[pmem_mo.group('multiplier')]
                 new_resource['Memory'] =  pmem_per_node
-                print "pmem_per_node (%s)" % (pmem_per_node,)
             else:
-                print "no multiplier key (%s)" % (pmem_mo.group('multiplier'),)
+                # no multiplier found
+                pmem_per_node = int(pmem_mo.group('amount'))
         # OpenPBS does not enforce memory or cpu on slave nodes.
         #new_resource['ConsumableCpus'] = 0
         #new_resource['ConsumableMemory'] = 0
@@ -638,8 +632,6 @@ def get_resources_list() :
               Catalina.RM_TO_CAT_RESOURCE_dict[dict['state'][1]]
         except :
             new_resource['State'] = 'Down'
-        #print "in get_resources_list, new_resource['State'] (%s)" % \
-        #  new_resource['State']
         new_resource['State_Change_Time'] = Catalina.Now_float
         resources_dict[new_resource['Machine']] = new_resource
     
@@ -716,7 +708,6 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
     #start_job_returncode_reo = start_job_returncode_reo
     ppn_reo = re.compile("ppn=\d+")
     RUNJOB='___RUNJOB_PLACEHOLDER___'
-    print "in run_jobs"
     RUNJOB = Catalina.HOMEDIR + '/' + RUNJOB
     RESUMEJOB = Catalina.HOMEDIR + '/' + '___RESUMEJOB_PLACEHOLDER___'
     # all dbs can be read
@@ -725,14 +716,10 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
     reservations_dict = reservations_db_handle[0]
     jobs_to_run = {}
     for reservation in reservations_dict.values() :
-        print "found reservation (%s) for start time" % (reservation['name'],)
         if not reservation['purpose_type_string'] in ['job', 'preempted_job']:
-            print "skipping reservation (%s) (%s)" % (reservation['name'],reservation['purpose_type_string'])
             continue
         start_time_float = reservation['start_time_float']
-        print "checking reservation (%s) for start time" % (reservation['name'],)
         if (Catalina.Now_float + 1) >= start_time_float and (Catalina.Now_float - start_time_float) <= Catalina.FUDGE_FACTOR/2 :
-            print "reservation (%s) has valid start time" % (reservation['name'],)
             if reservation.has_key('start_count_int') and \
               reservation['start_count_int'] >= 1 :
                 continue
@@ -742,7 +729,6 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
                 continue
             node_list = reservation['node_list']
             node_spec_string = jobs_dict[job_stepid]['node_spec_string']
-            print "node_spec_string (%s)" % (node_spec_string,)
             node_spec_global_tuple = string.split(node_spec_string, '#')
             node_spec_list = string.split(node_spec_global_tuple[0], '+')
             #node_usage = 'node_exclusive'
@@ -753,7 +739,6 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
                         node_usage = 'node_shared'
                     for node_spec in node_spec_list :
                         node_spec = node_spec + ':' + global_attribute
-            print "node_usage (%s)" % (node_usage,)
             # assume no other properties, besides ppn are present
             node_ppn_list = []
             for node_spec in node_spec_list :
@@ -786,7 +771,6 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
                   node_ppn_list[index]
                 if index < node_range[-1] :
                     node_destination_string = node_destination_string + '+'
-            print "node_destination_string (%s)" % node_destination_string
             #fromhost = jobs_dict[job_stepid]['fromhost']
             #cluster = jobs_dict[job_stepid]['cluster']
             #proc = jobs_dict[job_stepid]['proc']

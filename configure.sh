@@ -6,15 +6,15 @@
 
 
 if [ $# != 0 ] ; then
-   print "\n Usage parameters: ./configure.sh"
+   echo "\n Usage parameters: ./configure.sh"
    exit
 fi 
 
 #added by Martin Margo 6/5/2006
-print "Welcome to Catalina interactive configuration utility"
-print " ----------------------------------------------------"
+echo "Welcome to Catalina interactive configuration utility"
+echo " ----------------------------------------------------"
 
-print "Saving original stty settings...."
+echo "Saving original stty settings...."
 #Save user original stty settings
 USER_ORIGINAL_STTY=`stty -g` 
 export USER_ORIGINAL_STTY
@@ -23,33 +23,35 @@ stty erase ^?
 
 #### setting environment
 
-print "Setting environment variables..."
-while [[ $RESOURCEMANAGER != LL && $RESOURCEMANAGER != PBS ]]; do
-print "\n  Enter resource manager (LL|PBS) \c"
+echo "Setting environment variables..."
+while [[ $RESOURCEMANAGER != LL && $RESOURCEMANAGER != PBS && $RESOURCEMANAGER != TORQUE && $RESOURCEMANAGER != SLURM ]]; do
+echo "\n  Enter resource manager (LL|PBS|TORQUE|SLURM) \c"
 read RESOURCEMANAGER
 case $RESOURCEMANAGER in
    LL*) ;;
    PBS*) ;;
-   *) echo "either LL or PBS required ";;
+   TORQUE*) ;;
+   SLURM*) ;;
+   *) echo "either LL, PBS, TORQUE or SLURM required ";;
 esac
 done
 export RESOURCEMANAGER
 
-print "\n  Enter Cluster name (DS|TG) \c"
-read CLUSTER_NAME
-case $CLUSTER_NAME in
-	DS*) ;;
-	TG*) ;;
-	*) echo " warning : recognizable cluster name are TG or DS";;
-esac
-export CLUSTER_NAME
+#echo "\n  Enter Cluster name (DS|TG) \c"
+#read CLUSTER_NAME
+#case $CLUSTER_NAME in
+#	DS*) ;;
+#	TG*) ;;
+#	*) echo " warning : recognizable cluster name are TG or DS";;
+#esac
+#export CLUSTER_NAME
 
-print "\n  Enter $RESOURCEMANAGER lib dirs (e.g. /opt/torque/lib) \c"
+echo "\n  Enter $RESOURCEMANAGER lib dirs (e.g. /opt/torque/lib) \c"
 read CATALINA_RMLIBDIRS
 CATALINA_RMLIBDIRS="-L$CATALINA_RMLIBDIRS"
 export  CATALINA_RMLIBDIRS
 
-print "\n  Enter $RESOURCEMANAGER include dir (e.g. /opt/torque/include) \c"
+echo "\n  Enter $RESOURCEMANAGER include dir (e.g. /opt/torque/include) \c"
 read CATALINA_RMINCDIRS
 CATALINA_RMINCDIRS="-I$CATALINA_RMINCDIRS"
 export CATALINA_RMINCDIRS
@@ -60,22 +62,22 @@ export CATALINA_RMINCDIRS
 # if desired, this can be set to IGNORE
 
 if [ $RESOURCEMANAGER = "LL" ] ; then
- print "\n  Enter LoadLeveler Admin file (e.g. /users/loadl/LoadL_admin.Datastar ) \c"
+ echo "\n  Enter LoadLeveler Admin file (e.g. /users/loadl/LoadL_admin.Datastar ) \c"
  read CATALINA_LOADL_ADMIN_FILE
  export CATALINA_LOADL_ADMIN_FILE
 else
- print "\nSetting CATALINA_PBS_SUBMITHOST=IGNORE"
+ echo "\nSetting CATALINA_PBS_SUBMITHOST=IGNORE"
  export  CATALINA_PBS_SUBMITHOST=IGNORE
 fi
 
-print "\n  Enter catalina owner (e.g. loadl) \c"
+echo "\n  Enter catalina owner (e.g. loadl) \c"
 read CATALINA_CATOWNER
 if [ -z "$CATALINA_CATOWNER" ]; then
  CATALINA_CATOWNER=loadl
 fi
 export CATALINA_CATOWNER
 
-print "\n  Enter e-mail recipient (e.g. loadl@sdsc.edu) \c"
+echo "\n  Enter e-mail recipient (e.g. loadl@sdsc.edu) \c"
 read CATALINA_MAIL_RECIPIENT
 if [ -z "$CATALINA_MAIL_RECIPIENT" ] ; then
   CATALINA_MAIL_RECIPIENT=loadl
@@ -84,49 +86,49 @@ export CATALINA_MAIL_RECIPIENT
 
 
 
-print "\n  Enter catalina group (e.g. catalina) \c"
+echo "\n  Enter catalina group (e.g. catalina) \c"
 read CATALINA_CATLOCKGROUP
 if [ -z "$CATALINA_CATLOCKGROUP" ]; then
  CATALINA_CATLOCKGROUP=catalina
 fi
 export CATALINA_CATLOCKGROUP
 
-print "\n  Enter MAN directory : \c"
+echo "\n  Enter MAN directory : \c"
 read CATALINA_MANPATH
 export CATALINA_MANPATH
 
-print "\n  Enter install directory : \c"
+echo "\n  Enter install directory : \c"
 read CATALINA_INSTALLDIR
 export CATALINA_INSTALLDIR
 
-print "\n  Enter Database directory : \c" 
+echo "\n  Enter Database directory : \c" 
 read CATALINA_DBDIR
 export CATALINA_DBDIR
 
-print "\n  Enter archived logs directory : \c"
+echo "\n  Enter archived logs directory : \c"
 read CATALINA_ARCHIVEDIR
 export CATALINA_ARCHIVEDIR
 
-print "\n  Enter C compiler (e.g /usr/local/bin/gcc) \c"
+echo "\n  Enter C compiler (e.g /usr/local/bin/gcc) \c"
 read CC
 if [ -z "$CC" ]; then
  CC=/usr/local/bin/gcc
 fi
 export CC 
 
-print "\n  Enter Python 2.4 or greater interpreter (e.g. /usr/local/apps/python/bin/python) \c"
+echo "\n  Enter Python 2.4 or greater interpreter (e.g. /usr/local/apps/python/bin/python) \c"
 read CATALINA_PYTHONPATH
 if [ -z "$CATALINA_PYTHONPATH" ]; then
- CATALINA_PYTHONPATH=/usr/local/apps/python/bin/python
+ CATALINA_PYTHONPATH=/usr/bin/python
 fi
 export CATALINA_PYTHONPATH
 
-print "\n  Enter permissions for user-settable reservation commands (e.g. 2755) \c"
+echo "\n  Enter permissions for user-settable reservation commands (e.g. 2755) \c"
 read CATALINA_CATUSERPERMS
 export CATALINA_CATUSERPERMS 
 
 
-print "\n  Enter default job class or queue  (e.g normal, standard, dque) \c"
+echo "\n  Enter default job class or queue  (e.g normal, standard, dque) \c"
 read CATALINA_DEFAULT_JOB_CLASS
 export CATALINA_DEFAULT_JOB_CLASS
 
@@ -152,7 +154,7 @@ echo "========="
 echo "This is the current settings:"
 cat ./settings.sh 
 echo "=========="
-print "\n  Do you want to proceed? (yes|no) \c"
+echo "\n  Do you want to proceed? (yes|no) \c"
 read response
   case $response in
    no) stty $USER_ORIGINAL_STTY ; exit 3;;
@@ -160,10 +162,10 @@ read response
    *) echo "enter yes or no"; stty $USER_ORIGINAL_STTY ; exit 14;;
   esac
 ## I want to give options to save the settings to a file so that people can rerun the installation without going to step 1 again
-print "\n  Do you want to save this configuration settings to a file?"
-print "  Saving this configuration settings mean that you can skip the"
-print "  interactive session if the installation fail for any reason."
-print "  Recommended. (yes|no) \c"
+echo "\n  Do you want to save this configuration settings to a file?"
+echo "  Saving this configuration settings mean that you can skip the"
+echo "  interactive session if the installation fail for any reason."
+echo "  Recommended. (yes|no) \c"
 read response
   case $response in 
    no) /bin/rm settings.sh;;
@@ -178,7 +180,7 @@ read response
 #### Get conf.sh to work
 ./conf.sh
 
-print "\n Do you want to run \"make\" ? (yes|no) \c"
+echo "\n Do you want to run \"make\" ? (yes|no) \c"
 read response
 	case $response in
 	 no) stty $USER_ORIGINAL_STTY; exit 3;;
@@ -192,7 +194,7 @@ read response
 make
 
 
-print "\n  Do you want to proceed to run \"make install\" ? (yes|no) \c"
+echo "\n  Do you want to proceed to run \"make install\" ? (yes|no) \c"
 read response
    case $response in
     no) stty $USER_ORIGINAL_STTY ; exit 3;;
@@ -205,17 +207,17 @@ read response
 # #
 make install
 
-print "\n  Do you want to proceed to run \"make config\" ? (yes|no) \c"
+echo "\n  Do you want to proceed to run \"make config\" ? (yes|no) \c"
 read response
    case $response in
-    no) print "\nYou have to copy previous installation's catalina.config to the new install dir. Make sure that the config points to the correct absolute paths."; stty $USER_ORIGINAL_STTY ; exit 0;;
+    no) echo "\nYou have to copy previous installation's catalina.config to the new install dir. Make sure that the config points to the correct absolute paths."; stty $USER_ORIGINAL_STTY ; exit 0;;
     yes);;
     *) echo " enter yes or no" ; stty $USER_ORIGINAL_STTY ; exit 14;; 
    esac
 
 make config
 #the above command will produce catalina.config file which should be copied over to $CATALINA_INSTALLDIR
-cp catalina.config  $CATALINA_INSTALLDIR
+echo "Compare catalina.config to $CATALINA_INSTALLDIR/catalina.config and revise"
 
 stty $USER_ORIGINAL_STTY 
 exit 0
