@@ -30,6 +30,9 @@ AuthKey=3857
     - qmgr -c 'set server scheduling=True'
     - make sure pbs_sched daemon does not start
     - disable the qalter command
+    - for matching jobs to nodes correctly, create a submit filter
+      that adds node properties to the resources (-l) line of
+      the job script.
 
 2. Python v2.4.1+
 
