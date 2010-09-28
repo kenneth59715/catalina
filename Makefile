@@ -36,7 +36,7 @@ dist: clean
 	
 	@ $(ECHO) "Downloading files from SVN .."  
 	@ mkdir -p $(TEMP_DIR)/$(CATALINA); cd $(TEMP_DIR)/$(CATALINA); \
-	$(SVN) cat $(REPO_LOCATION)/MANIFEST > MANIFEST; for i in `$(CAT) MANIFEST`; do $(SVN) cat $(REPO_LOCATION)/$$i > $$i; done; $(CHMOD) ugo+x conf.sh
+	$(SVN) cat $(REPO_LOCATION)/MANIFEST > MANIFEST; for i in `$(CAT) MANIFEST`; do $(SVN) cat $(REPO_LOCATION)/$$i > $$i; done; $(CHMOD) ugo+x conf.sh configure.sh
 	@ $(ECHO) "done"
 
 	@ $(ECHO) "Creating DATESTAMP file .."	
