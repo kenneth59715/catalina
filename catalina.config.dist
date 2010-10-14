@@ -34,6 +34,10 @@ SERVERMODE=TEST
 # Cancel jobs in NORMAL mode?
 NORMALMODECANCELJOB=yes
 
+# Cancel jobs with down nodes?
+# NOTIFY or CANCEL
+JOBACTIONONNODEFAILURE=NOTIFY
+
 # Feature 669
 # Allows administrator to set the interval between reload_job_resource_lists()
 # function call. minimum is 1. Greater value speeds up Catalina in the expense

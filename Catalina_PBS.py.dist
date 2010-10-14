@@ -288,7 +288,9 @@ It may be necessary to manually clear the job.
                 #  (job['name'], job['user'])
                 #recipient = Catalina.MAIL_RECIPIENT
                 Catalina.catsyslog(message, 'crit')
-                
+                if Catalina.NORMALMODECANCELJOB == 'yes' and Catalina.JOBACTIONONNODEFAILURE == 'CANCEL':
+                    cancel_job(job, events_db_handle, message="down_node")
+
 def get_job_step_state(job_step) :
     LoadL_state = job_step['state']
     if LoadL_state == 'Starting' :
