@@ -264,6 +264,7 @@ PBS)
 	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
 	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
 	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
+	PURGECMD=${CATALINA_PURGECMD-`get_first_exe qdel` -p} || bailout 'Could not find qdel' 1 ;
 	PREEMPTCMD=${CATALINA_PREEMPTCMD-'qsig -s suspend'} || bailout 'Could not find qstat' 1 ;
 	RESUMECMD=${CATALINA_RESUMECMD-'qsig -s resume'} || bailout 'Could not find scontrol' 1 ;
 	TESTJOB=testjob.PBS ;
@@ -319,6 +320,7 @@ TORQUE)
 	RMSERVER_DEFAULT=$PBS_DEFAULT || bailout 'Could not find $PBS_DEFAULT' 1 ;
 	SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe qsub`} || bailout 'Could not find qsub' 1 ;
 	CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe qdel`} || bailout 'Could not find qdel' 1 ;
+	PURGECMD=${CATALINA_PURGECMD-`get_first_exe qdel` -p} || bailout 'Could not find qdel' 1 ;
 	PREEMPTCMD=${CATALINA_PREEMPTCMD-'qsig -s suspend'} || bailout 'Could not find qstat' 1 ;
 	RESUMECMD=${CATALINA_RESUMECMD-'qsig -s resume'} || bailout 'Could not find scontrol' 1 ;
 	TESTJOB=testjob.PBS ;
@@ -645,6 +647,7 @@ ${ECHO} "s@___LOST_JOB_WARN_PLACEHOLDER___@${LOST_JOB_WARN}@g" >> sedscr
 ${ECHO} "s@___SUBMITCMD_PLACEHOLDER___@${SUBMITCMD}@g" >> sedscr
 ${ECHO} "s@___RUNCMD_PLACEHOLDER___@${RUNCMD}@g" >> sedscr
 ${ECHO} "s@___CANCELCMD_PLACEHOLDER___@${CANCELCMD}@g" >> sedscr
+${ECHO} "s@___PURGECMD_PLACEHOLDER___@${PURGECMD}@g" >> sedscr
 ${ECHO} "s@___PREEMPTCMD_PLACEHOLDER___@${PREEMPTCMD}@g" >> sedscr
 ${ECHO} "s@___RESUMECMD_PLACEHOLDER___@${RESUMECMD}@g" >> sedscr
 ${ECHO} "s@___QMCMD_PLACEHOLDER___@${QMCMD}@g" >> sedscr

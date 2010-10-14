@@ -208,6 +208,31 @@ def cancel_job(job_step, events_db_handle, message=None) :
       }
     Catalina.log_event(event, events_db_handle)
 
+def purge_job(job_step, events_db_handle, message=None) :
+    if (message != None):
+        #use the message and use it to cancel jobs
+        #qdel -m 'Overrun job detected. I will kill it' 29101
+        cmd_string = Catalina.PURGECMD + ' -m \'' + message + '\' ' \
+            + job_step['name']
+    else:
+        cmd_string = Catalina.PURGECMD + job_step['name']
+    
+    output = ''
+    if Catalina.SERVERMODE == 'NORMAL' :
+        return_string = os.popen(cmd_string).read()
+        mo = re.match(output, return_string)
+        if mo == None :
+            raise 'CancelJobFailure', job_step
+    else :
+        print cmd_string
+        return_string = ''
+    event = {
+      'name' : 'purge_job',
+      'cmd' : cmd_string,
+      'return_string' : return_string
+      }
+    Catalina.log_event(event, events_db_handle)
+
 def cancel_bad_jobs(jobs_db_handle, resources_db_handle, events_db_handle) :
     jobs_dict = jobs_db_handle[0]
     jobs_list = jobs_dict.values()
@@ -289,7 +314,7 @@ It may be necessary to manually clear the job.
                 #recipient = Catalina.MAIL_RECIPIENT
                 Catalina.catsyslog(message, 'crit')
                 if Catalina.NORMALMODECANCELJOB == 'yes' and Catalina.JOBACTIONONNODEFAILURE == 'CANCEL':
-                    cancel_job(job, events_db_handle, message="down_node")
+                    purge_job(job, events_db_handle, message="down_node")
 
 def get_job_step_state(job_step) :
     LoadL_state = job_step['state']
