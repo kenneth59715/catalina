@@ -1,4 +1,5 @@
-SVN=/usr/local/apps/subversion-1.4.3/bin/svn
+#SVN=/usr/local/apps/subversion-1.4.3/bin/svn
+SVN=/usr/bin/svn
 CHMOD=/bin/chmod
 TAR=/bin/tar
 ECHO=/bin/echo
