@@ -2788,20 +2788,37 @@ def update_job_priorities (jobs_db_handle) :
                 fairshare_value_float = 0.0
         else :
             fairshare_value_float = 0.0
-        
-        # Calculate expansion factor
-        expansion_factor = \
-          ( Now_float -
-              float(temp_job['speculative_system_queue_time']) + \
-            float(temp_job['wall_clock_limit']) ) / \
-          float(temp_job['wall_clock_limit'])
-
-        # Calculate queue wait time
-        queue_wait_time = Now_float - float(temp_job['speculative_system_queue_time'])
-
-        # Calculate submit wait time
-        submit_wait_time = Now_float - float(temp_job['SubmitTime'])
-
+  
+        # if job has started, then we should calculate
+        # expansion_factor queue_wait_time and submit_wait_time
+        # differently.
+        if temp_job.has_key('wall_clock_used') and temp_job['wall_clock_used'] != None and float(temp_job['wall_clock_used']) > 0.0:
+            # this should be good for both Running and Preempted jobs
+            start_time_float = Now_float - float(temp_job['wall_clock_used'])
+            if temp_job.has_key('system_queue_time') and temp_job['system_queue_time'] != None and float(temp_job['system_queue_time']) > 0.0:
+                expansion_factor = ((start_time_float - float(temp_job['system_queue_time'])) + float(temp_job['wall_clock_limit'])) / float(temp_job['wall_clock_limit'])
+                queue_wait_time = start_time_float - float(temp_job['system_queue_time'])
+            else:
+                # if a running job has no system_queue_time, we did not
+                # see it in Idle.  Use SubmitTime instead.
+                expansion_factor = (start_time_float - float(temp_job['SubmitTime']) + float(temp_job['wall_clock_limit'])) / float(temp_job['wall_clock_limit'])
+                queue_wait_time = start_time_float - float(temp_job['SubmitTime'])
+            submit_wait_time = start_time_float - float(temp_job['SubmitTime'])
+        else:
+            # no wall_clock_used, assume still Idle
+            # Calculate expansion factor
+            expansion_factor = \
+              ( Now_float -
+                  float(temp_job['speculative_system_queue_time']) + \
+                float(temp_job['wall_clock_limit']) ) / \
+              float(temp_job['wall_clock_limit'])
+    
+            # Calculate queue wait time
+            queue_wait_time = Now_float - float(temp_job['speculative_system_queue_time'])
+    
+            # Calculate submit wait time
+            submit_wait_time = Now_float - float(temp_job['SubmitTime'])
+    
         # Get wall clock time
         wall_clock_time = temp_job['wall_clock_limit']
 
