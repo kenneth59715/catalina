@@ -222,45 +222,80 @@ now_windows.sort(by_end_time)
 window_dict = {}
 old_end_time = 0
 window_count = 0
+agg_dict = {}
 print "CPU Backfill window:"
 for window in now_windows :
     if not window[2].has_key('cpu') :
         continue
     if window[1] != old_end_time :
+        for agg_key in agg_dict.keys():
+            print "    node: %s cpus: %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
         if old_end_time != 0 :
             duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
             print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+        agg_dict = {}
         window_count = window[2]['cpu']
         old_end_time = window[1]
     else :
         window_count = window_count + window[2]['cpu']
-    print "    node: %s" % window[2]
+    if agg_dict.has_key(window[2]['nodename']):
+        agg_dict[window[2]['nodename']] = agg_dict[window[2]['nodename']] + window[2]['cpu']
+    else:
+        agg_dict[window[2]['nodename']] = window[2]['cpu']
+    #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
-if window_count > 0 :
-    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
-    print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+#if window_count > 0 :
+#    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#    print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+
+# print the last set of now_windows:
+if len(agg_dict.keys()) > 0:
+    for agg_key in agg_dict.keys():
+        print "    node: %s cpus: %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
+    if old_end_time != 0 :
+        duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        print "%s cpus available for approximately %.0f minutes" % ( window_count, duration/60 )
+    else:
+        print "failed to find free CPUs"
 
 old_end_time = 0
 window_count = 0
+agg_dict = {}
 print "Memory Backfill window:"
 for window in now_windows :
     if not window[2].has_key('memory') :
         continue
     if window[1] != old_end_time :
+        for agg_key in agg_dict.keys():
+            print "    node: %s memory (MB): %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
         if old_end_time != 0 :
             duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
             print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+        agg_dict = {}
         window_count = window[2]['memory']
         old_end_time = window[1]
     else :
         window_count = window_count + window[2]['memory']
-    print "    node: %s" % window[2]
+    if agg_dict.has_key(window[2]['nodename']):
+        agg_dict[window[2]['nodename']] = agg_dict[window[2]['nodename']] + window[2]['memory']
+    else:
+        agg_dict[window[2]['nodename']] = window[2]['memory']
+    #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
 if window_count > 0 :
     duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
     print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+# print the last set of now_windows:
+if len(agg_dict.keys()) > 0:
+    for agg_key in agg_dict.keys():
+        print "    node: %s memory (MB): %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
+    if old_end_time != 0 :
+        duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+        print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+    else:
+        print "failed to find free memory"
 
 old_end_time = 0
 window_count = 0

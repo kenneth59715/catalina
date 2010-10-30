@@ -386,14 +386,75 @@ def get_job_steps_dict() :
             node_spec_string = runjob_dict[job_step_id]['Resource_List']['nodes']
         node_spec_global_tuple = string.split(node_spec_string, '#')
         node_spec_list = string.split(node_spec_global_tuple[0], '+')
-        #node_usage = 'node_exclusive'
-        node_usage = 'node_shared'
+        node_usage = 'node_exclusive'
+        #node_usage = 'node_shared'
+
+        if runjob_dict[job_step_id].has_key('Variable_List'):
+            elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
+        else:
+            elements = []
+        for element in elements :
+            string.strip(element)
+            fields = string.split(element, '=')
+            if string.strip(fields[0]) == 'Catalina_res_bind' :
+                res_ids_list = []
+                raw_res_ids = string.split(fields[1], ':')
+                for id in raw_res_ids :
+                    res_ids_list.append(string.strip(id))
+                new_job_step['reservation_binding'] =  res_ids_list
+            elif string.strip(fields[0]) == 'Catalina_preemptible' :
+                if len(fields) >= 2 :
+                    preemptible_string = string.strip(fields[1])
+                    if preemptible_string in ['Yes','YES','yes','Y','y','1'] :
+                        new_job_step['preemptible'] = 1
+                else :
+                    new_job_step['preemptible'] =  1
+            elif string.strip(fields[0]) == 'Catalina_preempting' :
+                if len(fields) >= 2 :
+                    preempting_string = string.strip(fields[1])
+                    if preempting_string in ['Yes','YES','yes','Y','y','1'] :
+                        new_job_step['preempting'] = 1
+                else :
+                    new_job_step['preempting'] =  1
+            elif string.strip(fields[0]) == 'QOS' :
+                QOS = string.strip(fields[1])
+                try :
+                    testint = string.atoi(QOS)
+                except :
+                    new_job_step['QOS'] =  '0'
+                else :
+                    new_job_step['QOS'] =  QOS
+            elif string.strip(fields[0]) == 'Catalina_local_admin_priority' :
+                local_admin_priority_string = string.strip(fields[1])
+                new_job_step['local_admin_priority_string'] = local_admin_priority_string
+            elif string.strip(fields[0]) == 'Catalina_local_user_priority' :
+                local_user_priority_string = string.strip(fields[1])
+                new_job_step['local_user_priority_string'] = local_user_priority_string
+            elif string.strip(fields[0]) == 'Catalina_run_at_risk' :
+                run_at_risk_string = string.strip(fields[1])
+                if run_at_risk_string in ['Yes','YES','yes','Y','y','1'] :
+                    new_job_step['run_at_risk_int'] = 1
+            elif string.strip(fields[0]) == 'Catalina_do_not_start' :
+                do_not_start_string = string.strip(fields[1])
+                if do_not_start_string in ['Yes','YES','yes','Y','y','1'] :
+                    new_job_step['do_not_start_int'] = 1
+            elif string.strip(fields[0]) == 'Catalina_node_usage' :
+                node_usage_string = string.strip(fields[1])
+                if node_usage_string in ['shared',] :
+                    new_job_step['node_usage'] = 'shared'
+            elif string.strip(fields[0]) == 'proc_hours' :
+                proc_hours = string.strip(fields[1])
+                new_job_step['proc_hours'] = proc_hours
+
         if len(node_spec_global_tuple) > 1 :
             for global_attribute in node_spec_global_tuple[1:] :
                 if global_attribute == 'shared' :
                     node_usage = 'node_shared'
+                ########################################################
+                # is this obsolete?  don't see node_spec used...
                 for node_spec in node_spec_list :
                     node_spec = node_spec + ':' + global_attribute
+                ########################################################
         new_job_step['node_usage'] = node_usage
         #spec_list = string.split(node_spec_string, '+')
         spec_list = node_spec_list
@@ -532,58 +593,62 @@ def get_job_steps_dict() :
                 if not trimmed_host in new_job_step['allocated_hosts']:
                     new_job_step['allocated_hosts'].append(trimmed_host)
                 new_job_step['task_hosts'].append(trimmed_host)
-        if runjob_dict[job_step_id].has_key('Variable_List'):
-            elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
-        else:
-            elements = []
-        for element in elements :
-            string.strip(element)
-            fields = string.split(element, '=')
-            if string.strip(fields[0]) == 'Catalina_res_bind' :
-                res_ids_list = []
-                raw_res_ids = string.split(fields[1], ':')
-                for id in raw_res_ids :
-                    res_ids_list.append(string.strip(id))
-                new_job_step['reservation_binding'] =  res_ids_list
-            elif string.strip(fields[0]) == 'Catalina_preemptible' :
-                if len(fields) >= 2 :
-                    preemptible_string = string.strip(fields[1])
-                    if preemptible_string in ['Yes','YES','yes','Y','y','1'] :
-                        new_job_step['preemptible'] = 1
-                else :
-                    new_job_step['preemptible'] =  1
-            elif string.strip(fields[0]) == 'Catalina_preempting' :
-                if len(fields) >= 2 :
-                    preempting_string = string.strip(fields[1])
-                    if preempting_string in ['Yes','YES','yes','Y','y','1'] :
-                        new_job_step['preempting'] = 1
-                else :
-                    new_job_step['preempting'] =  1
-            elif string.strip(fields[0]) == 'QOS' :
-                QOS = string.strip(fields[1])
-                try :
-                    testint = string.atoi(QOS)
-                except :
-                    new_job_step['QOS'] =  '0'
-                else :
-                    new_job_step['QOS'] =  QOS
-            elif string.strip(fields[0]) == 'Catalina_local_admin_priority' :
-                local_admin_priority_string = string.strip(fields[1])
-                new_job_step['local_admin_priority_string'] = local_admin_priority_string
-            elif string.strip(fields[0]) == 'Catalina_local_user_priority' :
-                local_user_priority_string = string.strip(fields[1])
-                new_job_step['local_user_priority_string'] = local_user_priority_string
-            elif string.strip(fields[0]) == 'Catalina_run_at_risk' :
-                run_at_risk_string = string.strip(fields[1])
-                if run_at_risk_string in ['Yes','YES','yes','Y','y','1'] :
-                    new_job_step['run_at_risk_int'] = 1
-            elif string.strip(fields[0]) == 'Catalina_do_not_start' :
-                do_not_start_string = string.strip(fields[1])
-                if do_not_start_string in ['Yes','YES','yes','Y','y','1'] :
-                    new_job_step['do_not_start_int'] = 1
-            elif string.strip(fields[0]) == 'proc_hours' :
-                proc_hours = string.strip(fields[1])
-                new_job_step['proc_hours'] = proc_hours
+#        if runjob_dict[job_step_id].has_key('Variable_List'):
+#            elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
+#        else:
+#            elements = []
+#        for element in elements :
+#            string.strip(element)
+#            fields = string.split(element, '=')
+#            if string.strip(fields[0]) == 'Catalina_res_bind' :
+#                res_ids_list = []
+#                raw_res_ids = string.split(fields[1], ':')
+#                for id in raw_res_ids :
+#                    res_ids_list.append(string.strip(id))
+#                new_job_step['reservation_binding'] =  res_ids_list
+#            elif string.strip(fields[0]) == 'Catalina_preemptible' :
+#                if len(fields) >= 2 :
+#                    preemptible_string = string.strip(fields[1])
+#                    if preemptible_string in ['Yes','YES','yes','Y','y','1'] :
+#                        new_job_step['preemptible'] = 1
+#                else :
+#                    new_job_step['preemptible'] =  1
+#            elif string.strip(fields[0]) == 'Catalina_preempting' :
+#                if len(fields) >= 2 :
+#                    preempting_string = string.strip(fields[1])
+#                    if preempting_string in ['Yes','YES','yes','Y','y','1'] :
+#                        new_job_step['preempting'] = 1
+#                else :
+#                    new_job_step['preempting'] =  1
+#            elif string.strip(fields[0]) == 'QOS' :
+#                QOS = string.strip(fields[1])
+#                try :
+#                    testint = string.atoi(QOS)
+#                except :
+#                    new_job_step['QOS'] =  '0'
+#                else :
+#                    new_job_step['QOS'] =  QOS
+#            elif string.strip(fields[0]) == 'Catalina_local_admin_priority' :
+#                local_admin_priority_string = string.strip(fields[1])
+#                new_job_step['local_admin_priority_string'] = local_admin_priority_string
+#            elif string.strip(fields[0]) == 'Catalina_local_user_priority' :
+#                local_user_priority_string = string.strip(fields[1])
+#                new_job_step['local_user_priority_string'] = local_user_priority_string
+#            elif string.strip(fields[0]) == 'Catalina_run_at_risk' :
+#                run_at_risk_string = string.strip(fields[1])
+#                if run_at_risk_string in ['Yes','YES','yes','Y','y','1'] :
+#                    new_job_step['run_at_risk_int'] = 1
+#            elif string.strip(fields[0]) == 'Catalina_do_not_start' :
+#                do_not_start_string = string.strip(fields[1])
+#                if do_not_start_string in ['Yes','YES','yes','Y','y','1'] :
+#                    new_job_step['do_not_start_int'] = 1
+#            elif string.strip(fields[0]) == 'Catalina_node_usage' :
+#                node_usage_string = string.strip(fields[1])
+#                if node_usage_string in ['Yes','YES','yes','Y','y','1'] :
+#                    new_job_step['node_usage'] = 'shared'
+#            elif string.strip(fields[0]) == 'proc_hours' :
+#                proc_hours = string.strip(fields[1])
+#                new_job_step['proc_hours'] = proc_hours
         if runjob_dict[job_step_id]['Resource_List'].has_key('nodect') :
             node_count = string.atoi(runjob_dict[job_step_id]['Resource_List']['nodect'])
         else :
@@ -772,14 +837,22 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
             node_spec_string = jobs_dict[job_stepid]['node_spec_string']
             node_spec_global_tuple = string.split(node_spec_string, '#')
             node_spec_list = string.split(node_spec_global_tuple[0], '+')
-            #node_usage = 'node_exclusive'
-            node_usage = 'node_shared'
+            # ######################################################
+            # is this a bad cut-and-paste?  looks like node_usage and
+            # node_spec are not used...
+            # Torque admin guide says that -l nodes= indicates node
+            # exclusive.  Maybe procs could be used to indicate shared...
+            # for now, assume all PBS jobs are node_exclusive, unless
+            # explicitly labeled.
+            node_usage = 'node_exclusive'
+            #node_usage = 'node_shared'
             if len(node_spec_global_tuple) > 1 :
                 for global_attribute in node_spec_global_tuple[1:] :
                     if global_attribute == 'shared' :
                         node_usage = 'node_shared'
                     for node_spec in node_spec_list :
                         node_spec = node_spec + ':' + global_attribute
+            # ######################################################
             # assume no other properties, besides ppn are present
             node_ppn_list = []
             for node_spec in node_spec_list :

@@ -1,6 +1,6 @@
 #!___PYTHON_PATH_PLACEHOLDER___
 
-# ./show_free 
+# ./show_bf 
 # create a fake job with the requested characteristics
 # create ignore list for reservations in which the job can run
 # using the ignore list, create a reservation with earliest_start now, no resource amount specified,
@@ -46,7 +46,7 @@ def reverse_sort_dict(dict) :
     
 usage_string = \
 """
-Usage: show_free 
+Usage: show_bf 
                [--?]
                [--start=<mm/dd/yyyy_hh:mm>] | [--offset=<seconds to begin window]
                [--help]
@@ -210,6 +210,7 @@ else :
 # [ 'normal32', ]
 #set_legit_cpu_class = set(['normal32'])
 set_legit_cpu_class = set(showbfreportlist)
+#print "set_legit_cpu_class (%s)" % (set_legit_cpu_class,)
 
 if Catalina.__dict__.has_key('SHOWBFPROPERTYDICT_STRING') :
     exec('showbfproperty_dict = ' + Catalina.SHOWBFPROPERTYDICT_STRING)
@@ -370,7 +371,7 @@ for legit_class in displayorder :
                     
             #end of for
         else :
-            print "  No opportunity available at this time. Please try again later"
+            print "  No cpu opportunity available at this time. Please try again later"
         #end of if
         if len(dict_total_memory[legit_class]) > 0 :
             for dur in reverse_sort_dict(dict_total_memory[legit_class]):
@@ -390,7 +391,7 @@ for legit_class in displayorder :
                     
             #end of for
         else :
-            print "  No opportunity available at this time. Please try again later"
+            print "  No memory opportunity available at this time. Please try again later"
     else :
         # no need to print CPU info
         #print "high/normal"
@@ -417,7 +418,7 @@ for legit_class in displayorder :
                     print "  or"
             #end of for
         else :
-            print "  No opportunity available at this time. Please try again later"
+            print "  No whole node opportunity available at this time. Please try again later"
         #end of if
     #end of big if
        
