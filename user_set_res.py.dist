@@ -14,7 +14,8 @@ import getopt
 import copy
 
 # new function to check for valid accounts #
-def allocation_check(username,account,feature=[]) :
+#return_code = allocation_check(username_string,account_string,features,max_resource_int,duration_float,PROC_CHARGE,res_class)
+def allocation_check(username,account,feature=[],node_count=1,duration_float=3600.0,PROC_CHARGE=1,res_class='unknown') :
     """A function to check if the user has enough allocation. Uses SDSC accounting tools"""
     
     
@@ -28,27 +29,33 @@ def allocation_check(username,account,feature=[]) :
         queue = Catalina.DEFAULT_JOB_CLASS
     except :
         #this doesn't exist, use dummy variable
-        queue = "normal"
+        queue = "unknown"
     
-    if queue == "dque" :
-        machine_name = "sdsc_teragrid"
-    elif queue == "normal":
-        machine_name = "sdsc_datastar"
-    else:
+    try:
+        machine_name = Catalina.DEFAULT_MACHINE_NAME
+    except :
+        #this doesn't exist, use dummy variable
         machine_name = "unknown"
+    
+    #if queue == "dque" :
+    #    machine_name = "sdsc_teragrid"
+    #elif queue == "normal":
+    #    machine_name = "sdsc_datastar"
+    #else:
+    #    machine_name = "unknown"
 
     #check if the user wants a non-default queue for their reservation. This is only applicable
     #to datastar. The typical case if it uses feature batch32 instead of batch
-    if features :
-        #Because the list is nonempty, let's check for batch32
-        if 'batch32' in features :
-            queue = "normal32"
+    #if features :
+    #    #Because the list is nonempty, let's check for batch32
+    #    if 'batch32' in features :
+    #        queue = "normal32"
             
 
 
     #check if the program validate_job.pl exist, otherwise just warn the users
     if os.path.exists(validate_script) and os.path.isfile(validate_script) :
-        prep_arg_tuple = (machine_name,username,account,queue)
+        prep_arg_tuple = (machine_name,username,account,queue,str(node_count),str(duration_float),str(PROC_CHARGE),res_class)
         rc_status_tuple = Catalina.timedrun([validate_script,] + list(prep_arg_tuple), 30) #sleep 30 secs
         if rc_status_tuple[1] == 0 :
             return 0 
@@ -501,7 +508,13 @@ else :
 
 username_string = pwd.getpwuid(os.getuid())[0]
 
-return_code = allocation_check(username_string,account_string,features)
+if nodes_int != None:
+    return_code = allocation_check(username_string,account_string,features,nodes_int,duration_float,PROC_CHARGE,res_class)
+elif max_resource_int != None:
+    return_code = allocation_check(username_string,account_string,features,max_resource_int,duration_float,PROC_CHARGE,res_class)
+else:
+    print "Could not parse --nodes or --maxnodes!"
+    sys.exit(1)
 
 if return_code == 0 :
     print "allocation check passed"

@@ -101,6 +101,7 @@ Usage: show_q   [--?]
                 [--submitt]
                 [--reason]
                 [--risk]
+                [--resbind]
                 [--queue=qname1,qname2,...  <comma-delimited queue names>]
                 [--fullname]
 """
@@ -117,6 +118,7 @@ default_argdict = {
     '--resstartt' : None,
     '--systemqt' : None,
     '--risk' : None,
+    '--resbind' : None,
     '--reason' : None
 }
 
@@ -137,6 +139,7 @@ full_argdict = {
     '--systemqt' : None,
     '--submitt' : None,
     '--risk' : None,
+    '--resbind' : None,
     '--reason' : None,
     '--fullname' : None
 }
@@ -163,6 +166,7 @@ options = ['dump',
            'systemqt',
            'submitt',
            'risk',
+           'resbind',
            'reason',
            'queue=',
            'fullname'
@@ -293,7 +297,7 @@ if argdict.has_key('--taskmap') :
     header_string = header_string + " TASKMAP"
     format_string = format_string + " %s"
 if argdict.has_key('--fullname') :
-    header_string = header_string + " FULL NAME"
+    header_string = header_string + " FULL_NAME"
     format_string = format_string + "%s"
     
 
@@ -498,7 +502,10 @@ if argdict.has_key('--taskmap') :
     header_string = header_string + " TASKMAP"
     format_string = format_string + " %s"
 if argdict.has_key('--fullname') :
-    header_string = header_string + " FULL NAME"
+    header_string = header_string + " FULL_NAME"
+    format_string = format_string + "%s"
+if argdict.has_key('--resbind') :
+    header_string = header_string + " RES_BIND"
     format_string = format_string + "%s"
 print header_string
 for job_step in eligible_jobs :
@@ -589,6 +596,8 @@ for job_step in eligible_jobs :
             else:
                 user_org = 'None'
             print_list.append(' ' + user_fullname + ' (' + user_org + ')')
+        if argdict.has_key('--resbind') :
+            print_list.append(job_step['reservation_binding'])
         print format_string % tuple(print_list)
 
 ineligible_jobs.sort(by_priority)
@@ -642,7 +651,7 @@ if argdict.has_key('--taskmap') :
     header_string = header_string + " TASKMAP"
     format_string = format_string + " %s"
 if argdict.has_key('--fullname') :
-    header_string = header_string + " FULL NAME"
+    header_string = header_string + " FULL_NAME"
     format_string = format_string + "%s"
 print header_string
 for job_step in ineligible_jobs :

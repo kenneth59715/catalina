@@ -2,6 +2,7 @@
 
 import Catalina
 import time
+import sys
 
 CONFIGURATION_DB = Catalina.CONFIGURATION_DB
 
@@ -10,9 +11,14 @@ configuration_dict = configuration_db_handle[0]
 configuration_dict['state'] = 'stopped'
 Catalina.close_db(configuration_db_handle)
 
+if len(sys.argv) > 1:
+    times_to_check = int(sys.argv[1])
+else:
+    times_to_check = 60
+
 active_pids = 1
 times_checked = 0
-while active_pids != 0 and times_checked < 60 :
+while active_pids != 0 and times_checked < times_to_check :
     print "waiting for scheduling processes to end",
     times_checked = times_checked + 1
     active_pids = 0

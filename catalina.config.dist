@@ -400,6 +400,8 @@ SHOWBFREPORTMAXTIME_STRING = 64800
 DEFAULT_RES_CLASS = ___DEFAULT_RES_CLASS_PLACEHOLDER___
 # user_set_res uses this proc count to compute charge
 DEFAULT_PROC_CHARGE = ___DEFAULT_PROC_CHARGE_PLACEHOLDER___
+# user_set_res uses this machine name to compute charge
+DEFAULT_MACHINE_NAME = ___DEFAULT_MACHINE_NAME_PLACEHOLDER___
 
 # Test config info
 TEST_SHORTPOOL_AMOUNT = 2
