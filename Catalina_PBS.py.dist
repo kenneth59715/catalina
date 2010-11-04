@@ -193,20 +193,30 @@ def cancel_job(job_step, events_db_handle, message=None) :
         cmd_string = Catalina.CANCELCMD + ' ' + job_step['name']
     
     output = ''
-    if Catalina.SERVERMODE == 'NORMAL' :
-        return_string = os.popen(cmd_string).read()
-        mo = re.match(output, return_string)
-        if mo == None :
-            raise 'CancelJobFailure', job_step
-    else :
-        print cmd_string
-        return_string = ''
-    event = {
-      'name' : 'cancel_job',
-      'cmd' : cmd_string,
-      'return_string' : return_string
-      }
-    Catalina.log_event(event, events_db_handle)
+    if job_step.has_key('do_not_cancel_int') and \
+      job_step['do_not_cancel_int'] != None and \
+      int(job_step['do_not_cancel_int']) >= 1:
+        event = {
+          'name' : 'do_not_cancel_int',
+          'cmd' : "do_not_cancel is 1 for %s" % job_step['name'],
+          'return_string' : ''
+          }
+        Catalina.log_event(event, events_db_handle)
+    else:
+        if Catalina.SERVERMODE == 'NORMAL' :
+                return_string = os.popen(cmd_string).read()
+                mo = re.match(output, return_string)
+                if mo == None :
+                    raise 'CancelJobFailure', job_step
+        else :
+            print cmd_string
+            return_string = ''
+        event = {
+          'name' : 'cancel_job',
+          'cmd' : cmd_string,
+          'return_string' : return_string
+          }
+        Catalina.log_event(event, events_db_handle)
 
 def purge_job(job_step, events_db_handle, message=None) :
     if (message != None):
@@ -438,6 +448,10 @@ def get_job_steps_dict() :
                 do_not_start_string = string.strip(fields[1])
                 if do_not_start_string in ['Yes','YES','yes','Y','y','1'] :
                     new_job_step['do_not_start_int'] = 1
+            elif string.strip(fields[0]) == 'Catalina_do_not_cancel' :
+                do_not_cancel_string = string.strip(fields[1])
+                if do_not_cancel_string in ['Yes','YES','yes','Y','y','1'] :
+                    new_job_step['do_not_cancel_int'] = 1
             elif string.strip(fields[0]) == 'Catalina_node_usage' :
                 node_usage_string = string.strip(fields[1])
                 if node_usage_string in ['shared',] :
