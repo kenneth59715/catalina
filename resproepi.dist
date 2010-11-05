@@ -65,7 +65,7 @@ for res_key in reservations_db_handle[0].keys() :
         if argdict.has_key('--test') :
             print "would run %s %s" % (Catalina.PROLOGUE_RES, args_tuple)
         else :
-            return_tuple = Catalina.timedrun((Catalina.PROLOGUE_RES,) + args_tuple, 30)
+            return_tuple = Catalina.timedrun(list((Catalina.PROLOGUE_RES,)) + list(args_tuple), 30)
             if return_tuple[1] == 0 :
                 Catalina.update_object_attribute(
                   'prologuerc',
@@ -87,7 +87,7 @@ for res_key in reservations_db_handle[0].keys() :
         if argdict.has_key('--test') :
             print "would run %s %s" % (Catalina.EPILOGUE_RES, args_tuple)
         else :
-            return_tuple = Catalina.timedrun((Catalina.EPILOGUE_RES,) + args_tuple, 30)
+            return_tuple = Catalina.timedrun(list((Catalina.EPILOGUE_RES,)) + list(args_tuple), 30)
             if return_tuple[1] == 0 :
                 Catalina.update_object_attribute(
                   'epiloguerc',
