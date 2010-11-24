@@ -172,8 +172,8 @@ SLURM)
 	DB_WARN_LIMIT=3 ;
 	JOB_START_WARN_LIMIT=3 ;
 	RESOURCE_DOWN_TIME_LIMIT=900.0 ;
-	LOST_JOB_LIMIT=1800 ;
-	LOST_JOB_WARN=TRUE ;
+	LOST_JOB_LIMIT=0 ;
+	LOST_JOB_WARN=FALSE ;
         if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
 		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch_sim`} || bailout 'Could not find sbatch' 1 ;
 		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel_sim`} || bailout 'Could not find scancel' 1 ;
