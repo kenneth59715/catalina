@@ -220,6 +220,7 @@ SLURM)
   \"ALLOC\" : \"Running\",\\
   \"COMP\" : \"Running\",\\
   \"COMPLETING\" : \"Running\",\\
+  \"IDLE+COMPLETING\" : \"Running\",\\
   }" ;
 # job states from man squeue
 #PENDING (PD), RUNNING (R), SUSPENDED (S),  COMPLETING  (CG),  COMPLETED
@@ -233,6 +234,7 @@ SLURM)
   \"FAILED\" : \"Canceled\",\\
   \"TIMEOUT\" : \"Completed\",\\
   \"COMPLETING\" : \"Running\",\\
+  \"IDLE+COMPLETING\" : \"Running\",\\
   \"SUSPENDED\" : \"Preempted\",\\
   \"PENDING\" : \"Idle\"\\
   }" ;
@@ -457,7 +459,7 @@ else
 	esac
 	${ECHO} "PYTHONPATH=${PYTHONPATH}" >> Makefile
 fi
-KSH=`get_first_exe ksh` || bailout 'Could not find ksh' 1
+KSH=`get_first_exe bash` || bailout 'Could not find ksh' 1
 ${KSH} -c 'echo hello'
 case $? in
 0)	${ECHO} ksh hello works... ;;

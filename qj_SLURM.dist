@@ -120,11 +120,12 @@ for jobline in joblines:
         job_dict['NodeList'] = 'null'
     #if job_dict['Features'] == '(null)':
     #    job_dict['Features'] = ''
+    #job_dict['dispatchtime'] = 'None'
     if job_dict['JobState'] in ['PENDING',]:
         job_dict['wall_clock_used'] = 0
         job_dict['dispatchtime'] = 'None'
         job_dict['machinemap'] = 'None'
-    elif job_dict['JobState'] in ['RUNNING','COMPLETED','FAILED','CANCELLED']:
+    elif job_dict['JobState'] in ['COMPLETING','IDLE+COMPLETING','TIMEOUT','RUNNING','COMPLETED','FAILED','CANCELLED']:
         end_tuple = time.strptime(job_dict['EndTime'],'%Y-%m-%dT%H:%M:%S')
         #end_tuple = guessyear(end_tuple, Catalina.Now_float)
         EndTime_epoch = time.mktime(end_tuple)
@@ -149,6 +150,9 @@ for jobline in joblines:
         host_list = map(string.strip,os.popen(command).readlines())
         host_string = string.join(host_list,'+')
         job_dict['machinemap'] = host_string
+    else:
+        sys.stderr.write(job_dict['JobState'])
+        sys.exit(1)
     #print job_dict['wall_clock_used']
     if not job_dict.has_key('wall_clock_used'):
         job_dict['wall_clock_used'] = 0
@@ -166,11 +170,14 @@ for jobline in joblines:
         job_dict['user'] = ''
     else:
         job_dict['user'] = username_mo.group('username')
-    min_nodes = int(string.split(job_dict['ReqNodes'],'-')[0])
-    reqprocs = int(job_dict['ReqProcs'])
+    #min_nodes = int(string.split(job_dict['ReqNodes'],'-')[0])
+    min_nodes = int(string.split(job_dict['NumNodes'],'-')[0])
+    #reqprocs = int(job_dict['ReqProcs'])
+    reqprocs = int(job_dict['NumCPUs'])
     quotient, remainder = divmod(min_nodes, reqprocs)
     if debug > 0:
-        print "ReqProcs (%s) ReqNodes (%s)" % (job_dict['ReqProcs'], job_dict['ReqNodes'])
+        #print "ReqProcs (%s) ReqNodes (%s)" % (job_dict['ReqProcs'], job_dict['ReqNodes'])
+        print "NumCPUs (%s) NumNodes (%s)" % (job_dict['NumCPUs'], job_dict['NumNodes'])
     #print "quotient (%s) remainder (%s)" % (quotient, remainder)
     node_list = min_nodes * [quotient,]
     for nodeplace in range(remainder):
@@ -179,18 +186,14 @@ for jobline in joblines:
     #MinMemoryNode=450 MinTmpDisk=0 Features=compute
     requirements_string = 'Features=' + job_dict['Features'] + \
             '#cat_sep#' + 'MinMemoryNode=' + job_dict['MinMemoryNode'] + \
-            '#cat_sep#' + 'MinTmpDisk=' + job_dict['MinTmpDisk'] + \
-            '#cat_sep#' + 'MinProcs=' + job_dict['MinProcs'] + \
-            '#cat_sep#' + 'MinSockets=' + job_dict['MinSockets'] + \
-            '#cat_sep#' + 'MinCores=' + job_dict['MinCores'] + \
-            '#cat_sep#' + 'MinThreads=' + job_dict['MinThreads']
+            '#cat_sep#' + 'MinTmpDiskNode=' + job_dict['MinTmpDiskNode'] + \
+            '#cat_sep#' + 'MinCPUsNode=' + job_dict['MinCPUsNode'] + \
+            '#cat_sep#' + 'NumCPUs=' + job_dict['NumCPUs']
     job_dict['requirementsmap'] = min_nodes * [requirements_string,]
     resources_string = 'MinMemoryNode#cat_sep#' + job_dict['MinMemoryNode'] + \
-            '+' + 'MinTmpDisk#cat_sep#' + job_dict['MinTmpDisk'] + \
-            '+' + 'MinProcs#cat_sep#' + job_dict['MinProcs'] + \
-            '+' + 'MinSockets#cat_sep#' + job_dict['MinSockets'] + \
-            '+' + 'MinCores#cat_sep#' + job_dict['MinCores'] + \
-            '+' + 'MinThreads#cat_sep#' + job_dict['MinThreads']
+            '+' + 'MinTmpDiskNode#cat_sep#' + job_dict['MinTmpDiskNode'] + \
+            '+' + 'MinCPUsNode#cat_sep#' + job_dict['MinCPUsNode'] + \
+            '+' + 'NumCPUs#cat_sep#' + job_dict['NumCPUs']
     resourcesmap = min_nodes * [resources_string,]
     for nodeplace in range(min_nodes):
         resourcesmap[nodeplace] = resourcesmap[nodeplace] + "+Cores#cat_sep#%s" % node_list[nodeplace]

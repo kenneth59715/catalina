@@ -48,6 +48,7 @@ for nodeline in nodelines:
 #command = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.QPCMD
 command = Catalina.QPCMD
 partitionlines = os.popen(command).readlines()
+#print "partitionlines (%s) " % (partitionlines,)
 partitions_dict = {}
 for partitionline in partitionlines:
     partition_dict = {}
@@ -58,12 +59,14 @@ for partitionline in partitionlines:
     partitions_dict[partition_dict['PartitionName']] = partition_dict
 
 for partition_name in partitions_dict.keys():
+    #print "partition_name (%s)" % partition_name
     nodes_text = partitions_dict[partition_name]['Nodes']
     #scontrol show hostnames ken[1,2],ken1,ken[1-2]
     command = Catalina.QHNCMD + ' ' + nodes_text
     hostnames = os.popen(command).read()
     hostnames_list = string.split(hostnames)
     for hostname in hostnames_list:
+        #print "hostname (%s)" % hostname
         if nodes_dict[hostname].has_key('partitions_list'):
             if not partition_name in nodes_dict[hostname]['partitions_list']:
                 nodes_dict[hostname]['partitions_list'].append(partition_name)
@@ -88,6 +91,18 @@ output_template = output_template + "#cat_delim#Cpus:%s"
 output_template = output_template + "#cat_delim#State:%s"
 
 for node in nodes_dict.keys():
+    #print "node (%s)" % node
+    if not nodes_dict[node].has_key('partitions_list'):
+        continue
+    if nodes_dict[node].has_key('Procs'):
+        procs = nodes_dict[node]['Procs']
+    elif nodes_dict[node].has_key('CPUs') and nodes_dict[node].has_key('Cores'):
+        procs = int(nodes_dict[node]['CPUs']) * int(nodes_dict[node]['Cores'])
+    elif nodes_dict[node].has_key('CPUTot'):
+        procs = int(nodes_dict[node]['CPUTot'])
+    else:
+        print "failed (%s)" % (nodes_dict[node],)
+        continue
     print output_template % (
       node,
       nodes_dict[node]['Arch'],
@@ -97,7 +112,7 @@ for node in nodes_dict.keys():
       string.join(nodes_dict[node]['apartitions_list'],'+'),
       string.join(string.split(nodes_dict[node]['Features'],','),'+'),
       nodes_dict[node]['RealMemory'],
-      nodes_dict[node]['Procs'],
+      procs,
       nodes_dict[node]['State'],
       )
 
