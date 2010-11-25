@@ -14,9 +14,10 @@ node_list = sys.argv[2:]
 #    nodename, count = string.split(nodencount,'#')
 #    for index in range(string.atoi(count)) :
 #        node_list.append(nodename)
-node_string = string.join(node_list,',')
+node_string = string.join(node_list,",\\\n")
 
-command = Catalina.RUNCMD % (jobid, node_string)
+#command = Catalina.RUNCMD % (jobid, node_string)
+command = Catalina.RUNCMD + ' update ' + "JobId=%s Priority=1 ReqNodeList=%s" % (jobid, node_string)
 command_file = os.popen(command)
 return_text = command_file.read()
 rc = command_file.close()

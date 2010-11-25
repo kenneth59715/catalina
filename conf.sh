@@ -180,7 +180,7 @@ SLURM)
 		PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe scontrol_sim`} || bailout 'Could not find scontrol' 1 ;
 	else
 		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch`} || bailout 'Could not find sbatch' 1 ;
-		RUNCMD=${CATALINA_RUNCMD-'scontrol update JobId=%s ReqNodeList=%s Priority=1'} || bailout 'Could not find run job command' 1 ;
+		RUNCMD=${CATALINA_RUNCMD-`get_first_exe scontrol`} || bailout 'Could not find run job command' 1 ;
 		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel`} || bailout 'Could not find scancel' 1 ;
 		PREEMPTCMD=${CATALINA_PREEMPTCMD-'scontrol suspend'} || bailout 'Could not find scontrol' 1 ;
 		RESUMECMD=${CATALINA_RESUMECMD-'scontrol resume'} || bailout 'Could not find scontrol' 1 ;
