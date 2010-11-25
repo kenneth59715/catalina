@@ -35,7 +35,12 @@ for nodeline in nodelines:
     node_dict = {}
     attribute_list = string.split(nodeline)
     for attribute in attribute_list:
-        name, value = string.split(attribute, '=')
+        #name, value = string.split(attribute, '=')
+        namevalue_tuple = string.split(attribute, '=')
+        if len(namevalue_tuple) < 2:
+            continue
+        name = namevalue_tuple[0]
+        value = namevalue_tuple[1]
         node_dict[name] = value
     if not node_dict.has_key('Arch'):
         node_dict['Arch'] = None
@@ -93,6 +98,8 @@ output_template = output_template + "#cat_delim#State:%s"
 for node in nodes_dict.keys():
     #print "node (%s)" % node
     if not nodes_dict[node].has_key('partitions_list'):
+        continue
+    if not nodes_dict[node].has_key('apartitions_list'):
         continue
     if nodes_dict[node].has_key('Procs'):
         procs = nodes_dict[node]['Procs']
