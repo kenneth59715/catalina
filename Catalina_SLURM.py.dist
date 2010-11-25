@@ -61,7 +61,7 @@ import traceback
 
 JOBSUFFIX=''
 #sbatch: Submitted batch job 107
-SUBMIT_OUTPUT_PATTERN=r"sbatch: Submitted batch job (?P<job_id>\d+)"
+SUBMIT_OUTPUT_PATTERN=r"(sbatch:)*\s*Submitted batch job (?P<job_id>\d+)"
 JOB_UPDATE_ATTRIBUTE_list = [
   'state',
   'job_class',

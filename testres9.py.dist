@@ -1313,17 +1313,28 @@ else :
 Catalina.close_ro_db(jobs_db_handle)
 
 # check for same start_time for bound reservation and job
-output = r"\S+\s+(?P<res_time>\S+)\s+(?P<runID>.*)"
+output = r"\S+\s+(?P<res_time>\S+)\s+(?P<runID>.*)$"
 cmd = HOMEDIR + '/show_res'
 cmd_string = cmd + ' --job' + ' --start' + ' | ___GREP_PLACEHOLDER___ ' + job_step_name
-returnstring = os.popen(cmd_string).read()
-so = re.search(output, returnstring)
+#returnstring = os.popen(cmd_string).read()
+returnlines = os.popen(cmd_string).readlines()
+#so = re.search(output, returnstring)
 print "# start_time (%s) check for reservation_binding (%s) in job (%s)" % ( bind_res_start_time, bind_res_id, job_step_name)
-if so == None or so.group('res_time') != bind_res_start_time :
+res_time_found = 0
+for returnline in returnlines:
+    so = re.match(output, returnline)
+    if so == None:
+        continue
+    else:
+        if so.group('res_time') == bind_res_start_time:
+            res_time_found = 1
+#if so == None or so.group('res_time') != bind_res_start_time :
+if res_time_found == 0:
     print "not ok"
     print output
     print returnstring
     print bind_res_start_time
+    print so.group('res_time')
     print cmd_string
     continue_var = raw_input('continue? ')
 else :
