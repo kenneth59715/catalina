@@ -127,6 +127,8 @@ def initialize_job_step(job_step_name) :
     #new_job_step['adapter'] = None
     new_job_step['requirements'] = None
     new_job_step['originalreqnodelist'] = None
+    new_job_step['requestednodes'] = []
+    new_job_step['excludednodes'] = []
     new_job_step['ConfiguredClasses_list'] = []
     new_job_step['AvailableClasses_list'] = []
     new_job_step['properties_list'] = []

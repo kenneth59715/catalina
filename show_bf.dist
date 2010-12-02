@@ -249,6 +249,8 @@ for window in now_windows :
         if property in properties_list :
             if not showbfproperty_dict[property]['class'] in classes_list :
                 classes_list.append(showbfproperty_dict[property]['class'])
+    if showbfproperty_dict == {} and classes_list == []:
+        classes_list = [Catalina.DEFAULT_JOB_CLASS,]
 
     if window[2].has_key('node') :
         duration = window[1] - Catalina.Now_float - start_epoch - Catalina.FUDGE_FACTOR
