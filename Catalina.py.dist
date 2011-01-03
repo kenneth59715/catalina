@@ -2200,6 +2200,9 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
         # (start, end, node name)
         # this should sort first on window start time
         # and second on resource usability
+        # 20101217: We should also consider window end time,
+        # taking the lowest end time first.  This will use up
+        # small windows, leaving larger ones.
         windows = input_tuple[0]
         nodes = input_tuple[1]
         new_res = input_tuple[2]
@@ -2207,9 +2210,12 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
         temp_windows = []
         for window in windows :
             if resources_dict[window[2]['nodename']].has_key('resource_usability_int') :
-                temp_windows.append((- (window[0]), long(resources_dict[window[2]]['resource_usability_int']), window))
+                #temp_windows.append((- (window[0]), long(resources_dict[window[2]]['resource_usability_int']), window))
+                #temp_windows.append((- (window[0]), window[1], long(resources_dict[window[2]]['resource_usability_int']), window))
+                temp_windows.append((- (window[0]), long(resources_dict[window[2]]['resource_usability_int']), window[1], window))
             else :
-                temp_windows.append((- (window[0]), 0L, window))
+                #temp_windows.append((- (window[0]), 0L, window))
+                temp_windows.append((- (window[0]), window[1], 0L, window))
         temp_windows.sort()
         result = []
         for window in temp_windows :

@@ -298,7 +298,7 @@ if argdict.has_key('--taskmap') :
     format_string = format_string + " %s"
 if argdict.has_key('--fullname') :
     header_string = header_string + " FULL_NAME"
-    format_string = format_string + "%s"
+    format_string = format_string + " %s"
     
 
 #print "JobStepId       State     Class        Limit(hr) TimeRemaining(hr) StartTime                QOS    User      Group   Account (Nodes) TaskMap"
@@ -503,10 +503,10 @@ if argdict.has_key('--taskmap') :
     format_string = format_string + " %s"
 if argdict.has_key('--fullname') :
     header_string = header_string + " FULL_NAME"
-    format_string = format_string + "%s"
+    format_string = format_string + " %s"
 if argdict.has_key('--resbind') :
     header_string = header_string + " RES_BIND"
-    format_string = format_string + "%s"
+    format_string = format_string + " %s"
 print header_string
 for job_step in eligible_jobs :
 
