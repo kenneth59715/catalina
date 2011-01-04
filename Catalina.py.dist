@@ -2231,6 +2231,49 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
         reservations_dict = input_tuple[6]
         jobs_dict = input_tuple[7]
         temp_windows = []
+
+#        # maybe move this down into the reservation in relevant_reservations
+#        # loop?
+#        # for shared job reservations, should pack onto used nodes
+#        # do this by node_fraction_occupied
+#        # instead of walking through the reservations twice, could
+#        # use pointers in the sort tuple...
+#        node_pack_dict = {}
+#        for node in nodes:
+#            node_pack_dict[node] = { 'ConsumableCpus' : max(1,resources_dict[node]['ConsumableCpus']),
+#                                     'ConsumableMemory' : max(1,resources_dict[node]['ConsumableMemory']),
+#                                     'ConsumedCpus' : 0,
+#                                     'ConsumedMemory' : 0,
+#                                   }
+#        if new_res.has_key('job_runID') and jobs_dict[new_res['job_runID']]['node_usage'] == 'shared':
+#            for window_tuple in windows_and_reservations_list :
+#                relevant_reservations_list = window_tuple[1]
+#                for relevant_reservation in relevant_reservations_list:
+#                    for allocated_dict in relevant_reservation['allocated_dict_list']:
+#                        if allocated_dict['nodename'] in nodes:
+#                            if allocated_dict['type'] == 'node_exclusive':
+#                                node_pack_dict[allocated_dict['nodename']]['ConsumedCpus'] = \
+#                                  node_pack_dict[allocated_dict['nodename']]['ConsumableCpus']
+#                                node_pack_dict[allocated_dict['nodename']]['ConsumedMemory'] = \
+#                                  node_pack_dict[allocated_dict['nodename']]['ConsumableMemory']
+#                            else:
+#                                if allocated_dict.has_key('cpu') and allocated_dict['cpu'] != None:
+#                                    node_pack_dict[allocated_dict['nodename']]['ConsumedCpus'] = \
+#                                      node_pack_dict[allocated_dict['nodename']]['ConsumedCpus'] \
+#                                      + allocated_dict['cpu']
+#                                if allocated_dict.has_key('memory') and allocated_dict['memory'] != None:
+#                                    node_pack_dict[allocated_dict['nodename']]['ConsumedMemory'] = \
+#                                      node_pack_dict[allocated_dict['nodename']]['ConsumedMemory'] \
+#                                      + allocated_dict['memory']
+#        else:
+#            pass
+#
+#        for node in nodes:
+#            node_pack_dict[node]['fraction'] = \
+#              max(float(node_pack_dict[node]['ConsumedCpus'])
+#              /float(node_pack_dict[node]['ConsumableCpus']),
+#              float(node_pack_dict[node]['ConsumedMemory'])
+#              /float(node_pack_dict[node]['ConsumableMemory']))
         
         for window_tuple in windows_and_reservations_list :
             window = window_tuple[0]
@@ -2242,7 +2285,7 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
             for res_key in reservations_dict.keys() :
                 if reservations_dict[res_key]['purpose_type_string'] == "pushback" :
                     for allocated_dict in reservations_dict[res_key]['allocated_dict_list'] :
-                        if allocated_dict['nodename'] == window_tuple[0][2] :
+                        if allocated_dict['nodename'] == window_tuple[0][2]['nodename'] :
                             pushback_affinity = pushback_affinity + jobs_dict[reservations_dict[res_key]['job_runID']]['priority_int']
             affinity = 0
             for reservation in relevant_reservations_list :
@@ -2264,7 +2307,9 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "sort components (%s) (%s)" % (window[0], resource_sort_int)
                 sort_tuple = ( 0, -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
+                #sort_tuple = ( 0, -(pushback_affinity), -(window[0]), long(resource_sort_int), -node_pack_dict[window_tuple[0][2]['nodename']]['fraction'], window)
             else :
+                #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), long(resource_sort_int), -node_pack_dict[window_tuple[0][2]['nodename']]['fraction'], window)
                 sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "sort_tuple (%s)" % (sort_tuple,)
