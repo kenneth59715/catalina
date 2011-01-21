@@ -829,16 +829,16 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
     for reservation in reservations_dict.values() :
         if not reservation['purpose_type_string'] in ['job', 'preempted_job']:
             continue
-        if jobs_dict[reservation['job_runID']].has_key('do_not_start_int') and \
-          jobs_dict[reservation['job_runID']]['do_not_start_int'] != None and \
-          int(jobs_dict[reservation['job_runID']]['do_not_start_int']) >= 1:
-            event = {
-              'name' : 'do_not_start_int',
-              'cmd' : "do_not_start is 1 for %s" % reservation['job_runID'],
-              'return_string' : ''
-              }
-            Catalina.log_event(event, events_db_handle)
-            continue
+        #if jobs_dict[reservation['job_runID']].has_key('do_not_start_int') and \
+        #  jobs_dict[reservation['job_runID']]['do_not_start_int'] != None and \
+        #  int(jobs_dict[reservation['job_runID']]['do_not_start_int']) >= 1:
+        #    event = {
+        #      'name' : 'do_not_start_int',
+        #      'cmd' : "do_not_start is 1 for %s" % reservation['job_runID'],
+        #      'return_string' : ''
+        #      }
+        #    Catalina.log_event(event, events_db_handle)
+        #    continue
         start_time_float = reservation['start_time_float']
         if (Catalina.Now_float + 1) >= start_time_float and (Catalina.Now_float - start_time_float) <= Catalina.FUDGE_FACTOR/2 :
             if reservation.has_key('start_count_int') and \
