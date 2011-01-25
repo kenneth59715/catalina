@@ -50,6 +50,7 @@
 import fcntl
 import traceback
 import subprocess
+import shutil
 import Catalina____RESOURCEMANAGER_PLACEHOLDER___
 #from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_job_step_state
 #from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
@@ -692,7 +693,7 @@ def open_db (db_name, db_mode) :
                         recipient = MAIL_RECIPIENT
                         subject = "Attempting to correct DB corruption"
                         message = """Catalina database corruption detected for
-db: (%s)""" % REMOTEFILE + '\n' + tb_text
+db: (%s)""" % REMOTEFILE + '\n' + "file.tell() (%s)\n" % FO.tell() + tb_text
                         print "message (%s)" % message
                         warn(message, subject, recipient)
                         catsyslog(message,'warning')
@@ -702,8 +703,9 @@ db: (%s)""" % REMOTEFILE + '\n' + tb_text
                     good_pickle = 1
                     break
             if good_pickle == 0 :
+                shutil.copy(REMOTEFILE,'/tmp')
                 FO.close()
-                raise 'BadPickle', "open of writable db failed, 60x bad pickle"
+                raise 'BadPickle', "open of writable db failed, 60x bad pickle (saved to /tmp)"
             FO.close()
         else :
             FO.close()
@@ -828,6 +830,7 @@ def close_db (db_handle) :
             print "writing out (%s)" % db_name
         pickle.dump(dict)
         FO.flush()
+        os.fsync(FO.fileno())
         FO.close()
         ROFILE = DBDIR + '/' + db_name + '_readonly'
         shutil.copyfile(REMOTEFILE, ROFILE)
