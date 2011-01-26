@@ -219,15 +219,18 @@ if len(now_windows) == 0 :
 # sort now open_windows by end time
 now_windows.sort(by_end_time)
 # report number of now open_windows for each end_time
+used_windows = []
 window_dict = {}
 old_end_time = 0
 window_count = 0
 agg_dict = {}
 print "CPU Backfill window:"
-for window in now_windows :
+#for window in now_windows :
+for index, window in enumerate(now_windows) :
     if not window[2].has_key('cpu') :
         continue
-    if window[1] != old_end_time :
+    #if window[1] != old_end_time :
+    if window[1] != old_end_time or index == len(now_windows) - 1:
         for agg_key in agg_dict.keys():
             print "    node: %s cpus: %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
         if old_end_time != 0 :
@@ -242,6 +245,8 @@ for window in now_windows :
         agg_dict[window[2]['nodename']] = agg_dict[window[2]['nodename']] + window[2]['cpu']
     else:
         agg_dict[window[2]['nodename']] = window[2]['cpu']
+    if not window[2]['nodename'] in used_windows:
+        used_windows.append(window[2]['nodename'])
     #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
@@ -263,10 +268,11 @@ old_end_time = 0
 window_count = 0
 agg_dict = {}
 print "Memory Backfill window:"
-for window in now_windows :
+#for window in now_windows :
+for index, window in enumerate(now_windows) :
     if not window[2].has_key('memory') :
         continue
-    if window[1] != old_end_time :
+    if window[1] != old_end_time or index == len(now_windows) - 1:
         for agg_key in agg_dict.keys():
             print "    node: %s memory (MB): %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
         if old_end_time != 0 :
@@ -281,6 +287,8 @@ for window in now_windows :
         agg_dict[window[2]['nodename']] = agg_dict[window[2]['nodename']] + window[2]['memory']
     else:
         agg_dict[window[2]['nodename']] = window[2]['memory']
+    if not window[2]['nodename'] in used_windows:
+        used_windows.append(window[2]['nodename'])
     #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
@@ -300,10 +308,14 @@ if len(agg_dict.keys()) > 0:
 old_end_time = 0
 window_count = 0
 print "Node Backfill window:"
-for window in now_windows :
+#for window in now_windows :
+for index, window in enumerate(now_windows) :
     if not window[2].has_key('node') :
         continue
-    if window[1] != old_end_time :
+    #if window[2].has_key('nodename') and window[2]['nodename'] in used_windows:
+    #    continue
+    #if window[1] != old_end_time :
+    if window[1] != old_end_time or index == len(now_windows) - 1:
         if old_end_time != 0 :
             duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
             print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )

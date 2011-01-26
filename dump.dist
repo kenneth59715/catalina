@@ -6,12 +6,14 @@ import Catalina
 import math
 import string
 import getopt
+import cPickle
 
 options = [
   '?',
   'help',
   'jobs',
   'resources',
+  'file=',
   'reservations'
 ]
 
@@ -21,9 +23,10 @@ default_argdict = {
 
 usage_string = \
 """
-Usage: qp.sdsc [--help]
+Usage: dump [--help]
                [--resources]
                [--jobs]
+               [--file=<filename>]
                [--reservations]
                [--?]
 """
@@ -53,8 +56,14 @@ elif argdict.has_key('--resources') :
 elif argdict.has_key('--reservations') :
     db_handle = Catalina.open_ro_db(Catalina.RESERVATIONS_DB,'read')
     object_list = Catalina.get_object_list(db_handle)
+elif argdict.has_key('--file') :
+    FO = open(argdict['--file'],'rb')
+    dict = cPickle.load(FO)
+    FO.close()
+    object_list = dict.values()
 
 for object in object_list :
     print object
 
-Catalina.close_ro_db(db_handle)
+if not argdict.has_key('--file'):
+    Catalina.close_ro_db(db_handle)

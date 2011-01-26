@@ -99,6 +99,7 @@ Usage: show_q   [--?]
                 [--taskmap]
                 [--systemqt]
                 [--submitt]
+                [--xfactor]
                 [--reason]
                 [--risk]
                 [--resbind]
@@ -138,6 +139,7 @@ full_argdict = {
     '--resstartt' : None,
     '--systemqt' : None,
     '--submitt' : None,
+    '--xfactor' : None,
     '--risk' : None,
     '--resbind' : None,
     '--reason' : None,
@@ -165,6 +167,7 @@ options = ['dump',
            'taskmap',
            'systemqt',
            'submitt',
+           'xfactor',
            'risk',
            'resbind',
            'reason',
@@ -278,6 +281,9 @@ if argdict.has_key('--startt') :
 if argdict.has_key('--limit') :
     header_string = header_string + " LIMIT    "
     format_string = format_string + " %9s"
+if argdict.has_key('--xfactor') :
+    header_string = header_string + " XFACTOR "
+    format_string = format_string + " %11s"
 if argdict.has_key('--class') :
     header_string = header_string + " CLASS       "
     format_string = format_string + " %12s "
@@ -371,6 +377,10 @@ for job_step in running_starting_jobs :
                             cons_memory = cons_memory + resource_db_handle[0][node]['ConsumableMemory']
             limit_seconds = job_step['wall_clock_limit']
             limit_string = "%02u:%02u:%02u" % (job_step['wall_clock_limit']/3600, job_step['wall_clock_limit']%3600/60, job_step['wall_clock_limit']%60)
+            if job_step.has_key('system_queue_time') and job_step['system_queue_time'] != None:
+                xfactor = "%.2f" % ((job_step['Dispatch_Time'] - job_step['system_queue_time'] + limit_seconds)/limit_seconds,)
+            else:
+                xfactor = 'Unknown'
             if job_step.has_key('wall_clock_used') and job_step['wall_clock_used'] != None :
                 remaining_seconds = job_step['wall_clock_limit'] - job_step['wall_clock_used']
             else :
@@ -413,6 +423,8 @@ for job_step in running_starting_jobs :
                   )
             if argdict.has_key('--limit') :
                 print_list.append(limit_string)
+            if argdict.has_key('--xfactor') :
+                print_list.append(xfactor)
             if argdict.has_key('--class') :
                 print_list.append(job_step['job_class'])
             if argdict.has_key('--qos') :
@@ -480,6 +492,9 @@ if argdict.has_key('--systemqt') :
 if argdict.has_key('--submitt') :
     header_string = header_string + " SUBMITTIME "
     format_string = format_string + " %11s"
+if argdict.has_key('--xfactor') :
+    header_string = header_string + " XFACTOR "
+    format_string = format_string + " %11s"
 if argdict.has_key('--class') :
     header_string = header_string + " CLASS       "
     format_string = format_string + " %12s"
@@ -538,6 +553,10 @@ for job_step in eligible_jobs :
         res_start_string = None
         limit_seconds = job_step['wall_clock_limit']
         limit_string = "%02u:%02u:%02u" % (job_step['wall_clock_limit']/3600, job_step['wall_clock_limit']%3600/60, job_step['wall_clock_limit']%60)
+        if job_step.has_key('system_queue_time') and job_step['system_queue_time'] != None:
+            xfactor = "%.2f" % ((Catalina.Now_float - job_step['system_queue_time'] + limit_seconds)/limit_seconds,)
+        else:
+            xfactor = 'Unknown'
         for reservation in reservations :
             if reservation['job_runID'] == job_step['name'] :
                 res_start_time = reservation['start_time_float']
@@ -571,6 +590,8 @@ for job_step in eligible_jobs :
             print_list.append(
               time.strftime("%m/%d %H:%M", time.localtime(job_step['SubmitTime']))
             )
+        if argdict.has_key('--xfactor') :
+            print_list.append(xfactor)
         if argdict.has_key('--class') :
             print_list.append(job_step['job_class'])
         if argdict.has_key('--qos') :

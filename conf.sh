@@ -277,7 +277,7 @@ PBS)
   \"Idle\" : \"Idle\",\\
   \"Down\" : \"Down\",\\
   \"down\" : \"Down\",\\
-  \"offline\" : \"Down\",\\
+  \"offline\" : \"Drain\",\\
   \"state-unknown,down\" : \"Down\",\\
   \"busy\" : \"Running\",\\
   \"Running\" : \"Running\",\\
@@ -290,6 +290,7 @@ PBS)
   \"E\" : \"Running\",\\
   \"H\" : \"Hold\",\\
   \"Q\" : \"Idle\",\\
+  \"C\" : \"Completed\",\\
   \"S\" : \"Preempted\",\\
   \"T\" : \"Hold\",\\
   \"W\" : \"Hold\"\\
@@ -333,7 +334,7 @@ TORQUE)
   \"Idle\" : \"Idle\",\\
   \"Down\" : \"Down\",\\
   \"down\" : \"Down\",\\
-  \"offline\" : \"Down\",\\
+  \"offline\" : \"Drain\",\\
   \"state-unknown,down\" : \"Down\",\\
   \"busy\" : \"Running\",\\
   \"Running\" : \"Running\",\\
@@ -346,6 +347,7 @@ TORQUE)
   \"E\" : \"Running\",\\
   \"H\" : \"Hold\",\\
   \"Q\" : \"Idle\",\\
+  \"C\" : \"Completed\",\\
   \"S\" : \"Preempted\",\\
   \"T\" : \"Hold\",\\
   \"W\" : \"Hold\"\\

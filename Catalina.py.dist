@@ -857,6 +857,24 @@ def close_db (db_handle) :
         # stat of the file seems to sync it up in NFS...
         file_stat = os.stat(REMOTEFILE)
         file_stat = os.stat(ROFILE)
+        # seeing DB corruption, try to open db at close.
+        try :
+            FO = open(REMOTEFILE, 'rb')
+            db = cPickle.load(FO)
+            FO.close()
+        except :
+            info_tuple = sys.exc_info()
+            info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+            tb_list = traceback.format_tb(info_tuple[2])
+            info_list = info_list + tb_list
+            tb_text = string.join(info_list)
+            recipient = MAIL_RECIPIENT
+            subject = "Close DB corruption"
+            message = """Catalina database corruption detected for
+db: %s""" % REMOTEFILE + '\n' + "file.tell() (%s)\n" % FO.tell() + tb_text
+            print "message (%s)" % message
+            warn(message, subject, recipient)
+            catsyslog(message,'warning')
     unlock_db_files(db_tuple)
 
 def apply_policy_code(code_string,input_tuple) :
@@ -2724,7 +2742,8 @@ def update_job_info(jobs_db_handle) :
             update_object_attribute('system_queue_time', None, old_job_step,
               jobs_db_handle)
             
-        if old_job_step['name'] not in new_job_ids \
+        if not old_job_step['state'] in ['Completed','Canceled','Removed'] and \
+          old_job_step['name'] not in new_job_ids \
           and old_job_step.has_key('last_seen_time_float') \
           and ( LOST_JOB_LIMIT == None \
           or Now_float - old_job_step['last_seen_time_float'] > LOST_JOB_LIMIT ) :
