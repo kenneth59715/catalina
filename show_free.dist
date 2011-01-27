@@ -229,8 +229,7 @@ print "CPU Backfill window:"
 for index, window in enumerate(now_windows) :
     if not window[2].has_key('cpu') :
         continue
-    #if window[1] != old_end_time :
-    if window[1] != old_end_time or index == len(now_windows) - 1:
+    if window[1] != old_end_time :
         for agg_key in agg_dict.keys():
             print "    node: %s cpus: %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
         if old_end_time != 0 :
@@ -272,7 +271,7 @@ print "Memory Backfill window:"
 for index, window in enumerate(now_windows) :
     if not window[2].has_key('memory') :
         continue
-    if window[1] != old_end_time or index == len(now_windows) - 1:
+    if window[1] != old_end_time:
         for agg_key in agg_dict.keys():
             print "    node: %s memory (MB): %s properties: %s" % (agg_key, agg_dict[agg_key], resources_db_handle[0][agg_key]['properties_list'])
         if old_end_time != 0 :
@@ -292,9 +291,10 @@ for index, window in enumerate(now_windows) :
     #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
-if window_count > 0 :
-    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
-    print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+#if window_count > 0 :
+#    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#    print "%s memory (MB) available for approximately %.0f minutes" % ( window_count, duration/60 )
+
 # print the last set of now_windows:
 if len(agg_dict.keys()) > 0:
     for agg_key in agg_dict.keys():
@@ -314,8 +314,7 @@ for index, window in enumerate(now_windows) :
         continue
     #if window[2].has_key('nodename') and window[2]['nodename'] in used_windows:
     #    continue
-    #if window[1] != old_end_time :
-    if window[1] != old_end_time or index == len(now_windows) - 1:
+    if window[1] != old_end_time :
         if old_end_time != 0 :
             duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
             print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
@@ -326,9 +325,13 @@ for index, window in enumerate(now_windows) :
     print "    node: %s properties: %s" % (window[2]['nodename'], resources_db_handle[0][window[2]['nodename']]['properties_list'])
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
-if window_count > 0 :
-    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
-    print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
+#if window_count > 0 :
+#    duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+#    print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
+
+# print summary for the last set of now_windows:
+duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
+print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
 
 # release lock, close the file
 Catalina.close_ro_db(resources_db_handle)
