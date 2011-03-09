@@ -3059,9 +3059,15 @@ def cancel_risk_reservations(reservations_db_handle,
         nonrisk_res_dict = {}
         for nonrisk_res in nonrisk_reservations + retained_risk_reservations :
             # skip if nonrisk priority lower than risk priority
+            #if not nonrisk_res['purpose_type_string'] in ['running','job']:
+            #    continue
+            #if not nonrisk_res.has_key( in ['running','job']:
+            #print "nonrisk_res['job_runID'] (%s)" % (nonrisk_res['job_runID'],)
+            #print "risk_res['job_runID'] (%s)" % (risk_res['job_runID'],)
             if nonrisk_res.has_key('job_runID')  \
-              and nonrisk_res.has_key('job_runID') \
+              and nonrisk_res['job_runID'] != None \
               and risk_res.has_key('job_runID') \
+              and risk_res['job_runID'] != None \
               and jobs_db_handle[0][nonrisk_res['job_runID']]['priority'] < \
               jobs_db_handle[0][risk_res['job_runID']]['priority'] \
               :
