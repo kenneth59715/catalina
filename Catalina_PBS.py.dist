@@ -110,6 +110,8 @@ def initialize_job_step(job_step_name) :
     new_job_step['reservation_binding'] = []
     new_job_step['job_start_warns_int'] = 0
     new_job_step['resource_amount_int'] = 0
+    new_job_step['preemptible'] = 0
+    new_job_step['preempting'] = 0
     return new_job_step
 
 def get_runjob_dict() :
@@ -556,6 +558,8 @@ def get_job_steps_dict() :
                            string.atof(min) * 60 + \
                            string.atof(sec)
             new_job_step['wall_clock_used'] = walltime_sec
+        else:
+            new_job_step['wall_clock_used'] = 0
         if new_job_step['state'] == 'Running' :
             if runjob_dict[job_step_id].has_key('comment') :
                 job_comment = runjob_dict[job_step_id]['comment'][1]

@@ -2309,7 +2309,7 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
                 if reservations_dict[res_key]['purpose_type_string'] == "pushback" :
                     for allocated_dict in reservations_dict[res_key]['allocated_dict_list'] :
                         if allocated_dict['nodename'] == window_tuple[0][2]['nodename'] :
-                            pushback_affinity = pushback_affinity + jobs_dict[reservations_dict[res_key]['job_runID']]['priority_int']
+                            pushback_affinity = pushback_affinity + jobs_dict[reservations_dict[res_key]['job_runID']]['priority']
             affinity = 0
             for reservation in relevant_reservations_list :
                 input_tuple = (job_step,)
@@ -2706,23 +2706,23 @@ def update_job_info(jobs_db_handle) :
                     if DEBUGJOB != None:
                         print "updating (%s) (%s) for (%s)" % (key, new_job_step[key], temp_job_step['name'])
                     temp_job_step[key] = new_job_step[key]
-                    if key == 'requested_resource_list' and new_job_step[key] != old_job_step[key]:
+                    if key == 'requested_resource_list' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'wall_clock_limit' and new_job_step[key] != old_job_step[key]:
+                    if key == 'wall_clock_limit' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'reservation_binding' and new_job_step[key] != old_job_step[key]:
+                    if key == 'reservation_binding' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'QOS' and new_job_step[key] != old_job_step[key]:
+                    if key == 'QOS' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'preemptible' and new_job_step[key] != old_job_step[key]:
+                    if key == 'preemptible' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'preempting' and new_job_step[key] != old_job_step[key]:
+                    if key == 'preempting' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'run_at_risk_int' and new_job_step[key] != old_job_step[key]:
+                    if key == 'run_at_risk_int' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'local_admin_priority_string' and new_job_step[key] != old_job_step[key]:
+                    if key == 'local_admin_priority_string' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
-                    if key == 'local_user_priority_string' and new_job_step[key] != old_job_step[key]:
+                    if key == 'local_user_priority_string' and (not old_job_step.has_key(key) or new_job_step[key] != old_job_step[key]):
                         job_altered = 1
                     if job_altered == 1:
                         altered_jobs_list.append(new_job_step['name'])
@@ -3066,6 +3066,16 @@ def cancel_risk_reservations(reservations_db_handle,
               jobs_db_handle[0][risk_res['job_runID']]['priority'] \
               :
                 continue
+            # skip if nonrisk is not preempting
+            #if nonrisk_res.has_key('job_runID')  \
+            #  and nonrisk_res.has_key('job_runID') \
+            #  and risk_res.has_key('job_runID') \
+            #  and jobs_db_handle[0][nonrisk_res['job_runID']]['preempting'] <= 0 \
+            #  :
+            #    print "skipping %s" % (jobs_db_handle[0][nonrisk_res['job_runID']],)
+            #    continue
+            #else:
+            #    print "doing %s" % (jobs_db_handle[0][nonrisk_res['job_runID']],)
             
             if nonrisk_res['start_time_float'] <= \
               Now_float + RUN_AT_RISK_CLEANUP_TIME and \
@@ -4015,7 +4025,6 @@ def update_standing_reservations(
                 except InsufficientNodes :
                     if DEBUG == 'usr' :
                         print "No resource_amount Standing reservation instance failed"
-                    print "No resource_amount Standing reservation instance failed"
                 else :
                     print "No resource_amount Standing reservation instance succeeded"
                     partial_found = new_res['resource_amount_int']
@@ -4288,7 +4297,6 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                                  }
                 allocated_dict_list.append(allocated_dict)
         new_res['allocated_dict_list'] = allocated_dict_list
-        #print "new running res (%s)" % (new_res,)
         insert_new_object(new_res, reservations_db_handle)
     for preempted_job in preempted_jobs_list :
         #def create_job_reservation(

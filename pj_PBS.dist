@@ -15,5 +15,5 @@ rc = command_file.close()
 if rc == None:
     rc = 0
 print "(%s)" % (jobid,)
-print "rc from qsig -s suspend is >%s<" % rc
+print "rc from %s is >%s<" % (Catalina.PREEMPTCMD,rc)
 
