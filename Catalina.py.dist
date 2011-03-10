@@ -4400,6 +4400,7 @@ def create_standing_reservation(
     new_standing_reservation['node_restriction'] = node_restriction
     new_standing_reservation['conflict_policy'] = conflict_policy
     new_standing_reservation['sort_policy'] = sort_policy
+    new_standing_reservation['affinity_calculation'] = affinity_calculation
     new_standing_reservation['depth'] = string.atoi(depth)
     new_standing_reservation['comment_string'] = comment
     new_standing_reservation['overlap_running_int'] = overlap_running_int
