@@ -19,6 +19,7 @@ import sys
 
 os.environ['PBS_DEFAULT'] = '___RMSERVER_DEFAULT_PLACEHOLDER___'
 
+DO_NOT_CANCEL=0
 JOBSUFFIX=''
 SUBMIT_OUTPUT_PATTERN=r'^(?P<job_id>\d+\.\S+)'
 JOB_UPDATE_ATTRIBUTE_list = [
@@ -195,7 +196,7 @@ def cancel_job(job_step, events_db_handle, message=None) :
         cmd_string = Catalina.CANCELCMD + ' ' + job_step['name']
     
     output = ''
-    if job_step.has_key('do_not_cancel_int') and \
+    if DO_NOT_CANCEL != 0 and job_step.has_key('do_not_cancel_int') and \
       job_step['do_not_cancel_int'] != None and \
       int(job_step['do_not_cancel_int']) >= 1:
         event = {
