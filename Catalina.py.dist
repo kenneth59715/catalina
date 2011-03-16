@@ -3086,7 +3086,8 @@ def cancel_risk_reservations(reservations_db_handle,
             if nonrisk_res['start_time_float'] <= \
               Now_float + RUN_AT_RISK_CLEANUP_TIME and \
               ( nonrisk_res['start_time_float'] < risk_res['end_time_float'] <= nonrisk_res['end_time_float'] or \
-              nonrisk_res['start_time_float'] <= risk_res['start_time_float'] < nonrisk_res['end_time_float'] ) :
+              nonrisk_res['start_time_float'] <= risk_res['start_time_float'] < nonrisk_res['end_time_float'] or \
+              (risk_res['start_time_float'] <= nonrisk_res['start_time_float'] and nonrisk_res['end_time_float'] <= risk_res['end_time_float'])) :
 
                 # adding resources for nonrisk_res
                 input_tuple = ( jobs_dict[risk_res['job_runID']], )
