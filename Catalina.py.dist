@@ -5241,7 +5241,12 @@ def create_reservation(
             print "doing job (%s)" % job_runID
         # filter accepted_nodes_list with resource_dict_list[0]['resource_dict']
         old_accepted_nodes_list = copy.copy(accepted_nodes_list)
-        accepted_nodes_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), old_accepted_nodes_list)
+        accepted_nodes_list = []
+        for old_node in old_accepted_nodes_list:
+            for resource_dict in resource_dict_list:
+                if resource_dict['resource_dict'].has_key(old_node) and not old_node in accepted_nodes_list:
+                    accepted_nodes_list.append(old_node)
+        #accepted_nodes_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), old_accepted_nodes_list)
         # If the job is bound to a list of reservations, meaning
         # it is only supposed to run in that list, filter
         # accepted nodes list with that set of reservations
@@ -5650,7 +5655,12 @@ def create_reservation(
             existing_reservations = truncated_reservations
         if new_res['purpose_type_string'] == 'preempted_job' :
             old_accepted_nodes_list = copy.copy(accepted_nodes_list)
-            accepted_nodes_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), old_accepted_nodes_list)
+            accepted_nodes_list = []
+            for old_node in old_accepted_nodes_list:
+                for resource_dict in resource_dict_list:
+                    if resource_dict['resource_dict'].has_key(old_node) and not old_node in accepted_nodes_list:
+                        accepted_nodes_list.append(old_node)
+            #accepted_nodes_list = filter(lambda x,resource_dict_list=resource_dict_list : resource_dict_list[0]['resource_dict'].has_key(x), old_accepted_nodes_list)
         existing_reservations = existing_reservations + blocking_reservations_list
         #if purpose_type_string in ['preempted_job',] :
         #    for existing_reservation in existing_reservations :
