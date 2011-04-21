@@ -2741,7 +2741,7 @@ def update_job_info(jobs_db_handle) :
               jobs_db_handle)
 
         if old_job_step['name'] in altered_jobs_list:
-            update_object_attribute('system_queue_time', None, old_job_step,
+            update_object_attribute('system_queue_time', Now_float, old_job_step,
               jobs_db_handle)
             
         if not old_job_step['state'] in ['Completed','Canceled','Removed'] and \
