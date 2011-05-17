@@ -3139,7 +3139,8 @@ def cancel_risk_reservations(reservations_db_handle,
             if found_conflict == 0 :
                 if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
                     print "not deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
-                retained_risk_reservations.append(risk_res)
+                if not risk_res in retained_risk_reservations:
+                    retained_risk_reservations.append(risk_res)
             else :
                 if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
                     print "deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
