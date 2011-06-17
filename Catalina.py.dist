@@ -2910,11 +2910,11 @@ def update_job_priorities (jobs_db_handle) :
             QOS_target_xf_value = 0
         else :
             if expansion_factor >= QOS_target_expansion_factor :
-                QOS_target_xf_value = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+                QOS_target_xf_value = float(QOS_MAX_PRIORITY_dict[temp_job['QOS']])
             else :
                 QOS_target_xf_value = 1 / (QOS_target_expansion_factor - expansion_factor)
-            if QOS_target_xf_value > float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']]) :
-                QOS_target_xf_value = float(Catalina.QOS_MAX_PRIORITY_dict[temp_job['QOS']])
+            if QOS_target_xf_value > float(QOS_MAX_PRIORITY_dict[temp_job['QOS']]) :
+                QOS_target_xf_value = float(QOS_MAX_PRIORITY_dict[temp_job['QOS']])
         # Get QOS target queue time
         QOS_target_queue_wait_time = get_QOS_target_queue_wait_time(temp_job['QOS'])
         if QOS_target_queue_wait_time == None :
