@@ -733,6 +733,8 @@ def get_resources_list() :
             else:
                 pmem_per_node = 0
             new_resource['Memory'] =  pmem_per_node
+        else:
+            new_resource['Memory'] = 0
         # OpenPBS does not enforce memory or cpu on slave nodes.
         #new_resource['ConsumableCpus'] = 0
         #new_resource['ConsumableMemory'] = 0
