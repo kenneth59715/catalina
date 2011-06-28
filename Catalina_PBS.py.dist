@@ -724,12 +724,15 @@ def get_resources_list() :
         if status_dict.has_key('physmem') :
             pmem_mo = None
             pmem_mo = pmem_reo.match(status_dict['physmem'])
-            if pmem_mo.group('multiplier') in pmem_mult.keys():
-                pmem_per_node = int(pmem_mo.group('amount')) * pmem_mult[pmem_mo.group('multiplier')]
-                new_resource['Memory'] =  pmem_per_node
+            if pmem_mo != None:
+                if pmem_mo.group('multiplier') in pmem_mult.keys():
+                    pmem_per_node = int(pmem_mo.group('amount')) * pmem_mult[pmem_mo.group('multiplier')]
+                else:
+                    # no multiplier found
+                    pmem_per_node = int(pmem_mo.group('amount'))
             else:
-                # no multiplier found
-                pmem_per_node = int(pmem_mo.group('amount'))
+                pmem_per_node = 0
+            new_resource['Memory'] =  pmem_per_node
         # OpenPBS does not enforce memory or cpu on slave nodes.
         #new_resource['ConsumableCpus'] = 0
         #new_resource['ConsumableMemory'] = 0
