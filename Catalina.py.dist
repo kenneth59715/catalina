@@ -3114,7 +3114,7 @@ def cancel_risk_reservations(reservations_db_handle,
                             nonrisk_res_dict[nonrisknode]['cpu'] = nonrisk_res_dict[nonrisknode]['cpu'] + nonrisk_allocated_dict['cpu']
                             nonrisk_res_dict[nonrisknode]['memory'] = nonrisk_res_dict[nonrisknode]['memory'] + nonrisk_allocated_dict['memory']
                         else :
-                            nonrisk_res_dict[nonrisknode] = { 'cpu' : allocated_dict['cpu'], 'memory' : nonrisk_allocated_dict['memory'] }
+                            nonrisk_res_dict[nonrisknode] = { 'cpu' : nonrisk_allocated_dict['cpu'], 'memory' : nonrisk_allocated_dict['memory'] }
                     else :
                         if nonrisk_res_dict.has_key(nonrisknode) :
                             nonrisk_res_dict[nonrisknode]['cpu'] = nonrisk_res_dict[nonrisknode]['cpu'] + resources_dict[nonrisknode]['ConsumableCpus']
