@@ -48,11 +48,13 @@ fi
 
 get_first_exe() # Returns the path to the first real executable 
 {
+	#${ECHO} old_path ${old_path}
 	for i in `${ECHO} ${old_path} | ${SED}	's/^:/.:/
 						s/::/:.:/g
 						s/:$/:./
 						s/:/ /g'`
 	do
+		#${ECHO} checking $i/$1
 		if test -x $i/$1
 		then
 			${ECHO} $i/$1
@@ -182,12 +184,12 @@ SLURM)
 		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch`} || bailout 'Could not find sbatch' 1 ;
 		RUNCMD=${CATALINA_RUNCMD-`get_first_exe scontrol`} || bailout 'Could not find run job command' 1 ;
 		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel`} || bailout 'Could not find scancel' 1 ;
-		PREEMPTCMD=${CATALINA_PREEMPTCMD-'scontrol suspend'} || bailout 'Could not find scontrol' 1 ;
-		RESUMECMD=${CATALINA_RESUMECMD-'scontrol resume'} || bailout 'Could not find scontrol' 1 ;
-		QMCMD=${CATALINA_QMCMD-'scontrol --oneliner show node'} || bailout 'Could not find scontrol' 1 ;
-		QJCMD=${CATALINA_QJCMD-'scontrol --oneliner show job'} || bailout 'Could not find scontrol' 1 ;
-		QPCMD=${CATALINA_QPCMD-'scontrol --oneliner show partition'} || bailout 'Could not find scontrol' 1 ;
-		QHNCMD=${CATALINA_QHNCMD-'scontrol show hostnames'} || bailout 'Could not find scontrol' 1 ;
+		PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe scontrol`' suspend'} || bailout 'Could not find scontrol' 1 ;
+		RESUMECMD=${CATALINA_RESUMECMD-`get_first_exe scontrol`' resume'} || bailout 'Could not find scontrol' 1 ;
+		QMCMD=${CATALINA_QMCMD-`get_first_exe scontrol`' --oneliner show node'} || bailout 'Could not find scontrol' 1 ;
+		QJCMD=${CATALINA_QJCMD-`get_first_exe scontrol`' --oneliner show job'} || bailout 'Could not find scontrol' 1 ;
+		QPCMD=${CATALINA_QPCMD-`get_first_exe scontrol`' --oneliner show partition'} || bailout 'Could not find scontrol' 1 ;
+		QHNCMD=${CATALINA_QHNCMD-`get_first_exe scontrol`' show hostnames'} || bailout 'Could not find scontrol' 1 ;
 	fi
 	TESTJOB=testjob.SLURM ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.SLURM ;
@@ -220,6 +222,7 @@ SLURM)
   \"ALLOC\" : \"Running\",\\
   \"COMP\" : \"Running\",\\
   \"COMPLETING\" : \"Running\",\\
+  \"MIXED\" : \"Running\",\\
   \"IDLE+COMPLETING\" : \"Running\",\\
   }" ;
 # job states from man squeue

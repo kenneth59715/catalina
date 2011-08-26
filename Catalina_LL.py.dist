@@ -69,6 +69,7 @@ def initialize_resource(resource_name) :
     new_resource['Cpus'] = 0
     new_resource['ConsumableMemory'] = 0
     new_resource['ConsumableCpus'] = 0
+    new_resource['consumable_dict'] = {}
     new_resource['State'] = None
     new_resource['speculative_state'] = None
     new_resource['State_Change_Time'] = Catalina.Now_float
@@ -669,6 +670,7 @@ def get_resources_list() :
             # reservations for these.  To do new_resource here, would be
             # some overhead, whereas doing it in Catalina.py makes it less
             # portable...
+            new_resource['consumable_dict'] = {}
             if dict.has_key('resourcesmap') and dict['resourcesmap'] != '' :
                 for resource in string.split(dict['resourcesmap'], '+') :
                     resourcesmap_tuple = string.split(resource, '#cat_sep#')
@@ -678,11 +680,15 @@ def get_resources_list() :
                     resname, initialvalue, currentvalue = resourcesmap_tuple
                     if resname == 'ConsumableCpus' :
                         new_resource['ConsumableCpus'] = string.atoi(initialvalue)
+                        new_resource['consumable_dict']['cpu'] = string.atoi(initialvalue)
                     if resname == 'ConsumableMemory' :
                         new_resource['ConsumableMemory'] = string.atoi(initialvalue)
+                        new_resource['consumable_dict']['memory'] = string.atoi(initialvalue)
             else :
                 new_resource['ConsumableCpus'] = 0
                 new_resource['ConsumableMemory'] = 0
+                new_resource['consumable_dict']['cpu'] = 0
+                new_resource['consumable_dict']['memory'] = 0
             new_resource['Memory'] =  string.atoi(dict['Memory'])
             new_resource['Cpus'] =  string.atoi(dict['Cpus'])
             resources_dict[new_resource['Machine']] = new_resource

@@ -11,6 +11,8 @@ import time
 #24. Can SLURM time output format include the year?
 #The default SLURM time format output is MM/DD-HH:MM:SS. Define "ISO8601" at SLURM build time to get the time format YYYY-MM-DDTHH:MM:SS. Note that this change in format will break anything that parses SLURM output expecting the old format (e.g. LSF, Maui or Moab). 
 
+#JobId=59 Name=slurmjob.ex UserId=kenneth(15984) GroupId=sdsc(50) Priority=4294901727 Account=(null) QOS=(null) JobState=RUNNING Reason=None Dependency=(null) Requeue=1 Restarts=0 BatchFlag=1 ExitCode=0:0 RunTime=00:01:39 TimeLimit=00:05:00 TimeMin=N/A SubmitTime=2011-08-03T15:33:40 EligibleTime=2011-08-03T15:33:40 StartTime=2011-08-03T15:33:40 EndTime=2011-08-03T15:38:40 SuspendTime=None SecsPreSuspend=0 Partition=normal AllocNode:Sid=dash-1-4:22414 ReqNodeList=(null) ExcNodeList=(null) NodeList=dash-1-4 NumNodes=1 NumCPUs=8 CPUs/Task=1 ReqS:C:T=*:*:* MinCPUsNode=8 MinMemoryCPU=1500M MinTmpDiskNode=0 Features=(null) Gres=(null) Reservation=(null) Shared=OK Contiguous=0 Licenses=(null) Network=(null) Command=/rmount/users00/sdsc/kenneth/testprog/slurmjob.ex WorkDir=/rmount/users00/sdsc/kenneth/testprog
+
 def guessyear(old_tuple, Now_float):
     Now_tuple = time.localtime(Now_float)
     new_tuple = (Now_tuple[0],) + old_tuple[1:]
@@ -184,19 +186,41 @@ for jobline in joblines:
         node_list[nodeplace] = node_list[nodeplace] + 1
     job_dict['initiatormap'] = string.join(map(lambda x: "%s" % (x,) ,node_list),'+')
     #MinMemoryNode=450 MinTmpDisk=0 Features=compute
-    requirements_string = 'Features=' + job_dict['Features'] + \
-            '#cat_sep#' + 'MinMemoryNode=' + job_dict['MinMemoryNode'] + \
-            '#cat_sep#' + 'MinTmpDiskNode=' + job_dict['MinTmpDiskNode'] + \
-            '#cat_sep#' + 'MinCPUsNode=' + job_dict['MinCPUsNode'] + \
-            '#cat_sep#' + 'NumCPUs=' + job_dict['NumCPUs']
+    #requirements_string = 'Features=' + job_dict['Features'] + \
+    #        '#cat_sep#' + 'MinMemoryNode=' + job_dict['MinMemoryNode'] + \
+    #        '#cat_sep#' + 'MinTmpDiskNode=' + job_dict['MinTmpDiskNode'] + \
+    #        '#cat_sep#' + 'MinCPUsNode=' + job_dict['MinCPUsNode'] + \
+    #        '#cat_sep#' + 'NumCPUs=' + job_dict['NumCPUs']
+    requirements_list = []
+    if job_dict.has_key('Features'):
+        requirements_list.append('Features=' + job_dict['Features'])
+    if job_dict.has_key('MinMemoryNode'):
+        requirements_list.append('MinMemoryNode=' + job_dict['MinMemoryNode'])
+    if job_dict.has_key('MinTmpDiskNode'):
+        requirements_list.append('MinTmpDiskNode=' + job_dict['MinTmpDiskNode'])
+    if job_dict.has_key('MinCPUsNode'):
+        requirements_list.append('MinCPUsNode=' + job_dict['MinCPUsNode'])
+    if job_dict.has_key('NumCPUs'):
+        requirements_list.append('NumCPUs=' + job_dict['NumCPUs'])
+    requirements_string = string.join(requirements_list,'#cat_sep#')
     job_dict['requirementsmap'] = min_nodes * [requirements_string,]
-    resources_string = 'MinMemoryNode#cat_sep#' + job_dict['MinMemoryNode'] + \
-            '+' + 'MinTmpDiskNode#cat_sep#' + job_dict['MinTmpDiskNode'] + \
-            '+' + 'MinCPUsNode#cat_sep#' + job_dict['MinCPUsNode'] + \
-            '+' + 'NumCPUs#cat_sep#' + job_dict['NumCPUs']
+    resources_list = []
+    if job_dict.has_key('MinMemoryNode'):
+        resources_list.append('MinMemoryNode=' + job_dict['MinMemoryNode'])
+    if job_dict.has_key('MinTmpDiskNode'):
+        resources_list.append('MinTmpDiskNode=' + job_dict['MinTmpDiskNode'])
+    if job_dict.has_key('MinCPUsNode'):
+        resources_list.append('MinCPUsNode=' + job_dict['MinCPUsNode'])
+    if job_dict.has_key('NumCPUs'):
+        resources_list.append('NumCPUs=' + job_dict['NumCPUs'])
+    resources_string = string.join(resources_list,'+')
+    #resources_string = 'MinMemoryNode#cat_sep#' + job_dict['MinMemoryNode'] + \
+    #        '+' + 'MinTmpDiskNode#cat_sep#' + job_dict['MinTmpDiskNode'] + \
+    #        '+' + 'MinCPUsNode#cat_sep#' + job_dict['MinCPUsNode'] + \
+    #        '+' + 'NumCPUs#cat_sep#' + job_dict['NumCPUs']
     resourcesmap = min_nodes * [resources_string,]
     for nodeplace in range(min_nodes):
-        resourcesmap[nodeplace] = resourcesmap[nodeplace] + "+Cores#cat_sep#%s" % node_list[nodeplace]
+        resourcesmap[nodeplace] = resourcesmap[nodeplace] + "+Cores=%s" % node_list[nodeplace]
     job_dict['resourcesreq'] = resourcesmap
     if not job_dict.has_key('Comment'):
         job_dict['Comment'] = ''
@@ -228,7 +252,7 @@ for jobline in joblines:
       job_dict['dispatchtime'],
       job_dict['submittime'],
       string.join(job_dict['requirementsmap'],'+'),
-      string.join(job_dict['resourcesreq'],'+'),
+      string.join(job_dict['resourcesreq'],'#cat_sep#'),
       job_dict['Comment'],
       job_dict['requestednodes'],
       job_dict['excludednodes'],

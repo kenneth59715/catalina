@@ -60,7 +60,7 @@ pmem_mult = {
 
 def get_scheduler_time() :
     if Catalina.SERVERMODE == 'SIM' :
-        Now_float = float(os.system(TIME_SIM))
+        Now_float = float(os.system(Catalina.TIME_SIM))
     else :
         Now_float = time.time()
     return Now_float
@@ -119,7 +119,10 @@ def get_runjob_dict() :
     finished_reo = re.compile("^qj FINISHED$")
     finished_found = 0
     runjob_dict = {}
-    cmd = Catalina.HOMEDIR + '/___QJ_PLACEHOLDER___'
+    if Catalina.SERVERMODE == 'SIM' :
+        cmd = Catalina.QJ_SIM
+    else :
+        cmd = Catalina.HOMEDIR + '/___QJ_PLACEHOLDER___'
     for rawline in os.popen(cmd).readlines() :
         finished_mo = finished_reo.match(rawline)
         if finished_mo != None :
@@ -684,7 +687,10 @@ def get_job_steps_dict() :
     return job_steps
             
 def get_resources_list() :
-    QUERYMACHINES = Catalina.HOMEDIR + '/___QM_PLACEHOLDER___'
+    if Catalina.SERVERMODE == 'SIM' :
+        QUERYMACHINES = Catalina.QM_SIM
+    else :
+        QUERYMACHINES = Catalina.HOMEDIR + '/___QM_PLACEHOLDER___'
     machine_lines_list = os.popen(QUERYMACHINES).readlines()
     resources_dict = {}
     finished_reo = re.compile("^qm FINISHED$")
@@ -741,6 +747,9 @@ def get_resources_list() :
         # maybe do this with cpusets...
         new_resource['ConsumableCpus'] = new_resource['Cpus']
         new_resource['ConsumableMemory'] = new_resource['Memory']
+        new_resource['consumable_dict'] = {}
+        new_resource['consumable_dict']['cpu'] = new_resource['Cpus']
+        new_resource['consumable_dict']['memory'] = new_resource['Memory']
         new_resource['memory'] = new_resource['Memory']
         new_resource['cpu'] = new_resource['Cpus']
         #new_resource['Cpus'] = 0
@@ -748,6 +757,7 @@ def get_resources_list() :
         new_resource['ntype_string'] =  dict['ntype'][1]
         if dict.has_key('properties') :
             new_resource['properties_list'] = string.split(dict['properties'][1],',')
+            #print "properties_list (%s) dict['properties'] (%s)" % (new_resource['properties_list'], dict['properties'])
         try :
             new_resource['State'] = \
               Catalina.RM_TO_CAT_RESOURCE_dict[dict['state'][1]]
@@ -850,6 +860,8 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
         #    Catalina.log_event(event, events_db_handle)
         #    continue
         start_time_float = reservation['start_time_float']
+        if start_time_float == None:
+            continue
         if (Catalina.Now_float + 1) >= start_time_float and (Catalina.Now_float - start_time_float) <= Catalina.FUDGE_FACTOR/2 :
             if reservation.has_key('start_count_int') and \
               reservation['start_count_int'] >= 1 :

@@ -273,12 +273,19 @@ output = r"""reservation (?P<res_name>.*) created on %s nodes with start_time (?
 cmd_string = cmd + ' --earliest_start=' + start_time + ' --latest_end=' + end_time + ' --duration=' + duration + ' --resource_amount=' + resource_amount + ' --job_restriction=' + '"' + job_restriction + '"' + ' --node_restriction_file=' + '"' + node_restriction_file + '"' + ' --node_sort_policy_file=' + '"' + node_sort_policy_file + '"' + ' --conflict_policy_file=' + '"' + conflict_policy_file + '"' + ' --affinity_calculation=' + '"' + affinity_calculation + '"' + ' --mode=' + mode
 print "# create reservation, with earliest_start and resource_amount specified"
 returnstring = os.popen(cmd_string).read()
+#CMDFO = os.popen(cmd_string)
+#CMDFO.flush()
+#lines_list = CMDFO.readlines()
+#returnstring = CMDFO.read()
+#returnstring = string.join(lines_list,'')
+#CMDFO.close()
 so = re.search(output, returnstring)
 print "# 3 resource, 1 hour, earliest_start +1hr, latest_end +24hr"
 if so == None :
     print "not ok"
     print "returnstring is (%s)" % returnstring
     print cmd_string
+    continue_var = raw_input('continue? ')
 else :
     print "ok"
     res_id = so.group('res_name')
@@ -819,7 +826,8 @@ else :
 # create reservation with earliest_start and no resource_amount
 cmd = HOMEDIR + '/create_res'
 start_time = "%d" % (epoch_now + 3600)
-end_time = "%d" % (epoch_now + 77760000)
+#end_time = "%d" % (epoch_now + 77760000)
+end_time = "%d" % (epoch_now + Catalina.TEST_USERRES_END)
 duration = '3600'
 job_restriction = r"if input_tuple[0]['user'] == '%s' : result = 0" % username_string
 node_restriction_file = HOMEDIR + r"/node_restriction_file.___RESOURCEMANAGER_PLACEHOLDER___"

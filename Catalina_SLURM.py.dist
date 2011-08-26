@@ -106,6 +106,7 @@ def initialize_resource(resource_name) :
     new_resource['Cores'] = 0
     new_resource['ConsumableMemory'] = 0
     new_resource['ConsumableCpus'] = 0
+    new_resource['consumable_dict'] = {}
     new_resource['State'] = None
     new_resource['speculative_state'] = None
     new_resource['State_Change_Time'] = Catalina.Now_float
@@ -169,7 +170,6 @@ def get_runjob_dict() :
         line = string.strip(rawline)
         elements = string.split(line,'#cat_delim#')
         for element in elements :
-            #print "doing (%s)" % (element,)
             name_value_list = string.split(element, ':')
             if len(name_value_list) == 1 :
                 name_value_list.append('')
@@ -403,6 +403,8 @@ def get_job_steps_dict() :
     #llqlist = id_adapter_reo.findall(llqstring)
     #print "llqlist (%s)" % llqlist
     #for linetuple in llqlist :
+    memspec_pat = r"(?P<megs>\d+)M*"
+    memspec_reo = re.compile(memspec_pat)
     for (jobname,jobdict) in runjob_dict.items():
         #print "doing jobname (%s) (%s)" % (jobname, jobdict)
         # parse the lines, setting values in new_job_step
@@ -542,27 +544,51 @@ def get_job_steps_dict() :
         # storage resources for db or storage dicts.
         # Should translate LoadL-specific names to generic names.
         # support only ConsumableCpus and ConsumableMemory, for now.
+        ##cat_delim#name:69#cat_delim#user:kenneth#cat_delim#group:sdsc#cat_delim#account:(null)#cat_delim#state:PENDING#cat_delim#wall_clock_limit:300#cat_delim#wall_clock_used:0#cat_delim#class:normal#cat_delim#node_usage:NOT_SHARED#cat_delim#dispatchtime:None#cat_delim#submittime:1312478593.0#cat_delim#requirementsmap:Features=(null)#cat_sep#MinMemoryNode=12000M#cat_sep#MinTmpDiskNode=0#cat_sep#MinCPUsNode=8#cat_sep#NumCPUs=8#cat_delim#resourcesreq:MinMemoryNode#cat_sep#12000M+MinTmpDiskNode#cat_sep#0+MinCPUsNode#cat_sep#8+NumCPUs#cat_sep#8+Cores#cat_sep#1#cat_delim#comment:#cat_delim#requestednodes:#cat_delim#excludednodes:#cat_delim#machinemap:None#cat_delim#initiatormap:1
+            #resourcereq_dict = resourcereq_dict_list[rmindex]
+        resourcereq_dict_list = []
         resourcesreq = runjob_dict[job_step_id]['resourcesreq']
         #print "resourcesreq (%s)" % (resourcesreq,)
-        consumable_list = string.split(resourcesreq,'+')
-        cons_req = ''
-        last_consumable = len(consumable_list) - 1
-        resourcereq_dict = {'cpu' : 0, 'memory' : 0}
-        if new_job_step['node_usage'] == 'node_shared' :
-            node_dict_type = 'node_shared'
-        else :
-            node_dict_type = 'node_exclusive'
-        for index in range(len(consumable_list)) :
+        rq_list = string.split(resourcesreq,'#cat_sep#')
+        for rq in rq_list:
+            consumable_list = string.split(rq,'+')
+            cons_req = ''
+            last_consumable = len(consumable_list) - 1
+            resourcereq_dict = {'cpu' : 0, 'memory' : 0}
+            if new_job_step['node_usage'] == 'node_shared' :
+                node_dict_type = 'node_shared'
+            else :
+                node_dict_type = 'node_exclusive'
             #print "consumable_list (%s)" % (consumable_list,)
-            #(cons_name, cons_value) = string.split(consumable_list[index], '#cat_sep#')
-            cons_tuple = string.split(consumable_list[index], '#cat_sep#')
-            if len(cons_tuple) < 2 :
-                continue
-            if cons_tuple[0] == 'MinProcs' :
-                resourcereq_dict['cpu'] = long(cons_tuple[1])
-            if cons_tuple[0] == 'MinMemoryNode' :
-                resourcereq_dict['memory'] = long(cons_tuple[1])
-        #print "resourcereq_dict (%s)" % (resourcereq_dict,)
+            for index in range(len(consumable_list)) :
+                #(cons_name, cons_value) = string.split(consumable_list[index], '=')
+                cons_tuple = string.split(consumable_list[index], '=')
+                #print "cons_tuple (%s)" % (cons_tuple,)
+                if len(cons_tuple) < 2 :
+                    continue
+                if cons_tuple[0] == 'MinProcs' :
+                    resourcereq_dict['cpu'] = long(cons_tuple[1])
+                if cons_tuple[0] == 'NumCPUs' :
+                    resourcereq_dict['cpu'] = long(cons_tuple[1])
+                if cons_tuple[0] == 'MinCPUsNode' :
+                    resourcereq_dict['cpu'] = long(cons_tuple[1])
+                if cons_tuple[0] == 'MinMemoryNode' :
+                    memspec_mo = memspec_reo.match(cons_tuple[1])
+                    if memspec_mo == None:
+                        print "Failed to parse memory requirement (%s) for job (%s)!" % (cons_tuple[1], job_step_id)
+                        memspec = '1000'
+                    else:
+                        memspec = long(memspec_mo.group('megs'))
+                    #resourcereq_dict['memory'] = long(cons_tuple[1])
+                    resourcereq_dict['memory'] = long(memspec)
+            if not resourcereq_dict.has_key('cpu'):
+                print "failed to find --mincpus for (%s)!" % (jobstepid,)
+                resourcereq_dict['cpu'] = None
+            if not resourcereq_dict.has_key('memory'):
+                print "failed to find --mem for (%s)!" % (jobstepid,)
+                resourcereq_dict['memory'] = None
+            #print "resourcereq_dict (%s)" % (resourcereq_dict,)
+            resourcereq_dict_list.append(copy.deepcopy(resourcereq_dict))
         #new_job_step['req_dict_list'] = [{
         #  'amount_int' : new_job_step['resource_amount_int'],
         #  'this_req_string' : new_job_step['cat_requirements_string']
@@ -621,8 +647,15 @@ def get_job_steps_dict() :
 #                #new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step['requirements'])
 #                new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step)
         new_job_step['cat_requirements_string'] = get_requirements_string(new_job_step)
+        # resourcemap_list from initiatormap.  so this should
+        # be a list of integers, each item of the list is one
+        # node, each integer is the number of tasks on that node.
+        # resourcereq_dict is the resources requested for each task.
         resourcereq_dict_dict_list = []
-        for resourcemap in resourcemap_list :
+        #for resourcemap in resourcemap_list :
+        for rmindex in range(len(resourcemap_list)):
+            resourcemap = resourcemap_list[rmindex]
+            resourcereq_dict = resourcereq_dict_list[rmindex]
             resourcereq_dict_dict = {'type' : node_dict_type}
             req_list = []
             for index in range(long(resourcemap)) :
@@ -640,6 +673,8 @@ def get_job_steps_dict() :
                     pass
                  ## end bug 549 fix ##
                 req_list.append(resourcereq_dict)
+            if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
+                print "req_list (%s)" % (req_list,)
             resourcereq_dict_dict['req_list'] = req_list
             resourcereq_dict_dict_list.append(resourcereq_dict_dict)
 
@@ -764,6 +799,8 @@ def get_resources_list() :
             #    new_resource['ConsumableMemory'] = 0
             new_resource['ConsumableMemory'] =  string.atoi(dict['Memory'])
             new_resource['ConsumableCpus'] =  string.atoi(dict['Cpus'])
+            new_resource['consumable_dict']['memory'] =  string.atoi(dict['Memory'])
+            new_resource['consumable_dict']['cpu'] =  string.atoi(dict['Cpus'])
             new_resource['Memory'] =  string.atoi(dict['Memory'])
             new_resource['Cpus'] =  string.atoi(dict['Cpus'])
             #print "new_resource (%s)" % (new_resource,)
@@ -1135,6 +1172,7 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
     jobs_to_run = {}
     for reservation in reservations_dict.values() :
         #print "doing reservation (%s) with purpose_type_string (%s)" % (reservation['name'], reservation['purpose_type_string'])
+        #print "(%s)" % (reservation,)
         if not reservation['purpose_type_string'] in ['job', 'preempted_job'] :
             #print "skipping reservation (%s) with purpose_type_string (%s)" % (reservation['name'], reservation['purpose_type_string'])
             continue

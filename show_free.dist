@@ -42,6 +42,7 @@ Usage: show_free [--user=<username>]
                [--duration=<wallclocklimit>]
                [--runID=<job name>]
                [--requirementsmap=<job requirements>]
+               [--node_spec_string=<node specification>]
                [--Adapter=<job adapter requirement>]
                [--initiatormap=<job task map>]
                [--debug]"""
@@ -55,6 +56,7 @@ options = [ 'user=',
             'group=',
             'class=',
             'requirementsmap=',
+            'node_spec_string=',
             'Adapter=',
             'initiatormap=',
             'qos=',
@@ -126,6 +128,11 @@ if argdict.has_key('--requirementsmap') :
     print "argdict['--requirementsmap'] (%s)" % (argdict['--requirementsmap'],)
 else :
     fake_job['requirementsmap'] = ['',]
+if argdict.has_key('--node_spec_string') :
+    fake_job['node_spec_string'] = argdict['--node_spec_string']
+    print "argdict['--node_spec_string'] (%s)" % (argdict['--node_spec_string'],)
+else :
+    fake_job['node_spec_string'] = ''
 if argdict.has_key('--duration') :
     fake_job['wall_clock_limit'] = string.atof(argdict['--duration'])
 else :
