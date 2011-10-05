@@ -6,6 +6,7 @@ catalina.config.dist
 Catalina_LL.py.dist
 Catalina_PBS.py.dist
 Catalina.py.dist
+Topology.py.dist
 catalina_schedule_jobs.dist
 CHANGELOG
 check.py.dist
