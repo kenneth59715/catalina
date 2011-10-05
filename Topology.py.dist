@@ -1,0 +1,143 @@
+
+import copy
+
+TOPOFILE='___HOMEDIR_PLACEHOLDER___/topo.local'
+
+XDIM = 4
+YDIM = 4
+ZDIM = 4
+
+#maxhops = 2
+#candidate_switch_list = [
+#  (0,0,0),
+#  (0,1,0),
+#  (0,2,0),
+#  (0,3,0),
+#  (0,0,1),
+#  (0,0,2),
+#  (0,0,3)
+#  ]
+#candidate_switch_list = switch_list
+
+switch_list = []
+for i in range(XDIM):
+    for j in range(YDIM):
+        for k in range(ZDIM):
+            switch_list.append((i,j,k))
+
+def gethops(aswitch, bswitch):
+    xhops = min((aswitch[0] - bswitch[0]) % XDIM,
+                (bswitch[0] - aswitch[0]) % XDIM)
+    yhops = min((aswitch[1] - bswitch[1]) % YDIM,
+                (bswitch[1] - aswitch[1]) % YDIM)
+    zhops = min((aswitch[2] - bswitch[2]) % ZDIM,
+                (bswitch[2] - aswitch[2]) % ZDIM)
+    hops = xhops + yhops + zhops
+    return hops
+
+def test_maxhops(test_set, maxhops):
+    overmax = 0
+    for a_index in range(len(test_set)):
+        for b_index in range(len(test_set)):
+            if b_index <= a_index:
+                continue
+            hopcount = gethops(test_set[a_index], test_set[b_index])
+            if maxhops != None and hopcount > maxhops:
+                overmax = 1
+                break
+        if overmax == 1:
+            break
+    if overmax == 1:
+        return 0
+    else:
+        return 1
+
+def get_maxset(candidate_switch, test_set, maxhops):
+    maxset = [candidate_switch,]
+    for test_switch in test_set:
+        if test_switch == candidate_switch:
+            continue
+        maxset.append(test_switch)
+        if test_maxhops(maxset, maxhops):
+            pass
+        else:
+            del(maxset[-1])
+    return maxset
+
+def get_node_switch_dict():
+    #return {'debian' : (2,2,2),
+    #        'switch0_node0': (0,0,0),
+    #        'switch0_node1': (0,0,0),
+    #        'switch1_node0': (0,0,1),
+    #        'switch1_node1': (0,0,1),
+    #        'switch2_node0': (0,0,2),
+    #        'switch2_node1': (0,0,2),
+    #        'switch3_node0': (0,0,3),
+    #        'switch3_node1': (0,0,3),
+    #        'switch4_node0': (0,1,0),
+    #        'switch4_node1': (0,1,0),
+    #        'switch5_node0': (0,1,1),
+    #        'switch5_node1': (0,1,1),
+    #        'switch6_node0': (0,1,2),
+    #        'switch6_node1': (0,1,2),
+    #       }
+    TOPOFO = open(TOPOFILE)
+    node_switch_dict_text = TOPOFO.read()
+    TOPOFO.close()
+    node_switch_dict = eval(node_switch_dict_text
+    #print node_switch_dict
+    return node_switch_dict
+ 
+#def get_nodepriority(nodename, resources_dict, jobs_dict, reservations_dict):
+
+def get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict):
+
+    node_switch_dict = get_node_switch_dict()
+    candidate_switch_list = []
+    for switch_node in switch_node_list:
+        if not switch_node in candidate_switch_list:
+            candidate_switch_list.append(node_switch_dict[switch_node])
+    switch_sets_list = [[],]
+    for candidate_switch in candidate_switch_list:
+        #print "candidate_switch (%s)" % (candidate_switch,)
+        newsets_list = []
+        for switch_set_index in range(len(switch_sets_list)):
+            test_set = copy.deepcopy(switch_sets_list[switch_set_index])
+            test_set.append(candidate_switch)
+            if test_maxhops(test_set, maxhops):
+                switch_sets_list[switch_set_index] = test_set
+            else:
+                newset = get_maxset(candidate_switch, test_set, maxhops)
+                #print "newsets_list.append (%s)" % (newset,)
+                newsets_list.append(newset)
+        keepsets_list = []
+        for newset_index in range(len(newsets_list)):
+            newsets_tuple = tuple(newsets_list[newset_index])
+            #print "newsets_tuple (%s)" % (newsets_tuple,)
+            redundant = 0
+            for switch_set_index in range(len(switch_sets_list)):
+                switch_sets_tuple = tuple(switch_sets_list[switch_set_index])
+                #print "switch_sets check: newsets_tuple (%s) switch_sets_tuple (%s)" % (newsets_tuple,switch_sets_tuple)
+                if set(newsets_tuple).issubset(switch_sets_tuple):
+                    #print "redundant"
+                    redundant = 1
+            for switch_set_index in range(len(keepsets_list)):
+                keepsets_tuple = tuple(keepsets_list[switch_set_index])
+                #print "keep_sets check: newsets_tuple (%s) keepsets_tuple (%s)" % (newsets_tuple,keepsets_tuple)
+                if set(newsets_tuple).issubset(keepsets_tuple):
+                    #print "redundant"
+                    redundant = 1
+            if redundant == 0:
+                keepsets_list.append(copy.deepcopy(newsets_list[newset_index]))
+        switch_sets_list = switch_sets_list + keepsets_list
+    
+    #print "switch_sets_list (%s)" % (switch_sets_list,)
+    node_sets_list = []
+    for switch_set in switch_sets_list:
+        node_set = []
+        for nodename in switch_node_list:
+            if node_switch_dict[nodename] in switch_set:
+                node_set.append(nodename)
+        node_sets_list.append(copy.deepcopy(node_set))
+    #print "node_sets_list (%s)" % (node_sets_list,)
+    return node_sets_list
