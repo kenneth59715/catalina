@@ -61,6 +61,9 @@ ARCHIVE_DIR=___ARCHIVEDIR_PLACEHOLDER___
 # this config file
 CONFIGFILE=%(HOMEDIR)s/catalina.config
 
+# TOPOLOGY MODULE
+TOPOLOGY_MODULE=___TOPOLOGY_MODULE_PLACEHOLDER___
+
 # Database information
 CONFIGURATION_DB=configuration
 CONFIGURED_RESOURCES_DB=configured_resources

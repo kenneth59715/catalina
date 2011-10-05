@@ -6,6 +6,7 @@ import string
 import os
 import re
 import copy
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
 import Catalina
 import pwd
 import time
@@ -227,6 +228,11 @@ usage_string = \
                   Reservation list to ignore.  Use 'ALL' to specify that
                   all known reservations are to be ignored.
 
+                  [--maxhops=<maximum switch hops>]
+                  Maximum number of switch hops between any pair of nodes
+                  in the reservation.  Defaults to None, any amount of
+                  switch hops allowed.
+
                   [--mode=<real|lookahead>]
                   Determines whether reservation is really made (real) or just
                   tested (lookahead)."""
@@ -341,6 +347,10 @@ elif argdict.has_key('--copy_res_id') :
     ignore_list = copy_res['ignore_reservations_list']
 else :
     ignore_list = None
+if argdict.has_key('--maxhops') :
+    maxhops = argdict['--maxhops']
+else :
+    maxhops = None
 if argdict.has_key('--mode') :
     mode = argdict['--mode']
 else :
@@ -406,6 +416,7 @@ try :
       conflict_policy=conflict_policy,
       affinity_calculation=affinity_calculation,
       comment_string=comment,
+      maxhops=maxhops,
       ignore_reservations_list=ignore_list,
       mode=mode
     )

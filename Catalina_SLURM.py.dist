@@ -82,7 +82,8 @@ start_job_returncode_reo = re.compile("^rc from scontrol update is >(?P<code>\d+
 
 def get_scheduler_time() :
     if Catalina.SERVERMODE == 'SIM' :
-        Now_float = float(os.system(Catalina.TIME_SIM))
+        Now_float = float(os.popen(Catalina.TIME_SIM).read())
+        print "Now_float (%s)" % (Now_float,)
     else :
         Now_float = time.time()
     return Now_float
@@ -146,6 +147,7 @@ def initialize_job_step(job_step_name) :
     new_job_step['run_at_risk_int'] = 0
     new_job_step['preemptible'] = 0
     new_job_step['preempting'] = 0
+    new_job_step['node_spec_string'] = ''
     return new_job_step
 
 def get_runjob_dict() :
@@ -316,7 +318,7 @@ Please check to see if this job actually has Down nodes.
 """ % \
 (time.asctime(time.localtime(Catalina.Now_float)), job['name'],
   job['user'], job['state'], )
-                subject = "Job has LoadLeveler Down Nodes %s, %s" % \
+                subject = "Job has SLURM Down Nodes %s, %s" % \
                   (job['name'], job['user'])
                 recipient = Catalina.MAIL_RECIPIENT
                 Catalina.warn(message, subject, recipient)
@@ -514,6 +516,17 @@ def get_job_steps_dict() :
                     #print "run_at_risk_string (%s)" % run_at_risk_string
                     if run_at_risk_string in ['Yes','YES','yes','Y','y','1'] :
                         new_job_step['run_at_risk_int'] = 1
+                elif string.strip(fields[0]) == 'Catalina_maxhops' :
+                    maxhops = string.strip(fields[1])
+                    new_job_step['maxhops'] = maxhops
+                    #try:
+                    #    tested_maxhops = "%s" % (int(maxhops),)
+                    #except:
+                    #    tested_maxhops = 0
+                    #else:
+                    #    tested_maxhops = maxhops
+                    #new_job_step['maxhops'] = maxhops
+                    #new_job_step['maxhops'] = tested_maxhops
         new_job_step['initiatormap'] = runjob_dict[job_step_id]['initiatormap']
         resourcemap_list = string.split(new_job_step['initiatormap'], '+')
         #resourcemap_list = map(lambda x: '1', string.split(runjob_dict[job_step_id]['resourcesreq'],'+'))
@@ -653,6 +666,7 @@ def get_job_steps_dict() :
         # resourcereq_dict is the resources requested for each task.
         resourcereq_dict_dict_list = []
         #for resourcemap in resourcemap_list :
+        #print "resourcemap_list (%s) resourcereq_dict_list (%s)" % (resourcemap_list, resourcereq_dict_list)
         for rmindex in range(len(resourcemap_list)):
             resourcemap = resourcemap_list[rmindex]
             resourcereq_dict = resourcereq_dict_list[rmindex]
@@ -673,7 +687,7 @@ def get_job_steps_dict() :
                     pass
                  ## end bug 549 fix ##
                 req_list.append(resourcereq_dict)
-            if Catalina.DEBUGJOB != None and job_step['name'] == Catalina.DEBUGJOB :
+            if Catalina.DEBUGJOB != None and new_job_step['name'] == Catalina.DEBUGJOB :
                 print "req_list (%s)" % (req_list,)
             resourcereq_dict_dict['req_list'] = req_list
             resourcereq_dict_dict_list.append(resourcereq_dict_dict)
@@ -1178,9 +1192,9 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
             continue
         start_time_float = reservation['start_time_float']
         if (Catalina.Now_float + 1) >= start_time_float and (Catalina.Now_float - start_time_float) <= Catalina.FUDGE_FACTOR/2 :
-            if reservation.has_key('start_count_int') and \
-              reservation['start_count_int'] >= 1 :
-                continue
+            #if reservation.has_key('start_count_int') and \
+            #  reservation['start_count_int'] >= 1 :
+            #    continue
             job_stepid = reservation['job_runID']
             if not jobs_dict[job_stepid]['state'] in ['Idle', 'Preempted'] :
                 continue
@@ -1207,7 +1221,10 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
             if jobs_dict[job_stepid]['state'] == 'Preempted' :
                 runstring = ' ' + job_stepid
             else :
-                runstring = ' ' + job_stepid + \
+                #runstring = ' ' + job_stepid + \
+                #    ' ' + resourcemap_string
+                res_duration = "%s" % (int((reservation['duration_float'] + Catalina.FUDGE_FACTOR)/60.0),)
+                runstring = ' ' + job_stepid + ' ' + jobs_dict[job_stepid]['user'] + ' ' + res_duration + \
                     ' ' + resourcemap_string
             jobs_to_run[job_stepid] = (runstring, reservation)
     print "len(jobs_to_run.keys()) is (%s)" % len(jobs_to_run.keys())
@@ -1283,8 +1300,53 @@ def get_configured_resources_list(resources_db_handle) :
         stripped_line = line[:-1]
         return stripped_line
     #cmd_string = '___CAT_PLACEHOLDER___ ' + Catalina.LOADL_ADMIN_FILE + " | ___GREP_PLACEHOLDER___ 'type = machine' | ___GREP_PLACEHOLDER___ -v default | ___GREP_PLACEHOLDER___ -v ^# | ___AWK_PLACEHOLDER___ -F: '{print $1}'"
-    cmd_string = Catalina.QMCMD + " | awk '{print $1}' | awk -F= '{print $2}'"
+    if Catalina.SERVERMODE == 'SIM' :
+        cmd_string = Catalina.QM_SIM + " | ___AWK_PLACEHOLDER___ '{print $1}' | ___AWK_PLACEHOLDER___ -F= '{print $2}'"
+    else:
+        #cmd_string = Catalina.QMCMD + " | awk '{print $1}' | awk -F= '{print $2}'"
+        cmd_string = Catalina.QMCMD + " | ___AWK_PLACEHOLDER___ '{print $1}' | ___AWK_PLACEHOLDER___ -F= '{print $2}'"
     lines = os.popen(cmd_string).readlines()
+    #print "cmd_string (%s) lines (%s)" % (cmd_string, lines,)
     stripped_lines = map(strip_newline, lines)
     configured_resources_list = map( initialize_resource, stripped_lines)
     return configured_resources_list
+
+def cleanup_job_starts(jobs_db_handle, resources_db_handle, reservations_db_handle):
+    jobs_dict=jobs_db_handle[0]
+    resources_dict=resources_db_handle[0]
+    reservations_dict=reservations_db_handle[0]
+    #for jobkey in jobs_dict.keys():
+    #    jobname = jobs_dict[jobkey]['name']
+    #    # set Priority=0
+    #    # set Reservation=
+    #    command = Catalina.RUNCMD + " update " + "JobId=%s Priority=0 ReservationName=" % (jobname,)
+    #    print command
+    #    #os.system(command)
+    #    return_text = os.popen(command).read()
+    command = Catalina.RUNCMD + " --oneliner show job"
+    rawreslines = os.popen(command).readlines()
+    reslines = map(lambda x: string.strip(x),rawreslines)
+    for resline in reslines:
+        res_mo = re.match(r".*JobId=(?P<jobid>\S+).*Reservation=(?P<resname>catalinares\S+).*", resline)
+        if res_mo != None:
+            command = Catalina.RUNCMD + " update JobId=%s ReservationName=" % (res_mo.group('jobid'),)
+            print command
+            #os.system(command)
+            return_text = os.popen(command).read()
+            print return_text
+       #    print return_text
+
+    #ReservationName=10 StartTime=2011-09-15T14:41:36 EndTime=2011-09-16T14:41:36 Duration=1-00:00:00 Nodes=switch0_node0,switch0_node1 NodeCnt=2 Features=(null) PartitionName=(null) Flags=OVERLAP,SPEC_NODES Users=kenneth Accounts=(null) Licenses=(null)
+    command = Catalina.RUNCMD + " --oneliner show reservation"
+    rawreslines = os.popen(command).readlines()
+    #reslines = string.strip(rawreslines)
+    reslines = map(lambda x: string.strip(x),rawreslines)
+    for resline in reslines:
+        res_mo = re.match(r"ReservationName=(?P<resname>catalinares\S+).*", resline)
+        if res_mo != None:
+            command = Catalina.RUNCMD + " delete ReservationName=%s" % (res_mo.group('resname'),)
+            print command
+            #os.system(command)
+            return_text = os.popen(command).read()
+            print return_text
+    

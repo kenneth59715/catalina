@@ -177,9 +177,9 @@ SLURM)
 	LOST_JOB_LIMIT=0 ;
 	LOST_JOB_WARN=FALSE ;
         if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
-		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch_sim`} || bailout 'Could not find sbatch' 1 ;
-		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel_sim`} || bailout 'Could not find scancel' 1 ;
-		PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe scontrol_sim`} || bailout 'Could not find scontrol' 1 ;
+		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch_sim`} || bailout 'Could not find sbatch_sim' 1 ;
+		CANCELCMD=${CATALINA_CANCELCMD-`get_first_exe scancel_sim`} || bailout 'Could not find scancel_sim' 1 ;
+		PREEMPTCMD=${CATALINA_PREEMPTCMD-`get_first_exe scontrol_sim`} || bailout 'Could not find scontrol_sim' 1 ;
 	else
 		SUBMITCMD=${CATALINA_SUBMITCMD-`get_first_exe sbatch`} || bailout 'Could not find sbatch' 1 ;
 		RUNCMD=${CATALINA_RUNCMD-`get_first_exe scontrol`} || bailout 'Could not find run job command' 1 ;
@@ -673,6 +673,7 @@ ${ECHO} "s@___DEFAULT_RES_CLASS_PLACEHOLDER___@${CATALINA_DEFAULT_RES_CLASS-${DE
 ${ECHO} "s@___DEFAULT_PROC_CHARGE_PLACEHOLDER___@${CATALINA_DEFAULT_PROC_CHARGE-${DEF_DEFAULT_PROC_CHARGE}}@g" >> sedscr
 ${ECHO} "s@___DEFAULT_MACHINE_NAME_PLACEHOLDER___@${CATALINA_DEFAULT_MACHINE_NAME-${DEF_DEFAULT_MACHINE_NAME}}@g" >> sedscr
 ${ECHO} "s@___DEFAULT_JOB_CLASS_PLACEHOLDER___@${DEFAULT_JOB_CLASS}@g" >> sedscr
+${ECHO} "s@___TOPOLOGY_MODULE_PLACEHOLDER___@${CATALINA_TOPOLOGY_MODULE-None}@g" >> sedscr
 
 #STTY=`get_first_exe stty` || bailout 'Could not find stty' 1
 #case $? in
@@ -686,6 +687,7 @@ ${ECHO} "# Should not need to change anything below" >> Makefile
 ${ECHO} "SHELL=/bin/sh" >> Makefile
 ${ECHO} "CATALINA=Catalina.py" >> Makefile
 ${ECHO} "CATALINA_RM=Catalina_\$(RESOURCEMANAGER).py" >> Makefile
+${ECHO} "TOPOLOGY=Topology.py" >> Makefile
 ${ECHO} "BINDJOB=bind_job_to_res" >> Makefile
 ${ECHO} "CANCELRES=cancel_res" >> Makefile
 ${ECHO} "CANCELSTANDING=cancel_standing_res" >> Makefile
@@ -848,7 +850,7 @@ ${ECHO} "POLICY_FILES = \$(NODEREST) \$(NONCONFLICTING) \$(RUNNINGFIRST) \\" >> 
 ${ECHO} "	\$(FIRSTAVAILABLE) \$(LASTAVAIL) \$(CHANGELOG) \$(COPYRIGHT) \\" >> Makefile
 ${ECHO} "	\$(DATESTAMP) \$(VERSIONHASH)" >> Makefile
 ${ECHO} "" >> Makefile
-${ECHO} "PRODUCTION_FILES = \$(CATALINA) \$(CATALINA_RM) \$(TESTJOB_FILES) \\" >> Makefile
+${ECHO} "PRODUCTION_FILES = \$(CATALINA) \$(CATALINA_RM) \$(TOPOLOGY) \$(TESTJOB_FILES) \\" >> Makefile
 ${ECHO} "	\$(EXECUTABLE_FILES) \$(POLICY_FILES)" >> Makefile
 ${ECHO} "" >> Makefile
 ${ECHO} "all: PYSUB KSHSUB TESTJOBS \$(C_EXECUTABLE_FILES)" >> Makefile
@@ -994,7 +996,7 @@ ${ECHO} "		> \$\$i ; \\" >> Makefile
 ${ECHO} "	done" >> Makefile
 
 ${ECHO} "PYSUB: " >> Makefile
-${ECHO} "	for i in \$(PY_EXECUTABLE_FILES) \$(CATALINA) \$(CATALINA_RM) ; do \\" >> Makefile
+${ECHO} "	for i in \$(PY_EXECUTABLE_FILES) \$(CATALINA) \$(CATALINA_RM) \$(TOPOLOGY) ; do \\" >> Makefile
 ${ECHO} "		\$(CAT) \$\$i.dist | \\" >> Makefile
 ${ECHO} "		\$(SED) -f sedscrb \\">> Makefile
 ${ECHO} "		> \$\$i ; \\" >> Makefile
@@ -1019,7 +1021,7 @@ ${ECHO} "	done" >> Makefile
 ${ECHO} "" >> Makefile
 ${ECHO} "clean:" >> Makefile
 ${ECHO} "	\$(RM) -f *.c *.o *.py" >> Makefile
-${ECHO} "	for i in \$(PY_EXECUTABLE_FILES) \$(CATALINA) \$(CATALINA_RM) ; do \\" >> Makefile
+${ECHO} "	for i in \$(PY_EXECUTABLE_FILES) \$(CATALINA) \$(CATALINA_RM) \$(TOPOLOGY) ; do \\" >> Makefile
 ${ECHO} "		if test -x \$\$i ; \\" >> Makefile
 ${ECHO} "		then \\" >> Makefile
 ${ECHO} "		\$(RM) \$\$i ; \\" >> Makefile

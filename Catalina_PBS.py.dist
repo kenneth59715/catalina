@@ -113,6 +113,7 @@ def initialize_job_step(job_step_name) :
     new_job_step['resource_amount_int'] = 0
     new_job_step['preemptible'] = 0
     new_job_step['preempting'] = 0
+    new_job_step['node_spec_string'] = ''
     return new_job_step
 
 def get_runjob_dict() :

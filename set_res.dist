@@ -7,6 +7,7 @@ import string
 import os
 import re
 import copy
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
 import Catalina
 import time
 import copy
@@ -38,6 +39,7 @@ options = [
   'group_list=',
   'account_list=',
   'affinity_calculation=',
+  'maxhops=',
   'mode='
   ]
 usage_string = \
@@ -54,6 +56,7 @@ usage_string = \
                [--node_restriction=<Python code>] | [--node_list=<comma-delimited node names>] | [--nodestate_list=<comma-delimited node states> --feature_list=<comma-delimited features>]
                [--group_list=<comma-delimited group names>]
                [--account_list=<comma-delimited account names>]
+               [--maxhops=<maximum number of switch hops>]
                [--affinity_calculation=<Python code>]"""
 args = sys.argv[1:]
 argdict = {}
@@ -124,6 +127,10 @@ if argdict.has_key('--affinity_calculation') :
 else :
     # By default, run in reservation
     affinity_calculation = 'result = 1'
+if argdict.has_key('--maxhops') :
+    maxhops = argdict['--maxhops']
+else :
+    maxhops = None
 if argdict.has_key('--mode') :
     mode = argdict['--mode']
 else :
@@ -241,8 +248,11 @@ if ppn_int != None and mpn_int != None :
                       'req_list' : [{'cpu' : ppn_int, 'memory' : mpn_int}]
                     }
 requested_resource_list = []
-for node in range(resource_amount) :
-    requested_resource_list.append(req_dict_dict)
+if resource_amount != None:
+    for node in range(resource_amount) :
+        requested_resource_list.append(req_dict_dict)
+else:
+    requested_resource_list = [req_dict_dict,]
 
 try :
     new_res = Catalina.create_reservation(
@@ -260,6 +270,7 @@ try :
       resource_amount_int=resource_amount,
       requested_resource_list=requested_resource_list,
       affinity_calculation=affinity_calculation,
+      maxhops=maxhops,
       mode=mode
     )
 except Catalina.InsufficientNodes, new_res :

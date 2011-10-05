@@ -1,9 +1,11 @@
 #!___PYTHON_PATH_PLACEHOLDER___
 # script to update the resource database
 
-import Catalina
 import time
 import sys
+sys.path.append('___HOMEDIR_PLACEHOLDER___')
+import Catalina
+import Catalina____RESOURCEMANAGER_PLACEHOLDER___
 import os
 import getopt
 import socket
@@ -104,6 +106,7 @@ while ( (state == 'running' or state == 'suspended') and
         print "iteration (%s)" % count
         print "Catalina.Now_float (%s)" % time.asctime(time.localtime(Catalina.Now_float))
         print "%s" % time.clock()
+        iteration_start_float = time.time()
         configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
         configuration_dict = configuration_db_handle[0]
         if configuration_dict.has_key('state') :
@@ -227,6 +230,12 @@ while ( (state == 'running' or state == 'suspended') and
         Catalina.migrate_shortpools(jobs_db_handle, resources_db_handle, reservations_db_handle)
         #print "update_max_pushback"
         #update_max_pushback(jobs_db_handle, reservations_db_handle, resources_db_handle)
+        # cleanup job starts, if needed
+        if sys.__dict__['modules']['Catalina____RESOURCEMANAGER_PLACEHOLDER___'].__dict__.has_key('cleanup_job_starts') :
+            print "cleanup_job_starts"
+            Catalina____RESOURCEMANAGER_PLACEHOLDER___.cleanup_job_starts(jobs_db_handle=jobs_db_handle, resources_db_handle=resources_db_handle, reservations_db_handle=reservations_db_handle)
+        else:
+            print "no cleanup_job_starts in dict "
         # only schedule_jobs, if something has changed:
         # prioritized job list
         # any job status
@@ -323,7 +332,8 @@ while ( (state == 'running' or state == 'suspended') and
 
         failed_count = 0
         count = count + 1
-        print "elapsed (%s)" % (time.time() - Catalina.Now_float,)
+        #print "elapsed (%s)" % (time.time() - Catalina.Now_float,)
+        print "elapsed (%s)" % (time.time() - iteration_start_float,)
         time.sleep(1)
     except Catalina.SchedulerSuspended :
         print "Scheduler suspended"
