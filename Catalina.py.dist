@@ -170,7 +170,7 @@ if len(mandatory_keys_left) > 0 :
     sys.exit(1)
 
 print "SERVERMODE (%s)" % SERVERMODE
-if not vars().has_key('TOPOLOGY_MODULE') :
+if not vars().has_key('TOPOLOGY_MODULE'):
     TOPOLOGY_MODULE = None
 elif TOPOLOGY_MODULE == 'None':
     TOPOLOGY_MODULE = None
@@ -179,7 +179,231 @@ else:
     #    exec("import %s" % TOPOLOGY_MODULE)
     #except:
     #    import Topology
-    import Topology
+    #import Topology
+    TOPOFILE='___HOMEDIR_PLACEHOLDER___/topo.local'
+    if os.path.exists(TOPOFILE):
+        TOPOFO = open(TOPOFILE)
+        node_switch_dict_text = TOPOFO.read()
+        TOPOFO.close()
+        node_switch_dict = eval(node_switch_dict_text)
+        #print node_switch_dict
+    else:
+        print "failed to find TOPOFILE (%s)!" % (TOPOFILE,)
+        node_switch_dict = None
+        # run without TOPOLOGY
+        TOPOLOGY_MODULE = None
+    
+    
+    SWITCHFILE='___HOMEDIR_PLACEHOLDER___/switch.local'
+    if os.path.exists(SWITCHFILE):
+        SWITCHFO = open(SWITCHFILE)
+        switch_distance_dict_text = SWITCHFO.read()
+        SWITCHFO.close()
+        switch_distance_dict = eval(switch_distance_dict_text)
+        #print node_switch_dict
+    else:
+        #generate switch_distance_dict from XDIM,YDIM,ZDIM
+        if not vars().has_key('XDIM') or \
+          not vars().has_key('YDIM') or not vars().has_key('ZDIM'):
+            print "failed to find XDIM, YDIM or ZDIM!"
+            # run without TOPOLOGY
+            TOPOLOGY_MODULE = None
+        else:
+            try:
+                XDIM = int(XDIM)
+                YDIM = int(YDIM)
+                ZDIM = int(ZDIM)
+            except:
+                print "failed to int XDIM (%s), YDIM  (%s)or ZDIM (%s)!" % (XDIM, YDIM, ZDIM)
+                # run without TOPOLOGY
+                TOPOLOGY_MODULE = None
+        if TOPOLOGY_MODULE != None:
+            switch_distance_dict = {}
+            for xcoorda in range(XDIM):
+                for ycoorda in range(YDIM):
+                    for zcoorda in range(ZDIM):
+                        for xcoordb in range(XDIM):
+                            for ycoordb in range(YDIM):
+                                for zcoordb in range(ZDIM):
+                                    xhops = min((xcoorda - xcoordb) % XDIM,
+                                                (xcoordb - xcoorda) % XDIM)
+                                    yhops = min((ycoorda - ycoordb) % YDIM,
+                                                (ycoordb - ycoorda) % YDIM)
+                                    zhops = min((zcoorda - zcoordb) % ZDIM,
+                                                (zcoordb - zcoorda) % ZDIM)
+                                    hopcount = xhops + yhops + zhops
+                                    switch_distance_dict[((xcoorda,ycoorda,zcoorda),(xcoordb,ycoordb,zcoordb))] = hopcount
+
+    #else:
+    #    XDIM = 4
+    #    YDIM = 4
+    #    ZDIM = 4
+    
+    #maxhops = 2
+    #candidate_switch_list = [
+    #  (0,0,0),
+    #  (0,1,0),
+    #  (0,2,0),
+    #  (0,3,0),
+    #  (0,0,1),
+    #  (0,0,2),
+    #  (0,0,3)
+    #  ]
+    #candidate_switch_list = switch_list
+    
+    #switch_list = []
+    #for i in range(XDIM):
+    #    for j in range(YDIM):
+    #        for k in range(ZDIM):
+    #            switch_list.append((i,j,k))
+    
+    #def gethops(aswitch, bswitch):
+    #    xhops = min((aswitch[0] - bswitch[0]) % XDIM,
+    #                (bswitch[0] - aswitch[0]) % XDIM)
+    #    yhops = min((aswitch[1] - bswitch[1]) % YDIM,
+    #                (bswitch[1] - aswitch[1]) % YDIM)
+    #    zhops = min((aswitch[2] - bswitch[2]) % ZDIM,
+    #                (bswitch[2] - aswitch[2]) % ZDIM)
+    #    #xab = (aswitch[0] - bswitch[0]) % XDIM
+    #    #xba = (bswitch[0] - aswitch[0]) % XDIM
+    #    #if xab <= xba:
+    #    #    xhops = xab
+    #    #else:
+    #    #    xhops = xba
+    #    #yab = (aswitch[1] - bswitch[1]) % YDIM
+    #    #yba = (bswitch[1] - aswitch[1]) % YDIM
+    #    #if yab <= yba:
+    #    #    yhops = yab
+    #    #else:
+    #    #    yhops = yba
+    #    #zab = (aswitch[2] - bswitch[2]) % ZDIM
+    #    #zba = (bswitch[2] - aswitch[2]) % ZDIM
+    #    #if zab <= zba:
+    #    #    zhops = zab
+    #    #else:
+    #    #    zhops = zba
+    #    hops = xhops + yhops + zhops
+    #    return hops
+    
+    def test_maxhops(test_set, maxhops):
+        if maxhops == None:
+            return 1
+        overmax = 0
+        for a_index in range(len(test_set)):
+            for b_index in range(len(test_set)):
+                if b_index <= a_index:
+                    continue
+                #hopcount = gethops(test_set[a_index], test_set[b_index])
+                #xhops = min((test_set[a_index][0] - test_set[b_index][0]) % XDIM,
+                #            (test_set[b_index][0] - test_set[a_index][0]) % XDIM)
+                #yhops = min((test_set[a_index][1] - test_set[b_index][1]) % YDIM,
+                #            (test_set[b_index][1] - test_set[a_index][1]) % YDIM)
+                #zhops = min((test_set[a_index][2] - test_set[b_index][2]) % ZDIM,
+                #            (test_set[b_index][2] - test_set[a_index][2]) % ZDIM)
+                #hopcount = xhops + yhops + zhops
+                #if maxhops != None and hopcount > maxhops:
+                hopcount = switch_distance_dict[((test_set[a_index][0],test_set[a_index][1],test_set[a_index][2]),(test_set[b_index][0],test_set[b_index][1],test_set[b_index][2]))]
+                if maxhops != None and hopcount > maxhops:
+                    overmax = 1
+                    break
+            if overmax == 1:
+                break
+        if overmax == 1:
+            return 0
+        else:
+            return 1
+    
+    def get_maxset(candidate_switch, test_set, maxhops):
+        maxset = [candidate_switch,]
+        for test_switch in test_set:
+            if test_switch == candidate_switch:
+                continue
+            maxset.append(test_switch)
+            if test_maxhops(maxset, maxhops):
+                pass
+            else:
+                del(maxset[-1])
+        return maxset
+    
+    def get_node_switch_dict(nodenames_list):
+        #return {'debian' : (2,2,2),
+        #        'switch0_node0': (0,0,0),
+        #        'switch0_node1': (0,0,0),
+        #        'switch1_node0': (0,0,1),
+        #        'switch1_node1': (0,0,1),
+        #        'switch2_node0': (0,0,2),
+        #        'switch2_node1': (0,0,2),
+        #        'switch3_node0': (0,0,3),
+        #        'switch3_node1': (0,0,3),
+        #        'switch4_node0': (0,1,0),
+        #        'switch4_node1': (0,1,0),
+        #        'switch5_node0': (0,1,1),
+        #        'switch5_node1': (0,1,1),
+        #        'switch6_node0': (0,1,2),
+        #        'switch6_node1': (0,1,2),
+        #       }
+        global node_switch_dict
+        if node_switch_dict == None:
+            node_switch_dict = {}
+            for nodename in nodenames_list:
+                node_switch_dict[nodename] = (0,0,0)
+        return node_switch_dict
+     
+    #def get_nodepriority(nodename, resources_dict, jobs_dict, reservations_dict):
+    
+    def get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict):
+    
+        nodenames_list = resources_dict.keys()
+        node_switch_dict = get_node_switch_dict(nodenames_list)
+        candidate_switch_list = []
+        for switch_node in switch_node_list:
+            if not switch_node in candidate_switch_list:
+                candidate_switch_list.append(node_switch_dict[switch_node])
+        switch_sets_list = [[],]
+        for candidate_switch in candidate_switch_list:
+            #print "candidate_switch (%s)" % (candidate_switch,)
+            newsets_list = []
+            for switch_set_index in range(len(switch_sets_list)):
+                test_set = copy.deepcopy(switch_sets_list[switch_set_index])
+                test_set.append(candidate_switch)
+                if test_maxhops(test_set, maxhops):
+                    switch_sets_list[switch_set_index] = test_set
+                else:
+                    newset = get_maxset(candidate_switch, test_set, maxhops)
+                    #print "newsets_list.append (%s)" % (newset,)
+                    newsets_list.append(newset)
+            keepsets_list = []
+            for newset_index in range(len(newsets_list)):
+                newsets_tuple = tuple(newsets_list[newset_index])
+                #print "newsets_tuple (%s)" % (newsets_tuple,)
+                redundant = 0
+                for switch_set_index in range(len(switch_sets_list)):
+                    switch_sets_tuple = tuple(switch_sets_list[switch_set_index])
+                    #print "switch_sets check: newsets_tuple (%s) switch_sets_tuple (%s)" % (newsets_tuple,switch_sets_tuple)
+                    if set(newsets_tuple).issubset(switch_sets_tuple):
+                        #print "redundant"
+                        redundant = 1
+                for switch_set_index in range(len(keepsets_list)):
+                    keepsets_tuple = tuple(keepsets_list[switch_set_index])
+                    #print "keep_sets check: newsets_tuple (%s) keepsets_tuple (%s)" % (newsets_tuple,keepsets_tuple)
+                    if set(newsets_tuple).issubset(keepsets_tuple):
+                        #print "redundant"
+                        redundant = 1
+                if redundant == 0:
+                    keepsets_list.append(copy.deepcopy(newsets_list[newset_index]))
+            switch_sets_list = switch_sets_list + keepsets_list
+        
+        #print "switch_sets_list (%s)" % (switch_sets_list,)
+        node_sets_list = []
+        for switch_set in switch_sets_list:
+            node_set = []
+            for nodename in switch_node_list:
+                if node_switch_dict[nodename] in switch_set:
+                    node_set.append(nodename)
+            node_sets_list.append(copy.deepcopy(node_set))
+        #print "node_sets_list (%s)" % (node_sets_list,)
+        return node_sets_list
+
 if not vars().has_key('QJ_SIM') :
     QJ_SIM = None
 if not vars().has_key('QM_SIM') :
@@ -376,7 +600,16 @@ NODERESTCODE = re.sub("\n ","\n", NODERESTCODE_STRING)
 #    Now_float = float(os.system(TIME_SIM))
 #else :
 #    Now_float = time.time()
-Now_float = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
+
+def get_scheduler_time() :
+    if SERVERMODE == 'SIM' :
+        Now_float = float(os.popen(TIME_SIM).read())
+    else :
+        Now_float = time.time()
+    return Now_float
+
+#Now_float = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
+Now_float = get_scheduler_time()
 END_OF_SCHEDULING = Now_float + 7776000
 FIRST_AVAILABLE = """
 import string
@@ -1939,6 +2172,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             return first_list
         else :
             return second_list
+    #print "topotune: start of get_sized_windows_list"
     resources_dict = resources_db_handle[0]
     # Assume that if any resource_dict has 'amount_int' == None,
     # then we are supposed to return the largest set of sized
@@ -1984,6 +2218,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     nodeindex = 0
     #print "1. requested_resource_list (%s)" % (requested_resource_list,)
     for index in range(len(resource_dict_list)) :
+        #print "topotune: index (%s) range(len(resource_dict_list))" % (index,)
         # need to add 'req_list' to each dict...
         dict = resource_dict_list[index]
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -2055,6 +2290,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "dict['amount_int'] (%s)" % dict['amount_int']
             for sizedindex in range(dict['amount_int']) :
+                #print "topotune: sizedindex (%s) range(dict['amount_int'])" % (sizedindex,)
                 sized_dict = {
                   'initiatormap_index' : index,
                   'amount_int' : 1,
@@ -2093,12 +2329,14 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     requested_dict['node'] = 0
                 sized_dict['node_usage'] = new_res['node_usage']
                 for indexb in range(len(sized_dict['req_list'])) :
+                    #print "topotune: indexb (%s) range(len(sized_dict['req_list']))" % (indexb,)
                     requested_resource = sized_dict['req_list'][indexb]
                     #if requested_resource.has_key('cpu') :
                     #    requested_cpu = requested_cpu + requested_resource['cpu']
                     #if requested_resource.has_key('memory') :
                     #    requested_memory = requested_memory + requested_resource['memory']
                     for rkey in requested_resource.keys():
+                        #print "topotune: rkey (%s) requested_resource.keys()" % (rkey,)
                         if requested_dict.has_key(rkey):
                             requested_dict[rkey] = requested_dict[rkey] + requested_resource[rkey]
                         else:
@@ -2124,6 +2362,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     node_bin_dict = {}
     last_window_index = len(open_windows_list) - 1
     for new_window_index in range(len(open_windows_list)) :
+        #print "topotune: new_window_index (%s) range(len(open_windows_list))" % (new_window_index,)
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "new_window_index current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
         new_window = open_windows_list[new_window_index]
@@ -2211,6 +2450,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             # That should have happened above...
             saved_windows_list = []
             for i in range(len(sized_windows_list)) :
+                #print "topotune: i (%s) range(len(sized_windows_list))" % (i,)
                 if sized_windows_list[i][1] - current_start_time_float >= \
                 new_res['duration_float'] :
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -2266,6 +2506,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "populating node_bin_dict with sized_windows_list (%s)" % (sized_windows_list,)
             for sized_window in sized_windows_list :
+                #print "topotune: sized_window (%s) sized_windows_list" % (sized_window,)
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "processing sized_window (%s)" % (sized_window,)
                 if node_bin_dict.has_key(sized_window[2]['nodename']) :
@@ -2322,7 +2563,10 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     
 
             sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
+           
+            #print "topotune: len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
             for node_set in sorted_node_sets_list:
+                #print "topotune: node_set (%s) sorted_node_sets_list" % (node_set,)
 
                 ns_sized_windows_list = []
                 #print "node_set (%s)" % (node_set,)
@@ -2332,6 +2576,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 #counting_dict_list = copy.deepcopy(sized_dict_list)
                 counting_dict_list = copy.deepcopy(sized_dict_list)
                 for sized_dict in counting_dict_list :
+                    #print "topotune: sized_dict (%s) counting_dict_list" % (sized_dict,)
                     sized_dict['saved_windows_list'] = []
                     if not sized_dict.has_key('requested_dict'):
                         print "sized_dict (%s) has no requested_dict" % ( sized_dict,)
@@ -2339,6 +2584,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "node_bin_dict (%s)" % (node_bin_dict,)
                 for nodename in node_bin_dict.keys() :
+                    #print "topotune: nodename (%s) node_bin_dict.keys()" % (nodename,)
                     node_bin_dict[nodename]['viable_request_count'] = 0
                 #print "node_bin_dict (%s)" % (node_bin_dict,)
                 saved_sorting_list = []
@@ -2353,6 +2599,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 # For each initiator request, how many windows can satisfy
                 # that request?
                 for indexa in range(len(counting_dict_list)) :
+                    #print "topotune: indexa (%s) range(len(counting_dict_list))" % (indexa,)
                     #print "len(counting_dict_list) (%s) indexa (%s) dict (%s)" % (len(counting_dict_list), indexa, dict)
                     dict = counting_dict_list[indexa]
                     requested_dict = dict['requested_dict']
@@ -2404,6 +2651,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     # meet this request?
                     viable_request_count = 0
                     for nodename in node_bin_dict.keys() :
+                        #print "topotune: nodename (%s) node_bin_dict.keys()" % (nodename,)
     
                         # for TOPOLOGY_MODULE, only consider nodes in current
                         # node_set
@@ -2414,6 +2662,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "requested_dict (%s), node_bin_dict[nodename] (%s)" % (requested_dict, node_bin_dict[nodename])
                         for rkey in requested_dict.keys():
+                            #print "topotune: rkey (%s) requested_dict.keys()" % (rkey,)
                             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                                 print "checking rkey (%s) in requested_dict (%s)" % (rkey, requested_dict)
                             # should this check be skipped for rkey == 'node'?
@@ -2431,6 +2680,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                                     print "rkey == node, so check all consumables (%s) node_bin_dict (%s) consumable_dict (%s)" % (rkey, node_bin_dict, resources_dict[nodename]['consumable_dict'],)
                                 for conskey in resources_dict[nodename]['consumable_dict'].keys():
+                                    #print "topotune: conskey (%s) resources_dict[nodename]['consumable_dict'].keys()" % (conskey,)
                                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                                         print "conskey (%s)" % (conskey,)
                                     if conskey == 'node':
@@ -2501,6 +2751,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 # need to allow for the situation where two initiatormap entries
                 # could fit on a single node....
                 for nodename in node_bin_dict.keys() :
+                    #print "topotune: nodename (%s) node_bin_dict.keys()" % (nodename,)
                     # TOPOLOGY_MODULE skip
                     if not nodename in node_set:
                         continue
@@ -2543,6 +2794,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 required_dict_count = len(counting_dict_list)
                 found_dict_count = 0
                 for window in saved_sorting_list :
+                    #print "topotune: window (%s) saved_sorting_list" % (window,)
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "window (%s)" % (window,)
                     # only windows with nodename in node_set should
@@ -2554,9 +2806,12 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     assigned_dict['node'] = 0
     
                     for dict in counting_dict_list:
+                        #print "topotune: dict (%s) counting_dict_list" % (window,)
                         if dict.has_key('req_list'):
                             for req in dict['req_list']:
+                                #print "topotune: req (%s) dict['req_list']" % (req,)
                                 for req_key in req.keys():
+                                    #print "topotune: req_key (%s) req.keys()" % (req_key,)
                                     if not assigned_dict.has_key(req_key):
                                         assigned_dict[req_key] = 0
     
@@ -2569,6 +2824,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                         print "start of window for loop for (%s)" % window[1]
                         print "filling counting_dict_list (%s)" % (counting_dict_list,)
                     for dict in counting_dict_list :
+                        #print "topotune: dict (%s) counting_dict_list" % (dict,)
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "filling dict (%s) in counting_dict_list" % (dict,)
                         #if dict['amount_int'] == None :
@@ -2612,6 +2868,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                                     print "assigned_dict (%s) requested_dict (%s) node_bin_dict (%s)" % (assigned_dict, requested_dict, node_bin_dict)
                                 allopen = 1
                                 for assigned_key in assigned_dict.keys():
+                                    #print "topotune: assigned_key (%s) assigned_dict.keys()" % (assigned_key,)
                                     if assigned_key != 'node':
                                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                                             print "checking assigned_key (%s)" % (assigned_key,)
@@ -2630,6 +2887,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                                     if assigned_key == 'node' and requested_dict[assigned_key] > 0:
                                         # assign all consumable_dict resources for node
                                         for conskey in resources_dict[window[1]]['consumable_dict'].keys():
+                                            #print "topotune: conskey (%s) resources_dict[window[1]]['consumable_dict'].keys()" % (conskey,)
                                             if conskey == 'node':
                                                 continue
                                             if assigned_dict.has_key(conskey):
@@ -2661,6 +2919,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                                     if assigned_key == 'node' and requested_dict[assigned_key] > 0:
                                         # assign all consumable_dict resources for node
                                         for conskey in resources_dict[window[1]]['consumable_dict'].keys():
+                                            #print "topotune: conskey (%s) resources_dict[window[1]]['consumable_dict'].keys()" % (conskey,)
                                             if conskey == 'node':
                                                 continue
                                             if assigned_dict.has_key(conskey):
@@ -2737,6 +2996,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 want_more = 0
                 for dict in counting_dict_list :
                     #print "dict (%s)" % (dict,)
+                    #print "topotune: dict (%s) counting_dict_list" % (dict,)
                     if dict['amount_int'] == None :
                         want_more = 1
                 #print "want_more from amount_int check is (%s)" % (want_more,)
@@ -2878,6 +3138,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     print "set current_start_time_float to (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
                 saved_windows_list = []
                 for i in range(len(ns_sized_windows_list)) :
+                    #print "topotune: i (%s) range(len(ns_sized_windows_list))" % (i,)
                     if ns_sized_windows_list[i][1] - current_start_time_float >= \
                     new_res['duration_float'] :
                         saved_windows_list.append(ns_sized_windows_list[i])
@@ -2901,6 +3162,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             #for dict in sized_dict_list :
             #for dict in counting_dict_list :
             for dict in sized_dict_list :
+                #print "topotune: dict (%s) sized_dict_list" % (dict,)
                 if dict['amount_int'] == None :
                     sized_dict_tuple_list.append((1,len(dict['resource_dict'].keys()), dict))
                 else :
@@ -2912,6 +3174,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             sized_dict_list = tmplist
             candidate_tuple_list = []
             for start_and_list in sized_windows_lists_list :
+                #print "topotune: start_and_list (%s) sized_windows_list_list" % (start_and_list,)
                 window_list = start_and_list[1]
                 if len(window_list) == 0 :
                     continue
@@ -2920,9 +3183,12 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 #FIXME losing requested_dict here
                 counting_dict_list = sized_dict_list
                 for sized_dict in counting_dict_list :
+                    #print "topotune: sized_dict (%s) counting_dict_list" % (sized_dict,)
                     sized_dict['saved_windows_list'] = []
                 for window in window_list :
+                    #print "topotune: window (%s) window_list" % (window,)
                     for sized_dict in counting_dict_list :
+                        #print "topotune: sized_dict (%s) counting_dict_list" % (sized_dict,)
                         if sized_dict['amount_int'] == None :
                             # Here's where I check to see if the resource is
                             # usable.  Hmmm, a has_key should be lots faster
@@ -2943,6 +3209,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 need_more = 0
                 none_count = 0
                 for dict in counting_dict_list :
+                    #print "topotune: dict (%s) counting_dict_list" % (dict,)
                     if dict['amount_int'] == None :
                         none_count = none_count + len(dict['saved_windows_list'])
                         if len(dict['saved_windows_list']) > 0 :
@@ -2966,6 +3233,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 current_start_time_float = -(candidate_tuple_list[-1][1])
                 sized_windows_list = []
                 for counting_dict in counting_dict_list :
+                    #print "topotune: counting_dict (%s) counting_dict_list" % (counting_dict,)
                     sized_windows_list = sized_windows_list + counting_dict['saved_windows_list']
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "len(candidate_tuple_list) (%s)" % len(candidate_tuple_list)
@@ -3080,7 +3348,13 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
 #              /float(node_pack_dict[node]['ConsumableMemory']))
         if TOPOLOGY_MODULE != None:
             used_switch_dict = {}
-            node_switch_dict = Topology.get_node_switch_dict()
+            nodenames_list = resources_dict.keys()
+            #node_switch_dict = Topology.get_node_switch_dict(nodenames_list)
+            node_switch_dict = get_node_switch_dict(nodenames_list)
+            #if node_switch_dict == None:
+            #    node_switch_dict = {}
+            #    for resourcename in resources_dict.keys():
+            #        node_switch_dict[resourcename] = 'dummyswitch'
             if new_res.has_key('job_runID') and new_res['job_runID'] != None:
                 #print "new_res['job_runID'] (%s)" % new_res['job_runID']
                 rest_input_tuple = (copy.deepcopy(jobs_dict[new_res['job_runID']]),)
@@ -3173,7 +3447,7 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
             for cres in resources_dict[nodename]['consumable_dict'].keys():
                 if nodepack_dict.has_key(cres):
                     crespack = float(nodepack_dict[cres]) / float(resources_dict[nodename]['consumable_dict'][cres])
-                    print "nodepack_dict[%s] (%s) resources_dict[nodename]['consumable_dict'][%s] (%s) nodepack_dict[%s]/resources_dict[nodename]['consumable_dict'][%s] (%s)" % (cres, nodepack_dict[cres], cres, resources_dict[nodename]['consumable_dict'][cres], cres, cres, crespack)
+                    #print "nodepack_dict[%s] (%s) resources_dict[nodename]['consumable_dict'][%s] (%s) nodepack_dict[%s]/resources_dict[nodename]['consumable_dict'][%s] (%s)" % (cres, nodepack_dict[cres], cres, resources_dict[nodename]['consumable_dict'][cres], cres, cres, crespack)
                     if crespack > nodepack:
                         nodepack = crespack
 
@@ -3772,6 +4046,7 @@ def update_job_info(jobs_db_handle) :
     dict = jobs_db_handle[0]
     new_job_steps_dict = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_job_steps_dict()
     new_job_ids = new_job_steps_dict.keys()
+    print "len(new_job_ids) (%s)" % (len(new_job_ids),)
     old_job_steps_list = get_object_list(jobs_db_handle)
     old_job_ids = get_object_names_list(old_job_steps_list)
     attribute_list = Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOB_UPDATE_ATTRIBUTE_list
@@ -4577,6 +4852,7 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
         return result
 
     temp_jobs_list = get_object_list(jobs_db_handle)
+    print "len(temp_jobs_list) (%s)" % (len(temp_jobs_list),)
     temp_resources_list = get_object_list(resources_db_handle)
     temp_reservations_list = get_object_list(reservations_db_handle)
     input_tuple = ( temp_jobs_list, temp_resources_list, temp_reservations_list )
@@ -4588,6 +4864,7 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
         insert_new_object(job, jobs_db_handle)
     for job in ineligible_jobs :
         insert_new_object(job, jobs_db_handle)
+    print "len(eligible_jobs) (%s), len(runningstarting_jobs) (%s)" % (len(eligible_jobs), len(runningstarting_jobs))
     return (eligible_jobs, runningstarting_jobs)
 
 def spec_string_to_start_dict(object) :
@@ -7148,12 +7425,19 @@ def get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle):
         # generate a list of switch_tuples and max_hop
         if new_res.has_key('maxhops') and new_res['maxhops'] != None:
             maxhops = int(new_res['maxhops'])
+            switch_node_list = node_bin_dict.keys()
+            jobs_dict = jobs_db_handle[0]
+            resources_dict = resources_db_handle[0]
+            #node_sets_list = Topology.get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
+            node_sets_list = get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
         else:
             maxhops = None
-        switch_node_list = node_bin_dict.keys()
-        jobs_dict = jobs_db_handle[0]
-        resources_dict = resources_db_handle[0]
-        node_sets_list = Topology.get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
+            #node_sets_list = [node_bin_dict.keys(),]
+            # profile this.
+            switch_node_list = node_bin_dict.keys()
+            jobs_dict = jobs_db_handle[0]
+            resources_dict = resources_db_handle[0]
+            node_sets_list = get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
     else:
         node_sets_list = [node_bin_dict.keys(),]
     # sort, smallest first

@@ -1,5 +1,6 @@
 
 import copy
+import os
 
 TOPOFILE='___HOMEDIR_PLACEHOLDER___/topo.local'
 
@@ -64,7 +65,7 @@ def get_maxset(candidate_switch, test_set, maxhops):
             del(maxset[-1])
     return maxset
 
-def get_node_switch_dict():
+def get_node_switch_dict(nodenames_list):
     #return {'debian' : (2,2,2),
     #        'switch0_node0': (0,0,0),
     #        'switch0_node1': (0,0,0),
@@ -81,18 +82,25 @@ def get_node_switch_dict():
     #        'switch6_node0': (0,1,2),
     #        'switch6_node1': (0,1,2),
     #       }
-    TOPOFO = open(TOPOFILE)
-    node_switch_dict_text = TOPOFO.read()
-    TOPOFO.close()
-    node_switch_dict = eval(node_switch_dict_text
-    #print node_switch_dict
+    if os.path.exists(TOPOFILE):
+        TOPOFO = open(TOPOFILE)
+        node_switch_dict_text = TOPOFO.read()
+        TOPOFO.close()
+        node_switch_dict = eval(node_switch_dict_text)
+        #print node_switch_dict
+    else:
+        print "failed to find TOPOFILE (%s)!" % (TOPOFILE,)
+        node_switch_dict = {}
+        for nodename in nodenames_list:
+            node_switch_dict[nodename] = (0,0,0)
     return node_switch_dict
  
 #def get_nodepriority(nodename, resources_dict, jobs_dict, reservations_dict):
 
 def get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict):
 
-    node_switch_dict = get_node_switch_dict()
+    nodenames_list = resources_dict.keys()
+    node_switch_dict = get_node_switch_dict(nodenames_list)
     candidate_switch_list = []
     for switch_node in switch_node_list:
         if not switch_node in candidate_switch_list:

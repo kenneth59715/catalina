@@ -102,7 +102,8 @@ while ( (state == 'running' or state == 'suspended') and
         #    Catalina.Now_float = float(os.system(Catalina.TIME_SIM))
         #else :
         #    Catalina.Now_float = time.time()
-        Catalina.Now_float = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
+        #Catalina.Now_float = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
+        Catalina.Now_float = Catalina.get_scheduler_time()
         print "iteration (%s)" % count
         print "Catalina.Now_float (%s)" % time.asctime(time.localtime(Catalina.Now_float))
         print "%s" % time.clock()

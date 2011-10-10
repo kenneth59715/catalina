@@ -60,9 +60,13 @@ pmem_mult = {
 
 def get_scheduler_time() :
     if Catalina.SERVERMODE == 'SIM' :
+        print "Catalina.SERVERMODE is SIM"
         Now_float = float(os.system(Catalina.TIME_SIM))
+        print "os.system(Catalina.TIME_SIM) (%s)" % (os.system(Catalina.TIME_SIM,),)
     else :
+        print "Catalina.SERVERMODE is not SIM"
         Now_float = time.time()
+    print "in get_scheduler_time, setting  Now_float (%s)" % (time.strftime('%H:%M_%m/%d/%Y',time.localtime(Now_float)),)
     return Now_float
 
 def initialize_resource(resource_name) :
