@@ -290,6 +290,11 @@ else:
             return 1
         overmax = 0
         for a_index in range(len(test_set)):
+            #switcha0 = test_set[a_index][0]
+            #switcha1 = test_set[a_index][1]
+            #switcha2 = test_set[a_index][2]
+            #switcha = (switcha0,switcha1,switcha2)
+            #switcha = (test_set[a_index][0],test_set[a_index][1],test_set[a_index][2])
             for b_index in range(len(test_set)):
                 if b_index <= a_index:
                     continue
@@ -303,6 +308,13 @@ else:
                 #hopcount = xhops + yhops + zhops
                 #if maxhops != None and hopcount > maxhops:
                 hopcount = switch_distance_dict[((test_set[a_index][0],test_set[a_index][1],test_set[a_index][2]),(test_set[b_index][0],test_set[b_index][1],test_set[b_index][2]))]
+                #switchb = (test_set[b_index][0],test_set[b_index][1],test_set[b_index][2])
+                #switchb0 = test_set[b_index][0]
+                #switchb1 = test_set[b_index][1]
+                #switchb2 = test_set[b_index][2]
+                #switchb = (switchb0,switchb1,switchb2)
+                #switchb = (test_set[b_index][0],test_set[b_index][1],test_set[b_index][2])
+                #hopcount = switch_distance_dict[(switcha,switchb)]
                 if maxhops != None and hopcount > maxhops:
                     overmax = 1
                     break
@@ -344,6 +356,7 @@ else:
         #       }
         global node_switch_dict
         if node_switch_dict == None:
+            print "node_switch_dict is None!"
             node_switch_dict = {}
             for nodename in nodenames_list:
                 node_switch_dict[nodename] = (0,0,0)
@@ -353,18 +366,22 @@ else:
     
     def get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict):
     
+        #print "switch_node_list (%s)" % (switch_node_list,)
         nodenames_list = resources_dict.keys()
         node_switch_dict = get_node_switch_dict(nodenames_list)
         candidate_switch_list = []
         for switch_node in switch_node_list:
-            if not switch_node in candidate_switch_list:
+            #if not switch_node in candidate_switch_list:
+            if not node_switch_dict[switch_node] in candidate_switch_list:
                 candidate_switch_list.append(node_switch_dict[switch_node])
+        #print "candidate_switch_list (%s)" % (candidate_switch_list,)
         switch_sets_list = [[],]
         for candidate_switch in candidate_switch_list:
             #print "candidate_switch (%s)" % (candidate_switch,)
             newsets_list = []
             for switch_set_index in range(len(switch_sets_list)):
                 test_set = copy.deepcopy(switch_sets_list[switch_set_index])
+                #test_set = switch_sets_list[switch_set_index]
                 test_set.append(candidate_switch)
                 if test_maxhops(test_set, maxhops):
                     switch_sets_list[switch_set_index] = test_set
@@ -390,7 +407,8 @@ else:
                         #print "redundant"
                         redundant = 1
                 if redundant == 0:
-                    keepsets_list.append(copy.deepcopy(newsets_list[newset_index]))
+                    #keepsets_list.append(copy.deepcopy(newsets_list[newset_index]))
+                    keepsets_list.append(newsets_list[newset_index])
             switch_sets_list = switch_sets_list + keepsets_list
         
         #print "switch_sets_list (%s)" % (switch_sets_list,)
@@ -400,7 +418,8 @@ else:
             for nodename in switch_node_list:
                 if node_switch_dict[nodename] in switch_set:
                     node_set.append(nodename)
-            node_sets_list.append(copy.deepcopy(node_set))
+            #node_sets_list.append(copy.deepcopy(node_set))
+            node_sets_list.append(node_set)
         #print "node_sets_list (%s)" % (node_sets_list,)
         return node_sets_list
 
@@ -3358,6 +3377,7 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
             if new_res.has_key('job_runID') and new_res['job_runID'] != None:
                 #print "new_res['job_runID'] (%s)" % new_res['job_runID']
                 rest_input_tuple = (copy.deepcopy(jobs_dict[new_res['job_runID']]),)
+                #rest_input_tuple = (jobs_dict[new_res['job_runID']],)
             else:
                 job_step = Catalina____RESOURCEMANAGER_PLACEHOLDER___.initialize_job_step('temp_job_step')
                 rest_input_tuple = ( job_step, )
@@ -5824,7 +5844,7 @@ def create_job_reservation(
         node_dict_type = 'node_shared'
     else :
         node_dict_type = 'node_exclusive'
-    if job_step.has_key('maxhops') and job_step['maxhops'] != None :
+    if job_step.has_key('maxhops') and job_step['maxhops'] != None and job_step['maxhops'] != 'None':
         maxhops = int(job_step['maxhops'])
     else :
         maxhops = None
@@ -7446,6 +7466,7 @@ def get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle):
         node_sets_list_sort.append((len(node_set), node_set))
     node_sets_list_sort.sort()
     sorted_node_sets_list = map(lambda x: x[1], node_sets_list_sort)
+    #print sorted_node_sets_list
     return sorted_node_sets_list
     
 #end of file

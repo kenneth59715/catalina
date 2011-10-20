@@ -117,6 +117,7 @@ def initialize_job_step(job_step_name) :
     new_job_step['resource_amount_int'] = 0
     new_job_step['preemptible'] = 0
     new_job_step['preempting'] = 0
+    new_job_step['maxhops'] = None
     new_job_step['node_spec_string'] = ''
     return new_job_step
 
@@ -445,6 +446,9 @@ def get_job_steps_dict() :
                     new_job_step['QOS'] =  '0'
                 else :
                     new_job_step['QOS'] =  QOS
+            elif string.strip(fields[0]) == 'Catalina_maxhops' :
+                maxhops = string.strip(fields[1])
+                new_job_step['maxhops'] = maxhops
             elif string.strip(fields[0]) == 'Catalina_local_admin_priority' :
                 local_admin_priority_string = string.strip(fields[1])
                 new_job_step['local_admin_priority_string'] = local_admin_priority_string
