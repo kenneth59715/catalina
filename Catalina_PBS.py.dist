@@ -118,6 +118,7 @@ def initialize_job_step(job_step_name) :
     new_job_step['preemptible'] = 0
     new_job_step['preempting'] = 0
     new_job_step['maxhops'] = None
+    new_job_step['maxhops'] = None
     new_job_step['node_spec_string'] = ''
     return new_job_step
 
@@ -446,6 +447,13 @@ def get_job_steps_dict() :
                     new_job_step['QOS'] =  '0'
                 else :
                     new_job_step['QOS'] =  QOS
+            elif string.strip(fields[0]) == 'Catalina_maxhops' :
+                maxhops = string.strip(fields[1])
+                new_job_step['maxhops'] = maxhops
+            elif string.strip(fields[0]) == 'Catalina_license_request_list' :
+                # should be in the form: abaqus_16+pgi_1+gaussian_32
+                license_request_list = string.strip(fields[1])
+                new_job_step['license_request_list'] = license_request_list
             elif string.strip(fields[0]) == 'Catalina_maxhops' :
                 maxhops = string.strip(fields[1])
                 new_job_step['maxhops'] = maxhops
@@ -823,9 +831,15 @@ def get_resource_dict_list(job_step, resources_db_handle) :
                 continue
             if to_be_continued == 1 :
                 continue
-            this_resource_dict[resource['name']] = {}
+            #this_resource_dict[resource['name']] = {}
+            this_resource_dict[resource['name']] = None
         resource_dict['resource_dict'] = this_resource_dict
         this_resource_dict_list.append(resource_dict)
+    if Catalina.__dict__.has_key('LICENSENODE') and Catalina.LICENSENODE != None and job_step.has_key('license_request_list'):
+        # 'resource_dict' : { LICENSENODE : None},
+        # 'amount_int' : 1
+        this_resource_dict_list.append({'resource_dict' : { Catalina.LICENSENODE: None},
+                                        'amount_int' : 1 })
     return this_resource_dict_list
 
 def get_resource_list(job_step, resources_db_handle) :
@@ -880,6 +894,12 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
             if not jobs_dict[job_stepid]['state'] in ['Idle', 'Preempted'] :
                 continue
             node_list = reservation['node_list']
+            # filter out any nodes that don't have 'cpu' consumables
+            fnode_list = []
+            for nodename in node_list:
+                if resources_dict[nodename]['consumable_dict'].has_key('cpu') and resources_dict[nodename]['consumable_dict'] != None:
+                    fnode_list.append(nodename)
+            node_list = fnode_list
             node_spec_string = jobs_dict[job_stepid]['node_spec_string']
             node_spec_global_tuple = string.split(node_spec_string, '#')
             node_spec_list = string.split(node_spec_global_tuple[0], '+')

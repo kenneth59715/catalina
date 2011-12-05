@@ -125,6 +125,7 @@ LL)
 	fi
 	TESTJOB=testjob.LL ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.LL ;
+	TESTJOB_LICENSE=testjob.license.LL ;
 	USERNAMESUFFIX= ;
 	LOADL_ADMIN_FILE=${CATALINA_LOADL_ADMIN_FILE?ERROR: CATALINA_LOADL_ADMIN_FILE not set!} ;
 	RM_TO_CAT_RESOURCE_DICT_STRING="{\\
@@ -193,6 +194,7 @@ SLURM)
 	fi
 	TESTJOB=testjob.SLURM ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.SLURM ;
+	TESTJOB_LICENSE=testjob.license.SLURM ;
 	USERNAMESUFFIX= ;
 #	LOADL_ADMIN_FILE=${CATALINA_LOADL_ADMIN_FILE?ERROR: CATALINA_LOADL_ADMIN_FILE not set!} ;
 # node states from man sinfo
@@ -274,6 +276,7 @@ PBS)
 	RESUMECMD=${CATALINA_RESUMECMD-'qsig -s resume'} || bailout 'Could not find scontrol' 1 ;
 	TESTJOB=testjob.PBS ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.PBS ;
+	TESTJOB_LICENSE=testjob.license.PBS ;
 	LOADL_ADMIN_FILE= ;
 	RM_TO_CAT_RESOURCE_DICT_STRING="{\\
   \"free\" : \"Idle\",\\
@@ -331,6 +334,7 @@ TORQUE)
 	RESUMECMD=${CATALINA_RESUMECMD-'qsig -s resume'} || bailout 'Could not find scontrol' 1 ;
 	TESTJOB=testjob.PBS ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.PBS ;
+	TESTJOB_LICENSE=testjob.license.PBS ;
 	LOADL_ADMIN_FILE= ;
 	RM_TO_CAT_RESOURCE_DICT_STRING="{\\
   \"free\" : \"Idle\",\\
@@ -664,6 +668,7 @@ ${ECHO} "s@___QPCMD_PLACEHOLDER___@${QPCMD}@g" >> sedscr
 ${ECHO} "s@___QHNCMD_PLACEHOLDER___@${QHNCMD}@g" >> sedscr
 ${ECHO} "s@___TEST_JOB_PLACEHOLDER___@${TESTJOB}@g" >> sedscr
 ${ECHO} "s@___TEST_JOB_RUN_AT_RISK_PLACEHOLDER___@${TESTJOB_RUN_AT_RISK}@g" >> sedscr
+${ECHO} "s@___TEST_JOB_LICENSE_PLACEHOLDER___@${TESTJOB_LICENSE}@g" >> sedscr
 ${ECHO} "s#___USERNAMESUFFIX_PLACEHOLDER___#${USERNAMESUFFIX}#g" >> sedscr
 ${ECHO} "s@___LOADL_ADMIN_FILE_PLACEHOLDER___@${LOADL_ADMIN_FILE}@g" >> sedscr
 ${ECHO} "s@___RM_TO_CAT_RESOURCE_DICT_STRING_PLACEHOLDER___@${RM_TO_CAT_RESOURCE_DICT_STRING}@g" >> sedscr
@@ -783,6 +788,7 @@ ${ECHO} "START=start.ksh" >> Makefile
 ${ECHO} "STOP=stop.py" >> Makefile
 ${ECHO} "TESTJOB=${TESTJOB}" >> Makefile
 ${ECHO} "TESTJOB_RUN_AT_RISK=${TESTJOB_RUN_AT_RISK}" >> Makefile
+${ECHO} "TESTJOB_LICENSE=${TESTJOB_LICENSE}" >> Makefile
 ${ECHO} "TESTRES=testres9.py" >> Makefile
 ${ECHO} "UNBINDJOB=unbind_job_from_res" >> Makefile
 ${ECHO} "UPDATEJOBS=update_jobs" >> Makefile
@@ -807,7 +813,7 @@ ${ECHO} "USERCANCELPY=user_cancel_res.py" >> Makefile
 ${ECHO} "USERSETWRAP=user_set_res" >> Makefile
 ${ECHO} "USERSETPY=user_set_res.py" >> Makefile
 ${ECHO} "" >> Makefile
-${ECHO} "TESTJOB_FILES = \$(TESTJOB) \$(TESTJOB_RUN_AT_RISK)" >> Makefile
+${ECHO} "TESTJOB_FILES = \$(TESTJOB) \$(TESTJOB_RUN_AT_RISK) \$(TESTJOB_LICENSE)" >> Makefile
 ${ECHO} "" >> Makefile
 if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
 	${ECHO} "C_EXECUTABLE_FILES = \$(USERCANCELWRAP) \$(USERSETWRAP) \$(USERBINDWRAP) \$(USERUNBINDWRAP) \$(USERBINDJOBWRAP) \$(USERUNBINDJOBWRAP)" >> Makefile

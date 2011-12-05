@@ -367,13 +367,13 @@ for job_step in running_starting_jobs :
                 for node in job_nodes.keys() :
                     #print "adding cpu (%s) for node (%s)" % (resource_db_handle[0][node]['Cpus'], node)
                     if resource_db_handle[0].has_key(node) :
-                        if resource_db_handle[0][node]['Cpus'] != None :
+                        if resource_db_handle[0][node].has_key('Cpus') and resource_db_handle[0][node]['Cpus'] != None :
                             run_cpu = run_cpu + resource_db_handle[0][node]['Cpus']
-                        if resource_db_handle[0][node]['Memory'] != None :
+                        if resource_db_handle[0][node].has_key('Memory') and resource_db_handle[0][node]['Memory'] != None :
                             run_memory = run_memory + resource_db_handle[0][node]['Memory']
-                        if resource_db_handle[0][node]['ConsumableCpus'] != None :
+                        if resource_db_handle[0][node].has_key('ConsumableCpus') and resource_db_handle[0][node]['ConsumableCpus'] != None :
                             cons_cpu = cons_cpu + resource_db_handle[0][node]['ConsumableCpus']
-                        if resource_db_handle[0][node]['ConsumableMemory'] != None :
+                        if resource_db_handle[0][node].has_key('ConsumableMemory') and resource_db_handle[0][node]['ConsumableMemory'] != None :
                             cons_memory = cons_memory + resource_db_handle[0][node]['ConsumableMemory']
             limit_seconds = job_step['wall_clock_limit']
             limit_string = "%02u:%02u:%02u" % (job_step['wall_clock_limit']/3600, job_step['wall_clock_limit']%3600/60, job_step['wall_clock_limit']%60)
@@ -762,7 +762,7 @@ for ar in active_resource :
     if ar.has_key('ConsumableCpus') :
         conscpu = ar['ConsumableCpus']
     else :
-        consscpu = 0
+        conscpu = 0
     if ar.has_key('Cpus') :
         realcpu = ar['Cpus']
     else : 

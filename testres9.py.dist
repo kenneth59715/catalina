@@ -1060,6 +1060,42 @@ else :
     print "ok"
     run_at_risk_job_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
 
+# submit a job 1 for license test
+cmd = Catalina.SUBMITCMD
+job = HOMEDIR + '/' + Catalina.TEST_JOB_LICENSE
+output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
+#cmd_string = cmd + ' ' + job
+#returnstring = os.popen(cmd_string).read()
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
+so = re.search(output, returnstring)
+print "# submit a job"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    license_job_1_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
+
+# submit a job 2 for license test
+cmd = Catalina.SUBMITCMD
+job = HOMEDIR + '/' + Catalina.TEST_JOB_LICENSE
+output = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.SUBMIT_OUTPUT_PATTERN
+#cmd_string = cmd + ' ' + job
+#returnstring = os.popen(cmd_string).read()
+stdout_string, rc, stderr_string = Catalina.timedrun(cmd_string,60)
+returnstring = stdout_string + stderr_string
+so = re.search(output, returnstring)
+print "# submit a job"
+if so == None :
+    print "not ok"
+    print "returnstring is (%s)" % returnstring
+    print cmd_string
+else :
+    print "ok"
+    license_job_2_id = so.group('job_id') + Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
+
 # move old stuff
 cmd = HOMEDIR + '/move_old_stuff'
 cmd_string = cmd
@@ -1174,6 +1210,10 @@ returnstring = os.popen(cmd_string).read()
 cmd_string = cmd + ' --res=testholder' + ' --job=' + unbound_job_id
 returnstring = os.popen(cmd_string).read()
 cmd_string = cmd + ' --res=testholder' + ' --job=' + run_at_risk_job_id
+returnstring = os.popen(cmd_string).read()
+cmd_string = cmd + ' --res=testholder' + ' --job=' + license_job_1_id
+returnstring = os.popen(cmd_string).read()
+cmd_string = cmd + ' --res=testholder' + ' --job=' + license_job_2_id
 returnstring = os.popen(cmd_string).read()
 
 # schedule jobs
@@ -1348,6 +1388,40 @@ if res_time_found == 0:
 else :
     print "ok"
 
+output = r"\S+\s+(?P<runID>.*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --job' + ' | ___GREP_PLACEHOLDER___ ' + license_job_1_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# check reservation creation for license 1 job (%s)" % license_job_1_id
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+    #unbound_sj_out = open(HOMEDIR + '/unbound_sj_out', 'w')
+    #unbound_sj_out.write(sj_returnstring)
+else :
+    print "ok"
+    #runID = so.group('runID')
+
+output = r"\S+\s+(?P<runID>.*)"
+cmd = HOMEDIR + '/show_res'
+cmd_string = cmd + ' --job' + ' | ___GREP_PLACEHOLDER___ ' + license_job_2_id
+returnstring = os.popen(cmd_string).read()
+so = re.search(output, returnstring)
+print "# check reservation creation for license 2 job (%s)" % license_job_2_id
+if so == None :
+    print "not ok"
+    print output
+    print returnstring
+    print cmd_string
+    #unbound_sj_out = open(HOMEDIR + '/unbound_sj_out', 'w')
+    #unbound_sj_out.write(sj_returnstring)
+else :
+    print "ok"
+    #runID = so.group('runID')
+
 # unbind job from reservation
 cmd = HOMEDIR + '/unbind_job_from_res'
 cmd_string = cmd + ' --res=' + bind_res_id + ' --job=' + job_step_name
@@ -1386,6 +1460,22 @@ print returnstring
 print "# cancel %s" % run_at_risk_job_id
 cmd = Catalina.CANCELCMD
 cmd_string = cmd + ' ' + run_at_risk_job_id
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+print returnstring
+
+# cancel the license job 1
+print "# cancel %s" % license_job_1_id
+cmd = Catalina.CANCELCMD
+cmd_string = cmd + ' ' + license_job_1_id
+print cmd_string
+returnstring = os.popen(cmd_string).read()
+print returnstring
+
+# cancel the license job 2
+print "# cancel %s" % license_job_2_id
+cmd = Catalina.CANCELCMD
+cmd_string = cmd + ' ' + license_job_2_id
 print cmd_string
 returnstring = os.popen(cmd_string).read()
 print returnstring
