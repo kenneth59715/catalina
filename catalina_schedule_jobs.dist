@@ -419,8 +419,10 @@ while ( (state == 'running' or state == 'suspended') and
         sys.exit(1)
     else :
         configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
+        #print "db_tuple (%s)" % (configuration_db_handle[1],)
         instance_remove(configuration_db_handle)
         Catalina.DB_WARN_COUNT = 0
+        #Catalina.close_db(configuration_db_handle)
 
     if standing_reservations_db_handle != None :
         Catalina.close_db(standing_reservations_db_handle)
@@ -434,7 +436,8 @@ while ( (state == 'running' or state == 'suspended') and
         Catalina.close_db(old_jobs_db_handle)
     if jobs_db_handle != None :
         Catalina.close_db(jobs_db_handle)
+    if cfg_resources_db_handle != None :
+        #print "closing cfg_resources_db_handle (%s)" % (cfg_resources_db_handle[1],)
+        Catalina.close_db(cfg_resources_db_handle)
     if events_db_handle != None :
         Catalina.close_db(events_db_handle)
-    if cfg_resources_db_handle != None :
-        Catalina.close_db(cfg_resources_db_handle)

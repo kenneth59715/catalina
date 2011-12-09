@@ -72,7 +72,7 @@ import pwd
 import grp
 import ConfigParser
 import gc
-
+import socket
 
 gc.enable()
 
@@ -851,56 +851,250 @@ def get_file_code(filename_string) :
     input.close()
     return file_string
 
-def lock_db_files (db_name, db_mode='read') :
+#def lock_db_files (db_name, db_mode='read') :
+#    LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+#    print "Waiting for %s db lock" % db_name
+#    if db_mode == 'write' :
+#        # open the lock file for append, set exclusive lock
+#        LOCKFO = open(LOCK, 'a')
+#        fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_EX)
+#    else :
+#        # open the reservations file for read, set non-exclusive lock
+#        LOCKFO = open(LOCK, 'r')
+#        fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_SH)
+#    print "Received %s db lock" % db_name
+#    db_tuple = ( LOCKFO, db_name, db_mode )
+#    return db_tuple
+#
+#def unlock_db_files (db_tuple) :
+#    db_name = db_tuple[1]
+#    LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+#    LOCKFO = db_tuple[0]
+#    uid_int = pwd.getpwnam(CAT_LOCK_OWNER)[2]
+#    gid_int = grp.getgrnam(CAT_LOCK_GROUP)[2]
+#    try :
+#        os.chmod(LOCK,0664)
+#        os.chown(LOCK,uid_int,gid_int)
+#    except :
+#        try :
+#            if DEBUG == 'locks' :
+#                info_tuple = sys.exc_info()
+#                print "(%s) (%s) (%s)" % info_tuple
+#                info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+#                traceback.print_tb(info_tuple[2])
+#                tb_list = traceback.format_tb(info_tuple[2])
+#                info_list = info_list + tb_list
+#                tb_text = string.join(info_list)
+#                print tb_text
+#        except :
+#            print "print of sys.exc_info() failed!"
+#    # release lock, close the file
+#    fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_UN)
+#    print "Released %s db %s lock" % (db_tuple[1], db_tuple[2])
+#    LOCKFO.close()
+
+def check_lock(db_name):
+    myserver = socket.gethostname()
+    mypid = os.getpid()
     LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+    MYLOCK = DBDIR + '/' + db_name + LOCK_SUFFIX + '.' + myserver + '.' + "%s" % mypid
+    mystat = os.stat(MYLOCK)
+    lockstat = os.stat(LOCK)
+    if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
+        #still locked, 
+        return True
+
+def lock_db_files (db_name, db_mode='read', timeout=LOCKTIMEOUT, breakable=True) :
+    #print "db_mode (%s)" % (db_mode,)
+    LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+    myserver = socket.gethostname()
+    mypid = os.getpid()
+    #print "lock mypid (%s)" % mypid
+    MYLOCK = DBDIR + '/' + db_name + LOCK_SUFFIX + '.' + myserver + '.' + "%s" % mypid
+    ulock_pat = db_name + LOCK_SUFFIX + '\.' + "\S+" + '\.' + "\d+"
+    ulock_reo = re.compile(ulock_pat)
+    #print "ulock_pat (%s)" % (ulock_pat,)
+    #print "lock MYLOCK (%s)" % (MYLOCK,)
     print "Waiting for %s db lock" % db_name
+    LOCKLOCK = 0
     if db_mode == 'write' :
         # open the lock file for append, set exclusive lock
-        LOCKFO = open(LOCK, 'a')
-        fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_EX)
+        #LOCKFO = open(LOCK, 'a')
+        #fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_EX)
+        # if i need a write lock, i need both read and 
+        # and write lock.  if i only need a read lock,
+        # ignore the write lock.
+        # actually, just ignore locking for read clients,
+        # let them retry the read, if it fails.
+        while LOCKLOCK == 0:
+            FO = open(MYLOCK,'w')
+            FO.close()
+            try:
+                rc = os.link(MYLOCK,LOCK)
+            except:
+                pass
+            mystat = os.stat(MYLOCK)
+            lockstat = os.stat(LOCK)
+            if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
+                #print "lock match mystat.st_ino (%s) lockstat.st_ino (%s) mystat.st_rdev (%s) lockstat.st_rdev (%s)" % (mystat.st_ino, lockstat.st_ino,mystat.st_rdev,lockstat.st_rdev)
+                # same unique file and lockfile, so I have the lock
+                #print "got lock for (%s)" % (LOCK,)
+                LOCKLOCK = 1
+                # clean out all old locks
+                rawfiles = os.listdir(DBDIR)
+                for filename in rawfiles :
+                    #print "filename (%s)" % (filename,)
+                    ulock_mo = ulock_reo.match(filename)
+                    if ulock_mo != None and DBDIR + '/' + filename != MYLOCK:
+                        #print "unlinking (%s)" % (filename,)
+                        #try:
+                        #    os.unlink(DBDIR + '/' + filename)
+                        #except:
+                        #    continue_var = raw_input('continue? ')
+                        os.unlink(DBDIR + '/' + filename)
+            else:
+                #print "lock mismatch mystat.st_ino (%s) lockstat.st_ino (%s) mystat.st_rdev (%s) lockstat.st_rdev (%s)" % (mystat.st_ino, lockstat.st_ino,mystat.st_rdev,lockstat.st_rdev)
+                #print "failed to get lock for (%s)" % (LOCK,)
+                # I did not get the lock.  check to see if the LOCK file
+                # has timed out
+                locktime = time.time()
+                #print "locktime - float(lockstat.st_ctime) (%s) LOCKTIMEOUT (%s)" % (locktime - float(lockstat.st_ctime), float(LOCKTIMEOUT))
+                if breakable == False:
+                    break
+                if locktime - float(lockstat.st_ctime) > float(timeout):
+                    # get the lock to unlock
+                    print "breaking lock for (%s) lockstat.st_ctime (%s) LOCKTIMEOUT (%s)" % (db_name, lockstat.st_ctime, LOCKTIMEOUT)
+                    #recipient = MAIL_RECIPIENT
+                    #subject = "Attempting to break old lock for DB (%s)" % (db_name,)
+                    #message = """Catalina database lock break attempt for
+        #db: (%s)""" % db_name + '\n'
+                    #print "message (%s)" % message
+                    #warn(message, subject, recipient)
+                    #catsyslog(message,'warning')
+
+                    #UNLOCK = LOCK + '.unlocking'
+                    #MYUNLOCK = DBDIR + '/' + db_name + '.unlocking.' + myserver + '.' + "%s" % mypid
+                    #FO = open(MYUNLOCK,'w')
+                    #FO.close()
+                    #try:
+                    #    rc = os.link(MYUNLOCK,UNLOCK)
+                    #except:
+                    #    pass
+                    #myunlockstat = os.stat(MYUNLOCK)
+                    #unlockstat = os.stat(UNLOCK)
+                    #if myunlockstat.st_ino == unlockstat.st_ino and myunlockstat.st_rdev == unlockstat.st_rdev:
+                    #    # got the unlock lock
+                    #    UNLOCKLOCK = 1
+                    #    os.unlink(LOCK)
+                    #     # release the unlock lock
+                    #    os.unlink(UNLOCK)
+                    #    os.unlink(MYUNLOCK)
+                    os.unlink(LOCK)
+                else:
+                    pass
     else :
         # open the reservations file for read, set non-exclusive lock
-        LOCKFO = open(LOCK, 'r')
-        fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_SH)
-    print "Received %s db lock" % db_name
-    db_tuple = ( LOCKFO, db_name, db_mode )
+        #LOCKFO = open(LOCK, 'r')
+        #fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_SH)
+        pass
+    if db_mode != 'write' or LOCKLOCK == 1:
+        print "Received %s db lock" % db_name
+        #db_tuple = ( LOCKFO, db_name, db_mode )
+        db_tuple = ( LOCK, db_name, db_mode )
+    else:
+        print "Failed %s db lock!" % db_name
+        raise 'LockDBFile', "open of writable db failed"
     return db_tuple
 
 def unlock_db_files (db_tuple) :
-    db_name = db_tuple[1]
-    LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
-    LOCKFO = db_tuple[0]
-    uid_int = pwd.getpwnam(CAT_LOCK_OWNER)[2]
-    gid_int = grp.getgrnam(CAT_LOCK_GROUP)[2]
-    try :
-        os.chmod(LOCK,0664)
-        os.chown(LOCK,uid_int,gid_int)
-    except :
+    db_mode = db_tuple[2]
+    if db_mode == 'write':
+        db_name = db_tuple[1]
+        #print "unlocking (%s)" % db_name
+        ulock_pat = db_name + '\.unlocking\.' + "\S+" + '\.' + "\d+"
+        ulock_reo = re.compile(ulock_pat)
+        myserver = socket.gethostname()
+        mypid = os.getpid()
+        #print "unlock mypid (%s)" % mypid
+        LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+        MYLOCK = DBDIR + '/' + db_name + LOCK_SUFFIX + '.' + myserver + '.' + "%s" % mypid
+        #print "unlock MYLOCK (%s)" % (MYLOCK,)
+        UNLOCK = LOCK + '.unlocking'
+        MYUNLOCK = DBDIR + '/' + db_name + '.unlocking.' + myserver + '.' + "%s" % mypid
+        #LOCKFO = db_tuple[0]
+        uid_int = pwd.getpwnam(CAT_LOCK_OWNER)[2]
+        gid_int = grp.getgrnam(CAT_LOCK_GROUP)[2]
         try :
-            if DEBUG == 'locks' :
-                info_tuple = sys.exc_info()
-                print "(%s) (%s) (%s)" % info_tuple
-                info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
-                traceback.print_tb(info_tuple[2])
-                tb_list = traceback.format_tb(info_tuple[2])
-                info_list = info_list + tb_list
-                tb_text = string.join(info_list)
-                print tb_text
+            os.chmod(LOCK,0664)
+            os.chown(LOCK,uid_int,gid_int)
+            os.chmod(UNLOCK,0664)
+            os.chown(UNLOCK,uid_int,gid_int)
         except :
-            print "print of sys.exc_info() failed!"
-    # release lock, close the file
-    fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_UN)
+            try :
+                if DEBUG == 'locks' :
+                    info_tuple = sys.exc_info()
+                    print "(%s) (%s) (%s)" % info_tuple
+                    info_list = ["%s" % info_tuple[0], "%s" % info_tuple[1], '\n']
+                    traceback.print_tb(info_tuple[2])
+                    tb_list = traceback.format_tb(info_tuple[2])
+                    info_list = info_list + tb_list
+                    tb_text = string.join(info_list)
+                    print tb_text
+            except :
+                print "print of sys.exc_info() failed!"
+        # release lock, close the file
+        #fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_UN)
+        mystat = os.stat(MYLOCK)
+        lockstat = os.stat(LOCK)
+        if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
+            # still my lock, so unlock it
+            # get the lock to unlock
+            #FO = open(MYUNLOCK,'w')
+            #FO.close()
+            #try:
+            #    rc = os.link(MYUNLOCK,UNLOCK)
+            #except:
+            #    pass
+            #myunlockstat = os.stat(MYUNLOCK)
+            #unlockstat = os.stat(UNLOCK)
+            #if myunlockstat.st_ino == unlockstat.st_ino and myunlockstat.st_rdev == unlockstat.st_rdev:
+            #    # got the unlock lock
+            #    UNLOCKLOCK = 1
+            #    rawfiles = os.listdir(DBDIR)
+            #    for filename in rawfiles :
+            #        #print "filename (%s)" % (filename,)
+            #        ulock_mo = ulock_reo.match(filename)
+            #        if ulock_mo != None and DBDIR + '/' + filename != MYUNLOCK:
+            #            #print "unlinking (%s)" % (filename,)
+            #            #try:
+            #            #    os.unlink(DBDIR + '/' + filename)
+            #            #except:
+            #            #    continue_var = raw_input('continue? ')
+            #            os.unlink(DBDIR + '/' + filename)
+            #    #print "unlinking (%s)" % (LOCK,)
+            #    os.unlink(LOCK)
+            #    #print "unlinking (%s)" % (MYLOCK,)
+            #    os.unlink(MYLOCK)
+            #     # release the unlock lock
+            #    os.unlink(UNLOCK)
+            #    os.unlink(MYUNLOCK)
+            #os.unlink(UNLOCK)
+            #os.unlink(MYUNLOCK)
+            os.unlink(LOCK)
+            os.unlink(MYLOCK)
+            #else:
+            #    print "unlock mismatch myunlockstat.st_ino (%s) unlockstat.st_ino (%s) myunlockstat.st_rdev (%s) unlockstat.st_rdev (%s)" % (myunlockstat.st_ino, unlockstat.st_ino,myunlockstat.st_rdev,unlockstat.st_rdev)
     print "Released %s db %s lock" % (db_tuple[1], db_tuple[2])
-    LOCKFO.close()
+    #LOCKFO.close()
 
 def initialize_db(db_name) :
-    LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
-    LOCKFO = open(LOCK, 'a')
-    LOCKFO.close()
+    #LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+    #LOCKFO = open(LOCK, 'a')
+    #LOCKFO.close()
     lock_uid = pwd.getpwnam(CAT_LOCK_OWNER)[2]
     lock_gid = grp.getgrnam(CAT_LOCK_GROUP)[2]
-    os.chown(LOCK, lock_uid, lock_gid)
-    os.chmod(LOCK, 0664)
+    #os.chown(LOCK, lock_uid, lock_gid)
+    #os.chmod(LOCK, 0664)
     db_tuple = lock_db_files(db_name, db_mode='write')
     FILE = DBDIR + '/' + db_name
     FO = open(FILE, 'wb')
@@ -916,11 +1110,11 @@ def initialize_db(db_name) :
     os.chmod(FILE, 0664)
     unlock_db_files(db_tuple)
     RO_DB_NAME = db_name + '_readonly'
-    ROLOCK = DBDIR + '/' + RO_DB_NAME + LOCK_SUFFIX
-    ROLOCKFO = open(ROLOCK, 'a')
-    ROLOCKFO.close()
-    os.chown(ROLOCK, lock_uid, lock_gid)
-    os.chmod(ROLOCK, 0664)
+    #ROLOCK = DBDIR + '/' + RO_DB_NAME + LOCK_SUFFIX
+    #ROLOCKFO = open(ROLOCK, 'a')
+    #ROLOCKFO.close()
+    #os.chown(ROLOCK, lock_uid, lock_gid)
+    #os.chmod(ROLOCK, 0664)
     ro_db_tuple = lock_db_files(RO_DB_NAME, db_mode='write')
     ROFILE = DBDIR + '/' + RO_DB_NAME
     ROFO = open(ROFILE, 'wb')
@@ -944,6 +1138,7 @@ def open_db (db_name, db_mode) :
         nonempty = 0
         for i in range(60) :
             FO = open(REMOTEFILE, 'rb')
+            #FO = os.open(REMOTEFILE, 'rb')
             contents = FO.read()
             if len(contents) == 0 :
                 FO.close()
@@ -1099,19 +1294,57 @@ def close_db (db_handle) :
     db_name = db_tuple[1]
     db_mode = db_tuple[2]
     db_tuple = db_handle[1]
-    if db_mode == 'write' :
-        REMOTEFILE = DBDIR + '/' + db_name
-        FO = open(REMOTEFILE, 'wb')
-        pickle = cPickle.Pickler(FO,1)
-        pickle.fast = 1
+    if db_mode == 'write':
+        # if another process has broken the lock for db_name,
+        # we skip writing out our version.  There is still a
+        # window where the other process has broken the lock,
+        # but we miss it, so we inadvertantly write our stuff out
+        still_locked = check_lock(db_name)
+        # get a write lock
+        if still_locked == False:
+            raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
+        #writing_db_tuple = lock_db_files(db_name+'-writing', db_mode, timeout=0, breakable=False)
+
+        ROFILE = DBDIR + '/' + db_name + '_readonly'
+        #shutil.copyfile(REMOTEFILE, ROFILE)
+        FD = os.open(ROFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+        #FO = os.fdopen(FD,'w',0)
+        FO = os.fdopen(FD,'w')
+        #pickle = cPickle.Pickler(FO,1)
+        pickle = cPickle.Pickler(FO,cPickle.HIGHEST_PROTOCOL)
+        #pickle.fast = 1
         if DEBUG == 'cd' :
             print "writing out (%s)" % db_name
         pickle.dump(dict)
         FO.flush()
         os.fsync(FO.fileno())
         FO.close()
-        ROFILE = DBDIR + '/' + db_name + '_readonly'
-        shutil.copyfile(REMOTEFILE, ROFILE)
+        #os.close(FD)
+
+        # if other broke my lock, bail out before
+        # the primary database is corrupted.
+        # if I still have the lock, the backup
+        # database should be good.
+        still_locked = check_lock(db_name)
+        if still_locked == False:
+            raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
+
+        REMOTEFILE = DBDIR + '/' + db_name
+        #FO = open(REMOTEFILE, 'wb')
+        FD = os.open(REMOTEFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+        #FO = os.fdopen(FD,'w',0)
+        FO = os.fdopen(FD,'w')
+        #pickle = cPickle.Pickler(FO,1)
+        pickle = cPickle.Pickler(FO,cPickle.HIGHEST_PROTOCOL)
+        #pickle.fast = 1
+        if DEBUG == 'cd' :
+            print "writing out (%s)" % db_name
+        pickle.dump(dict)
+        FO.flush()
+        os.fsync(FO.fileno())
+        FO.close()
+        #os.close(FD)
+
         uid_int = pwd.getpwnam(CAT_LOCK_OWNER)[2]
         gid_int = grp.getgrnam(CAT_LOCK_GROUP)[2]
         try :
@@ -1153,6 +1386,10 @@ db: %s""" % REMOTEFILE + '\n' + "file.tell() (%s)\n" % FO.tell() + tb_text
             print "message (%s)" % message
             warn(message, subject, recipient)
             catsyslog(message,'warning')
+        #unlock_db_files(writing_db_tuple)
+    else:
+        #print "db_mode (%s)" % (db_mode,)
+        pass
     unlock_db_files(db_tuple)
 
 def apply_policy_code(code_string,input_tuple) :

@@ -44,6 +44,8 @@ JOBACTIONONNODEFAILURE=NOTIFY
 # of accuracy (especially on DS)
 MACHINE_REFRESH_INTERVAL=1
 
+LOCKTIMEOUT = 300.0
+
 # For simulation mode, query job command and query machine command
 QJ_SIM=___INSTALLDIR_PLACEHOLDER___/qj_sim
 QM_SIM=___INSTALLDIR_PLACEHOLDER___/qm_sim

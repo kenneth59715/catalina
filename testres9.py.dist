@@ -801,7 +801,7 @@ if so == None :
     sys.exit(1)
 else :
     print "ok"
-    #print cmd_string
+    print cmd_string
     #continue_var = raw_input('continue? ')
     res_id = so.group('res_name')
     test_res_id_list.append(res_id)
