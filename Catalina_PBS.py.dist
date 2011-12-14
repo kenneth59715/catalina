@@ -45,17 +45,18 @@ JOB_UPDATE_ATTRIBUTE_list = [
 start_job_returncode_reo = re.compile("^rc from pbs_asyrunjob is >(?P<code>\d+)<$", re.MULTILINE)
 
 pmem_reo = re.compile("(?P<amount>\d+)(?P<multiplier>[a-z]*)")
+totalmem_reo = re.compile("(?P<amount>\d+)(?P<multiplier>[a-z]*)")
 pmem_mult = {
   'b' : 1,
-  'w' : 1,
+  'w' : 1 * 8,
   'kb' : 1024,
-  'kw' : 1024,
+  'kw' : 1024 * 8,
   'mb' : 1048576,
-  'mw' : 1048576,
+  'mw' : 1048576 * 8,
   'gb' : 1073741824,
-  'gw' : 1073741824,
+  'gw' : 1073741824 * 8,
   'tb' : 1099511627776,
-  'tw' : 1099511627776,
+  'tw' : 1099511627776 * 8,
   }
 
 def get_scheduler_time() :
@@ -512,12 +513,40 @@ def get_job_steps_dict() :
         req_dict_list = []
         resourcereq_dict_dict_list = []
         pmem_mo = None
+        totalmem_mo = None
         if runjob_dict[job_step_id]['Resource_List'].has_key('pmem'):
             pmem_mo = pmem_reo.match(runjob_dict[job_step_id]['Resource_List']['pmem'])
             if pmem_mo.group('multiplier') in pmem_mult.keys():
                 memory_per_task = int(pmem_mo.group('amount')) * pmem_mult[pmem_mo.group('multiplier')]
+        elif runjob_dict[job_step_id]['Resource_List'].has_key('mem'):
+            totalmem_mo = totalmem_reo.match(runjob_dict[job_step_id]['Resource_List']['mem'])
+            if totalmem_mo.group('multiplier') in pmem_mult.keys():
+                proccount = 0
+                for spec_index in range(len(spec_list)) :
+                    spec = spec_list[spec_index]
+                    spec_elements = string.split(spec, ':')
+                    thisnodecount = 0
+                    thisppn = None
+                    for index in range(len(spec_elements)) :
+                        if index == 0 :
+                            spec_mo = re.match(r"\d+",spec_elements[index])
+                            if spec_mo != None :
+                                thisnodecount = int(spec_elements[index])
+                            else :
+                                thisnodecount = 1
+                        else :
+                            ppn_mo = ppn_reo.match(spec_elements[index])
+                            if ppn_mo != None :
+                                thisppn = int(ppn_mo.group('tasks'))
+                    if thisppn == None:
+                        # If no ppn found, assume ppn=1.  Is that valid?
+                        thisppn = 1
+                    proccount = proccount + (thisnodecount * thisppn)
+                memory_per_task = int(totalmem_mo.group('amount')) * pmem_mult[totalmem_mo.group('multiplier')] / proccount
+
         else: 
             memory_per_task = 0
+
         for spec_index in range(len(spec_list)) :
             # assume 1 cpu per task
             resourcereq_dict = { 'cpu' : 1, 'memory' : memory_per_task }
