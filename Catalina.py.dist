@@ -51,6 +51,7 @@ import fcntl
 import traceback
 import subprocess
 import shutil
+import exceptions
 import Catalina____RESOURCEMANAGER_PLACEHOLDER___
 #from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_job_step_state
 #from Catalina____RESOURCEMANAGER_PLACEHOLDER___ import Catalina____RESOURCEMANAGER_PLACEHOLDER___.JOBSUFFIX
@@ -933,8 +934,13 @@ def lock_db_files (db_name, db_mode='read', timeout=LOCKTIMEOUT, breakable=True)
                 rc = os.link(MYLOCK,LOCK)
             except:
                 pass
-            mystat = os.stat(MYLOCK)
-            lockstat = os.stat(LOCK)
+            # if someone else has unlinked LOCK, or some other
+            # problem, keep going
+            try:
+                lockstat = os.stat(LOCK)
+                mystat = os.stat(MYLOCK)
+            except exceptions.OSError:
+                continue
             if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
                 #print "lock match mystat.st_ino (%s) lockstat.st_ino (%s) mystat.st_rdev (%s) lockstat.st_rdev (%s)" % (mystat.st_ino, lockstat.st_ino,mystat.st_rdev,lockstat.st_rdev)
                 # same unique file and lockfile, so I have the lock
@@ -989,7 +995,10 @@ def lock_db_files (db_name, db_mode='read', timeout=LOCKTIMEOUT, breakable=True)
                     #     # release the unlock lock
                     #    os.unlink(UNLOCK)
                     #    os.unlink(MYUNLOCK)
-                    os.unlink(LOCK)
+                    try:
+                        os.unlink(LOCK)
+                    except exceptions.OSError:
+                        continue
                 else:
                     pass
     else :
@@ -1307,15 +1316,21 @@ def close_db (db_handle) :
 
         ROFILE = DBDIR + '/' + db_name + '_readonly'
         #shutil.copyfile(REMOTEFILE, ROFILE)
-        FD = os.open(ROFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+        #FD = os.open(ROFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+        FD = os.open(ROFILE, os.O_SYNC|os.O_WRONLY)
+        #print "ROFILE (%s)" % (ROFILE,)
+        #print "type(FD) (%s)" % (type(FD),)
         #FO = os.fdopen(FD,'w',0)
-        FO = os.fdopen(FD,'w')
+        #FO = os.fdopen(FD,'wb')
+        FO = os.fdopen(FD,'wb')
+        #print "type(FO) (%s)" % (type(FO),)
         #pickle = cPickle.Pickler(FO,1)
         pickle = cPickle.Pickler(FO,cPickle.HIGHEST_PROTOCOL)
         #pickle.fast = 1
         if DEBUG == 'cd' :
             print "writing out (%s)" % db_name
         pickle.dump(dict)
+        #print "type(FO) (%s)" % (type(FO),)
         FO.flush()
         os.fsync(FO.fileno())
         FO.close()
@@ -1331,9 +1346,10 @@ def close_db (db_handle) :
 
         REMOTEFILE = DBDIR + '/' + db_name
         #FO = open(REMOTEFILE, 'wb')
-        FD = os.open(REMOTEFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+        #FD = os.open(REMOTEFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+        FD = os.open(REMOTEFILE, os.O_SYNC|os.O_WRONLY)
         #FO = os.fdopen(FD,'w',0)
-        FO = os.fdopen(FD,'w')
+        FO = os.fdopen(FD,'wb')
         #pickle = cPickle.Pickler(FO,1)
         pickle = cPickle.Pickler(FO,cPickle.HIGHEST_PROTOCOL)
         #pickle.fast = 1
