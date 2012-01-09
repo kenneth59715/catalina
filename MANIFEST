@@ -74,8 +74,13 @@ start.ksh.dist
 stop.py.dist
 testjob.LL.dist
 testjob.PBS.dist
+testjob.SLURM.dist
 testjob.run_at_risk.LL.dist
 testjob.run_at_risk.PBS.dist
+testjob.run_at_risk.SLURM.dist
+testjob.license.LL.dist
+testjob.license.PBS.dist
+testjob.license.SLURM.dist
 testres9.py.dist
 unbind_job_from_res.dist
 update_job_priorities.dist
@@ -104,7 +109,5 @@ qj_SLURM.dist
 rj_SLURM.dist
 node_restriction_file.SLURM
 qm_SLURM.dist
-testjob.run_at_risk.SLURM.dist
 pj_SLURM.dist
 resj_SLURM.dist
-testjob.SLURM.dist

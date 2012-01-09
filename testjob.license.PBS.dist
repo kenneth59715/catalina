@@ -1,0 +1,6 @@
+#PBS -l nodes=2,walltime=630,mem=320kb
+#PBS -q ___DEFAULT_JOB_CLASS_PLACEHOLDER___
+#PBS -v QOS=___DEFAULT_JOB_QOS_PLACEHOLDER___,Catalina_local_admin_priority=92091,Catalina_local_user_priority=-100,Catalina_res_bind=testholder,Catalina_preempting=1,Catalina_preemptible=1,Catalina_license_request_list=abaqus_16
+/bin/hostname
+cat $PBS_NODEFILE
+sleep 120
