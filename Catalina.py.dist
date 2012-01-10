@@ -904,8 +904,15 @@ def check_lock(db_name):
     mypid = os.getpid()
     LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
     MYLOCK = DBDIR + '/' + db_name + LOCK_SUFFIX + '.' + myserver + '.' + "%s" % mypid
-    mystat = os.stat(MYLOCK)
-    lockstat = os.stat(LOCK)
+    try:
+        mystat = os.stat(MYLOCK)
+        lockstat = os.stat(LOCK)
+    except exceptions.OSError:
+        print "OSError opening (%s)" % (MYLOCK,)
+        return False
+    except exceptions.IOError:
+        print "IOError opening (%s)" % (MYLOCK,)
+        return False
     if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
         #still locked, 
         return True
@@ -935,9 +942,13 @@ def lock_db_files (db_name, db_mode='read', timeout=LOCKTIMEOUT, breakable=True)
         while LOCKLOCK == 0:
             try:
                 FO = open(MYLOCK,'w')
+                FO.close()
             except exceptions.OSError:
+                print "OSError opening (%s)" % (MYLOCK,)
                 continue
-            FO.close()
+            except exceptions.IOError:
+                print "IOError opening (%s)" % (MYLOCK,)
+                continue
             try:
                 rc = os.link(MYLOCK,LOCK)
             except:
@@ -969,6 +980,7 @@ def lock_db_files (db_name, db_mode='read', timeout=LOCKTIMEOUT, breakable=True)
                             os.unlink(DBDIR + '/' + filename)
                         except exceptions.OSError:
                             pass
+                break
             else:
                 #print "lock mismatch mystat.st_ino (%s) lockstat.st_ino (%s) mystat.st_rdev (%s) lockstat.st_rdev (%s)" % (mystat.st_ino, lockstat.st_ino,mystat.st_rdev,lockstat.st_rdev)
                 #print "failed to get lock for (%s)" % (LOCK,)
@@ -1012,6 +1024,7 @@ def lock_db_files (db_name, db_mode='read', timeout=LOCKTIMEOUT, breakable=True)
                         continue
                 else:
                     pass
+            time.sleep(1)
     else :
         # open the reservations file for read, set non-exclusive lock
         #LOCKFO = open(LOCK, 'r')
