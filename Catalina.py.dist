@@ -4933,15 +4933,24 @@ def cancel_risk_reservations(reservations_db_handle,
                     #        nonrisk_res_dict[nonrisknode] = { 'cpu' : resources_dict[nonrisknode]['ConsumableCpus'], 'memory' : resources_dict[nonrisknode]['ConsumableMemory'] }
 
                     if atrisk_res_dict.has_key(nonrisknode):
-                        if nonrisk_res_dict.has_key(nonrisknode):
-                            for conskey in nonrisk_allocated_dict.keys():
-                                if conskey == ['nodename','type']:
-                                    continue
+                        #if nonrisk_res_dict.has_key(nonrisknode):
+                        #    for conskey in nonrisk_allocated_dict.keys():
+                        #        if conskey == ['nodename','type']:
+                        #            continue
+                        #        nonrisk_res_dict[nonrisknode][conskey] = nonrisk_res_dict[nonrisknode][conskey] + nonrisk_allocated_dict[conskey]
+                        #else :
+                        #    for conskey in nonrisk_allocated_dict.keys():
+                        #        if conskey == ['nodename','type']:
+                        #            continue
+                        #        nonrisk_res_dict[nonrisknode][conskey] = nonrisk_allocated_dict[conskey]
+                        if not nonrisk_res_dict.has_key(nonrisknode):
+                            nonrisk_res_dict[nonrisknode] = {}
+                        for conskey in nonrisk_allocated_dict.keys():
+                            if conskey == ['nodename','type']:
+                                continue
+                            if nonrisk_res_dict[nonrisknode].has_key(conskey):
                                 nonrisk_res_dict[nonrisknode][conskey] = nonrisk_res_dict[nonrisknode][conskey] + nonrisk_allocated_dict[conskey]
-                        else :
-                            for conskey in nonrisk_allocated_dict.keys():
-                                if conskey == ['nodename','type']:
-                                    continue
+                            else:
                                 nonrisk_res_dict[nonrisknode][conskey] = nonrisk_allocated_dict[conskey]
                     else:
                         if not nonrisk_res_dict.has_key(nonrisknode):
