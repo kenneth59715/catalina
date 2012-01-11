@@ -1077,46 +1077,51 @@ def unlock_db_files (db_tuple) :
                 print "print of sys.exc_info() failed!"
         # release lock, close the file
         #fcntl.lockf(LOCKFO.fileno(), fcntl.LOCK_UN)
-        mystat = os.stat(MYLOCK)
-        lockstat = os.stat(LOCK)
-        if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
-            # still my lock, so unlock it
-            # get the lock to unlock
-            #FO = open(MYUNLOCK,'w')
-            #FO.close()
-            #try:
-            #    rc = os.link(MYUNLOCK,UNLOCK)
-            #except:
-            #    pass
-            #myunlockstat = os.stat(MYUNLOCK)
-            #unlockstat = os.stat(UNLOCK)
-            #if myunlockstat.st_ino == unlockstat.st_ino and myunlockstat.st_rdev == unlockstat.st_rdev:
-            #    # got the unlock lock
-            #    UNLOCKLOCK = 1
-            #    rawfiles = os.listdir(DBDIR)
-            #    for filename in rawfiles :
-            #        #print "filename (%s)" % (filename,)
-            #        ulock_mo = ulock_reo.match(filename)
-            #        if ulock_mo != None and DBDIR + '/' + filename != MYUNLOCK:
-            #            #print "unlinking (%s)" % (filename,)
-            #            #try:
-            #            #    os.unlink(DBDIR + '/' + filename)
-            #            #except:
-            #            #    continue_var = raw_input('continue? ')
-            #            os.unlink(DBDIR + '/' + filename)
-            #    #print "unlinking (%s)" % (LOCK,)
-            #    os.unlink(LOCK)
-            #    #print "unlinking (%s)" % (MYLOCK,)
-            #    os.unlink(MYLOCK)
-            #     # release the unlock lock
-            #    os.unlink(UNLOCK)
-            #    os.unlink(MYUNLOCK)
-            #os.unlink(UNLOCK)
-            #os.unlink(MYUNLOCK)
-            os.unlink(LOCK)
-            os.unlink(MYLOCK)
-            #else:
-            #    print "unlock mismatch myunlockstat.st_ino (%s) unlockstat.st_ino (%s) myunlockstat.st_rdev (%s) unlockstat.st_rdev (%s)" % (myunlockstat.st_ino, unlockstat.st_ino,myunlockstat.st_rdev,unlockstat.st_rdev)
+        try:
+            mystat = os.stat(MYLOCK)
+            lockstat = os.stat(LOCK)
+        except:
+            # could not stat one of these, assume someone else broke my locks
+            pass
+        else:
+            if mystat.st_ino == lockstat.st_ino and mystat.st_rdev == lockstat.st_rdev:
+                # still my lock, so unlock it
+                # get the lock to unlock
+                #FO = open(MYUNLOCK,'w')
+                #FO.close()
+                #try:
+                #    rc = os.link(MYUNLOCK,UNLOCK)
+                #except:
+                #    pass
+                #myunlockstat = os.stat(MYUNLOCK)
+                #unlockstat = os.stat(UNLOCK)
+                #if myunlockstat.st_ino == unlockstat.st_ino and myunlockstat.st_rdev == unlockstat.st_rdev:
+                #    # got the unlock lock
+                #    UNLOCKLOCK = 1
+                #    rawfiles = os.listdir(DBDIR)
+                #    for filename in rawfiles :
+                #        #print "filename (%s)" % (filename,)
+                #        ulock_mo = ulock_reo.match(filename)
+                #        if ulock_mo != None and DBDIR + '/' + filename != MYUNLOCK:
+                #            #print "unlinking (%s)" % (filename,)
+                #            #try:
+                #            #    os.unlink(DBDIR + '/' + filename)
+                #            #except:
+                #            #    continue_var = raw_input('continue? ')
+                #            os.unlink(DBDIR + '/' + filename)
+                #    #print "unlinking (%s)" % (LOCK,)
+                #    os.unlink(LOCK)
+                #    #print "unlinking (%s)" % (MYLOCK,)
+                #    os.unlink(MYLOCK)
+                #     # release the unlock lock
+                #    os.unlink(UNLOCK)
+                #    os.unlink(MYUNLOCK)
+                #os.unlink(UNLOCK)
+                #os.unlink(MYUNLOCK)
+                os.unlink(LOCK)
+                os.unlink(MYLOCK)
+                #else:
+                #    print "unlock mismatch myunlockstat.st_ino (%s) unlockstat.st_ino (%s) myunlockstat.st_rdev (%s) unlockstat.st_rdev (%s)" % (myunlockstat.st_ino, unlockstat.st_ino,myunlockstat.st_rdev,unlockstat.st_rdev)
     print "Released %s db %s lock" % (db_tuple[1], db_tuple[2])
     #LOCKFO.close()
 
