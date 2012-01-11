@@ -4112,19 +4112,24 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                     allocated_dict['node'] = requested_dict['node']
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "requested_node is (%s), allocated_node (%s)" % (requested_dict['node'], allocated_dict['node'])
+                rkeymismatch = 0
                 for rkey in resources_dict[nodename]['consumable_dict'].keys():
                     if not requested_dict.has_key(rkey):
-                        print "requested_dict[rkey] mismatch (%s) (%s) (%s)" % (rkey, requested_dict, resources_dict[nodename]['consumable_dict'])
+                        #print "requested_dict[rkey] mismatch (%s) (%s) (%s)" % (rkey, requested_dict, resources_dict[nodename]['consumable_dict'])
+                        rkeymismatch = 1
+                        break
                     # need to handle the case where requested_dict only has 'node':
                     #requested_dict[rkey] mismatch (cpu) ({'node': 1}) ({'cpu': 32, 'memory': 67592482816})
-                    if requested_dict[rkey] == None :
+                    if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
                     #if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
                         if consumed_resource_dict.has_key(nodename) :
-                            allocated_dict[rkey] = resources_db_handle[0][nodename][rkey] - consumed_resource_dict[nodename][rkey]
+                            allocated_dict[rkey] = resources_db_handle[0][nodename][rkey] - consumed_resource_dict[nodename]['consumable_dict'][rkey]
                         else :
-                            allocated_dict[rkey] = resources_db_handle[0][nodename][rkey]
+                            allocated_dict[rkey] = resources_db_handle[0][nodename]['consumable_dict'][rkey]
                     else :
                         allocated_dict[rkey] = requested_dict[rkey]
+                if rkeymismatch == 1:
+                    continue
     #
                 #print "requested_dict (%s)" % (requested_dict,)
                 #print "resources_db_handle[0][nodename] (%s)" % (resources_db_handle[0][nodename],)
@@ -4824,17 +4829,34 @@ def cancel_risk_reservations(reservations_db_handle,
             if risk_res.has_key('allocated_dict_list') :
                 for allocated_dict in risk_res['allocated_dict_list'] :
                     if allocated_dict.has_key('type') and allocated_dict['type'] == 'node_shared' :
-                        if atrisk_res_dict.has_key(node) :
-                            atrisk_res_dict[node]['cpu'] = atrisk_res_dict[node]['cpu'] + allocated_dict['cpu']
-                            atrisk_res_dict[node]['memory'] = atrisk_res_dict[node]['memory'] + allocated_dict['memory']
-                        else :
-                            atrisk_res_dict[node] = { 'cpu' : allocated_dict['cpu'], 'memory' : allocated_dict['memory'] }
+                        #if atrisk_res_dict.has_key(node) :
+                        #    atrisk_res_dict[node]['cpu'] = atrisk_res_dict[node]['cpu'] + allocated_dict['cpu']
+                        #    atrisk_res_dict[node]['memory'] = atrisk_res_dict[node]['memory'] + allocated_dict['memory']
+                        #else :
+                        #    atrisk_res_dict[node] = { 'cpu' : allocated_dict['cpu'], 'memory' : allocated_dict['memory'] }
+                        if not atrisk_res_dict.has_key(node) :
+                            atrisk_res_dict[node] = {}
+                        for conskey in allocated_dict.keys():
+                            if conskey == ['nodename','type']:
+                                continue
+                            if atrisk_res_dict[node].has_key(conskey):
+                                atrisk_res_dict[node][conskey] = atrisk_res_dict[node][conskey] + allocated_dict[conskey]
+                            else:
+                                atrisk_res_dict[node][conskey] = allocated_dict[conskey]
                     else :
-                        if atrisk_res_dict.has_key(node) :
-                            atrisk_res_dict[node]['cpu'] = atrisk_res_dict[node]['cpu'] + resources_dict[node]['ConsumableCpus']
-                            atrisk_res_dict[node]['memory'] = atrisk_res_dict[node]['memory'] + resources_dict[node]['ConsumableMemory']
-                        else :
-                            atrisk_res_dict[node] = { 'cpu' : resources_dict[node]['ConsumableCpus'], 'memory' : resources_dict[node]['ConsumableMemory'] }
+                        #if atrisk_res_dict.has_key(node) :
+                        #    atrisk_res_dict[node]['cpu'] = atrisk_res_dict[node]['cpu'] + resources_dict[node]['ConsumableCpus']
+                        #    atrisk_res_dict[node]['memory'] = atrisk_res_dict[node]['memory'] + resources_dict[node]['ConsumableMemory']
+                        #else :
+                        #    atrisk_res_dict[node] = { 'cpu' : resources_dict[node]['ConsumableCpus'], 'memory' : resources_dict[node]['ConsumableMemory'] }
+                        if not atrisk_res_dict.has_key(node) :
+                            atrisk_res_dict[node] = {}
+                        for conskey in resources_dict[node]['consumable_dict'].keys():
+                            if atrisk_res_dict[node].has_key(conskey):
+                                atrisk_res_dict[node][conskey] = atrisk_res_dict[node][conskey] + resources_dict[node]['consumable_dict'][conskey]
+                            else:
+                                atrisk_res_dict[node][conskey] = resources_dict[node]['consumable_dict'][conskey]
+                        
         # add up cpu and memory by node for nonrisky reservations that
         # conflict
         nonrisk_res_dict = {}
@@ -4882,41 +4904,79 @@ def cancel_risk_reservations(reservations_db_handle,
                 else :
                     nonrisk_allocated_dict_list = []
                     for nonrisknode in nonrisk_res['node_list'] :
-                        nonrisk_allocated_dict_list.append(
+                        #nonrisk_allocated_dict_list.append(
+                        #  { 'nodename' : nonrisknode,
+                        #    'type' : 'node_exclusive',
+                        #    'cpu' : resources_dict[nonrisknode]['ConsumableCpus'],
+                        #    'memory' : resources_dict[nonrisknode]['ConsumableMemory']
+                        #  })
+                        nonrisk_allocated_dict = \
                           { 'nodename' : nonrisknode,
                             'type' : 'node_exclusive',
-                            'cpu' : resources_dict[nonrisknode]['ConsumableCpus'],
-                            'memory' : resources_dict[nonrisknode]['ConsumableMemory']
-                          })
+                          }
+                        for conskey in resources_dict[nonrisknode]['consumable_dict'].keys():
+                            nonrisk_allocated_dict[conskey] = resources_dict[nonrisknode]['consumable_dict'][conskey]
+                        nonrisk_allocated_dict_list.append(nonrisk_allocated_dict)
                 for nonrisk_allocated_dict in nonrisk_allocated_dict_list :
                     nonrisknode = nonrisk_allocated_dict['nodename']
-                    if atrisk_res_dict.has_key(nonrisknode) :
-                        if nonrisk_res_dict.has_key(nonrisknode) :
-                            nonrisk_res_dict[nonrisknode]['cpu'] = nonrisk_res_dict[nonrisknode]['cpu'] + nonrisk_allocated_dict['cpu']
-                            nonrisk_res_dict[nonrisknode]['memory'] = nonrisk_res_dict[nonrisknode]['memory'] + nonrisk_allocated_dict['memory']
+                    #if atrisk_res_dict.has_key(nonrisknode) :
+                    #    if nonrisk_res_dict.has_key(nonrisknode) :
+                    #        nonrisk_res_dict[nonrisknode]['cpu'] = nonrisk_res_dict[nonrisknode]['cpu'] + nonrisk_allocated_dict['cpu']
+                    #        nonrisk_res_dict[nonrisknode]['memory'] = nonrisk_res_dict[nonrisknode]['memory'] + nonrisk_allocated_dict['memory']
+                    #    else :
+                    #        nonrisk_res_dict[nonrisknode] = { 'cpu' : nonrisk_allocated_dict['cpu'], 'memory' : nonrisk_allocated_dict['memory'] }
+                    #else :
+                    #    if nonrisk_res_dict.has_key(nonrisknode) :
+                    #        nonrisk_res_dict[nonrisknode]['cpu'] = nonrisk_res_dict[nonrisknode]['cpu'] + resources_dict[nonrisknode]['ConsumableCpus']
+                    #        nonrisk_res_dict[nonrisknode]['memory'] = nonrisk_res_dict[nonrisknode]['memory'] + resources_dict[nonrisknode]['ConsumableMemory']
+                    #    else :
+                    #        nonrisk_res_dict[nonrisknode] = { 'cpu' : resources_dict[nonrisknode]['ConsumableCpus'], 'memory' : resources_dict[nonrisknode]['ConsumableMemory'] }
+
+                    if atrisk_res_dict.has_key(nonrisknode):
+                        if nonrisk_res_dict.has_key(nonrisknode):
+                            for conskey in nonrisk_allocated_dict.keys():
+                                if conskey == ['nodename','type']:
+                                    continue
+                                nonrisk_res_dict[nonrisknode][conskey] = nonrisk_res_dict[nonrisknode][conskey] + nonrisk_allocated_dict[conskey]
                         else :
-                            nonrisk_res_dict[nonrisknode] = { 'cpu' : nonrisk_allocated_dict['cpu'], 'memory' : nonrisk_allocated_dict['memory'] }
-                    else :
-                        if nonrisk_res_dict.has_key(nonrisknode) :
-                            nonrisk_res_dict[nonrisknode]['cpu'] = nonrisk_res_dict[nonrisknode]['cpu'] + resources_dict[nonrisknode]['ConsumableCpus']
-                            nonrisk_res_dict[nonrisknode]['memory'] = nonrisk_res_dict[nonrisknode]['memory'] + resources_dict[nonrisknode]['ConsumableMemory']
-                        else :
-                            nonrisk_res_dict[nonrisknode] = { 'cpu' : resources_dict[nonrisknode]['ConsumableCpus'], 'memory' : resources_dict[nonrisknode]['ConsumableMemory'] }
+                            for conskey in nonrisk_allocated_dict.keys():
+                                if conskey == ['nodename','type']:
+                                    continue
+                                nonrisk_res_dict[nonrisknode][conskey] = nonrisk_allocated_dict[conskey]
+                    else:
+                        if not nonrisk_res_dict.has_key(nonrisknode):
+                            nonrisk_res_dict[nonrisknode] = {}
+                        for conskey in resources_dict[nonrisknode]['consumable_dict'].keys():
+                            if nonrisk_res_dict[nonrisknode].has_key(conskey):
+                                nonrisk_res_dict[nonrisknode][conskey] = nonrisk_res_dict[nonrisknode][conskey] + resources_dict[nonrisknode]['consumable_dict'][conskey]
+                            else:
+                                nonrisk_res_dict[nonrisknode][conskey] = resources_dict[nonrisknode]['consumable_dict'][conskey]
+                     
         found_conflict = 0
         for node in nonrisk_res_dict.keys() :
             #checking nonrisk node
             if atrisk_res_dict.has_key(node) and resources_dict.has_key(node) :
-                if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
-                    print "cpu conflict check %s %s %s" % (nonrisk_res_dict[node]['cpu'], atrisk_res_dict[node]['cpu'], resources_dict[node]['ConsumableCpus'])
-                    print "memory conflict check %s %s %s" % (nonrisk_res_dict[node]['memory'], atrisk_res_dict[node]['memory'], resources_dict[node]['ConsumableMemory'])
-                if nonrisk_res_dict[node]['cpu'] + atrisk_res_dict[node]['cpu'] > resources_dict[node]['ConsumableCpus'] :
-                    if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
-                        print "found cpu conflict %s %s %s" % (nonrisk_res_dict[node]['cpu'], atrisk_res_dict[node]['cpu'], resources_dict[node]['ConsumableCpus'])
-                    found_conflict = 1
-                if nonrisk_res_dict[node]['memory'] + atrisk_res_dict[node]['memory'] > resources_dict[node]['ConsumableMemory'] :
-                    if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
-                        print "found memory conflict %s %s %s" % (nonrisk_res_dict[node]['memory'], atrisk_res_dict[node]['memory'], resources_dict[node]['ConsumableMemory'])
-                    found_conflict = 1
+                #if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
+                #    print "cpu conflict check %s %s %s" % (nonrisk_res_dict[node]['cpu'], atrisk_res_dict[node]['cpu'], resources_dict[node]['ConsumableCpus'])
+                #    print "memory conflict check %s %s %s" % (nonrisk_res_dict[node]['memory'], atrisk_res_dict[node]['memory'], resources_dict[node]['ConsumableMemory'])
+                #if nonrisk_res_dict[node]['cpu'] + atrisk_res_dict[node]['cpu'] > resources_dict[node]['ConsumableCpus'] :
+                for conskey in resources_dict[node]['consumable_dict'].keys():
+                    if nonrisk_res_dict[node].has_key(conskey):
+                        nramount = nonrisk_res_dict[node][conskey]
+                    else:
+                        nramount = 0
+                    if atrisk_res_dict[node].has_key(conskey):
+                        aramount = atrisk_res_dict[node][conskey]
+                    else:
+                        aramount = 0
+                    if nramount + aramount > resources_dict[node][conskey] :
+                        #if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
+                        #    print "found cpu conflict %s %s %s" % (nonrisk_res_dict[node]['cpu'], atrisk_res_dict[node]['cpu'], resources_dict[node]['ConsumableCpus'])
+                        found_conflict = 1
+                #if nonrisk_res_dict[node]['memory'] + atrisk_res_dict[node]['memory'] > resources_dict[node]['ConsumableMemory'] :
+                #    if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
+                #        print "found memory conflict %s %s %s" % (nonrisk_res_dict[node]['memory'], atrisk_res_dict[node]['memory'], resources_dict[node]['ConsumableMemory'])
+                #    found_conflict = 1
             if found_conflict == 0 :
                 if DEBUGJOB != None and risk_res['job_runID'] != None and risk_res['job_runID'] == DEBUGJOB :
                     print "not deleting (%s) (%s) (%s)" % (risk_res['name'], risk_res['purpose_type_string'], risk_res['job_runID'])
