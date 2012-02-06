@@ -39,6 +39,7 @@ JOB_UPDATE_ATTRIBUTE_list = [
   'resource_amount_int',
   'requirements_string',
   'cat_requirements_string',
+  'env_dict',
   'req_dict_list'
   ]
 
@@ -119,7 +120,7 @@ def initialize_job_step(job_step_name) :
     new_job_step['preemptible'] = 0
     new_job_step['preempting'] = 0
     new_job_step['maxhops'] = None
-    new_job_step['maxhops'] = None
+    new_job_step['env_dict'] = {}
     new_job_step['node_spec_string'] = ''
     return new_job_step
 
@@ -420,6 +421,7 @@ def get_job_steps_dict() :
         for element in elements :
             string.strip(element)
             fields = string.split(element, '=')
+            new_job_step['env_dict'][fields[0]] = fields[1]
             if string.strip(fields[0]) == 'Catalina_res_bind' :
                 res_ids_list = []
                 raw_res_ids = string.split(fields[1], ':')
