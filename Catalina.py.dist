@@ -1804,7 +1804,9 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                         if event[2].has_key('node') :
                             node_amount = event[2]['node']
                         else :
+                            # FIXME? should this be 0 for shared?
                             node_amount = 1
+                            #node_amount = 0
                     #if event[2].has_key('node') :
                     #    started_windows_list.append(
                     #      ( event[0],
@@ -1906,7 +1908,9 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                             need_dict['node'] = event[2]['node']
                         else :
                             #neednodes = 1
+                            # FIXME? should this be 0 for shared?
                             need_dict['node'] = 1
+                            #need_dict['node'] = 0
                     #needcpus = event[2]['cpu']
                     #needmemory = event[2]['memory']
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -6165,7 +6169,10 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                 for consumable_key in this_consumable_dict.keys():
                     if consumable_key == 'node':
                         continue
-                    allocated_dict[consumable_key] = resources_dict[node_list[index]]['consumable_dict'][consumable_key]
+                    if node_usage == 'node_shared':
+                        allocated_dict[consumable_key] = this_consumable_dict[consumable_key]
+                    else:
+                        allocated_dict[consumable_key] = resources_dict[node_list[index]]['consumable_dict'][consumable_key]
                       #{ 'nodename' : node,
                       #  'type' : 'node_exclusive',
                       #  'node' : 1,
