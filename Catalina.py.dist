@@ -6795,8 +6795,11 @@ def update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle
             lost_resource_names_list.append(resource['name'])
         elif not found_resource_dict[resource['name']]['State'] in ['Idle', 'Running'] :
             # put delay in here, too
-            if Now_float - resource_shelf[resource['name']]['State_Change_Time'] > RESOURCE_DOWN_TIME_LIMIT :
-                down_resource_names_dict[resource['name']] = found_resource_dict[resource['name']]['State']
+            #if Now_float - resource_shelf[resource['name']]['State_Change_Time'] > RESOURCE_DOWN_TIME_LIMIT :
+            #    down_resource_names_dict[resource['name']] = found_resource_dict[resource['name']]['State']
+            # actually, the delay is in updating found_resource_dict state above
+            # no delay here, else non-Down state changes will be missed.
+            down_resource_names_dict[resource['name']] = found_resource_dict[resource['name']]['State']
     down_resource_names_list = map(lambda x, down_resource_names_dict=down_resource_names_dict : "%s - %s" % (x, down_resource_names_dict[x]), down_resource_names_dict.keys())
 
     #Martin Margo: Just a hack for now, remove the broken nodes from the job eligible nodes
