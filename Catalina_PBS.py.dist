@@ -357,6 +357,9 @@ def get_job_step_state(job_step) :
         return 'OTHER'
 
 def get_job_steps_dict() :
+    #envvar_pat = r"([^=,]*=([^,]*(\\,)*)*(?!\\)),"
+    envvar_pat = r"([^=]*=[^,\\]*(\\,[^,\\]*)*),"
+    envvar_reo = re.compile(envvar_pat)
     Now_tuple = time.localtime(Catalina.Now_float)
     Now_year = Now_tuple[0]
     runjob_dict = get_runjob_dict()
@@ -415,12 +418,24 @@ def get_job_steps_dict() :
         #node_usage = 'node_shared'
 
         if runjob_dict[job_step_id].has_key('Variable_List'):
-            elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
+            #elements = string.split(runjob_dict[job_step_id]['Variable_List'][1], ',')
+            commaterm = runjob_dict[job_step_id]['Variable_List'][1] + ','
+            elements = envvar_reo.findall(commaterm)
         else:
             elements = []
-        for element in elements :
+        #print "job_step_id (%s) " % (job_step_id,)
+        
+        #for element in elements :
+        for elementgroup in elements :
+            element = elementgroup[0]
+            #print "elementgroup (%s) " % (elementgroup,)
+            #print "element (%s) " % (element,)
             string.strip(element)
             fields = string.split(element, '=')
+            #FIXME need to properly handle GLOBUS port number
+            # range with 50000\,51000
+            #if len(fields) > 1:
+            #    new_job_step['env_dict'][fields[0]] = fields[1]
             new_job_step['env_dict'][fields[0]] = fields[1]
             if string.strip(fields[0]) == 'Catalina_res_bind' :
                 res_ids_list = []
