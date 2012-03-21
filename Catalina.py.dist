@@ -603,10 +603,18 @@ if vars().has_key('QOS_MAXJOBPERACCOUNTPOLICY_STRING') :
     exec('QOS_MAXJOBPERACCOUNTPOLICY_dict = ' + QOS_MAXJOBPERACCOUNTPOLICY_STRING)
 else :
     QOS_MAXJOBPERACCOUNTPOLICY_dict = {}
+if vars().has_key('QOS_MAXJOBPERUSERPERQOSPOLICY_STRING') :
+    exec('QOS_MAXJOBPERUSERPERQOSPOLICY_dict = ' + QOS_MAXJOBPERUSERPERQOSPOLICY_STRING)
+else :
+    QOS_MAXJOBPERUSERPERQOSPOLICY_dict = {}
 if vars().has_key('QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_STRING') :
     exec('QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_dict = ' + QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_STRING)
 else :
     QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_dict = {}
+if vars().has_key('QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_STRING') :
+    exec('QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_dict = ' + QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_STRING)
+else :
+    QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_dict = {}
 if vars().has_key('QOS_MAXNODESECQUEUEDPERUSERPOLICY_STRING') :
     exec('QOS_MAXNODESECQUEUEDPERUSERPOLICY_dict = ' + QOS_MAXNODESECQUEUEDPERUSERPOLICY_STRING)
 else :
@@ -5138,6 +5146,8 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
         queued_jobs_per_user = {}
         running_jobs_per_account_per_qos = {}
         queued_jobs_per_account_per_qos = {}
+        running_jobs_per_user_per_qos = {}
+        queued_jobs_per_user_per_qos = {}
         running_node_sec_per_user_per_qos = {}
         queued_node_sec_per_user_per_qos = {}
         running_node_sec_per_account_per_qos = {}
@@ -5172,6 +5182,14 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
                         running_jobs_per_account_per_qos[account][qos] = 1
                 else :
                     running_jobs_per_account_per_qos[account] = { qos : 1, }
+                if running_jobs_per_user_per_qos.has_key(user) :
+                    if running_jobs_per_user_per_qos[user].has_key(qos) :
+                        running_jobs_per_user_per_qos[user][qos] = \
+                          running_jobs_per_user_per_qos[user][qos] + 1
+                    else :
+                        running_jobs_per_user_per_qos[user][qos] = 1
+                else :
+                    running_jobs_per_user_per_qos[user] = { qos : 1, }
                 if running_node_sec_per_account_per_qos.has_key(account) :
                     if running_node_sec_per_account_per_qos[account].has_key(qos) :
                         running_node_sec_per_account_per_qos[account][qos] = \
@@ -5247,6 +5265,15 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
                             job['ineligible_reason'] = 'MAXJOBPERACCOUNTPOLICY'
                             ineligible_jobs.append(job)
                             continue
+            if QOS_MAXJOBPERUSERPERQOSPOLICY_dict.has_key(job['QOS']) and QOS_MAXJOBPERUSERPERQOSPOLICY_dict[job['QOS']] != None :
+                if running_jobs_per_user_per_qos.has_key(user) :
+                    if running_jobs_per_user_per_qos[user].has_key(job['QOS']) :
+                        if running_jobs_per_user_per_qos[user][qos] >= \
+                          QOS_MAXJOBPERUSERPERQOSPOLICY_dict[job['QOS']] :
+                            job['system_queue_time'] = None
+                            job['ineligible_reason'] = 'MAXJOBPERPERUSERPERQOSPOLICY'
+                            ineligible_jobs.append(job)
+                            continue
             if MAXJOBQUEUEDPERUSERPOLICY != None and MAXJOBQUEUEDPERUSERPOLICY == 'ON' :
                 if queued_jobs_per_user.has_key(user) :
                     if queued_jobs_per_user[user] >= \
@@ -5271,6 +5298,16 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
                               QOS_MAXJOBQUEUEDPERACCOUNTPOLICY_dict[job['QOS']] :
                                 job['system_queue_time'] = None
                                 job['ineligible_reason'] = 'QOSMAXJOBQUEUEDPERACCOUNTPOLICY'
+                                ineligible_jobs.append(job)
+                                continue
+            if QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_dict.has_key(job['QOS']) and QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_dict[job['QOS']] != None :
+                if queued_jobs_per_user_per_qos.has_key(user) :
+                    if queued_jobs_per_user_per_qos[user].has_key(job['QOS']) :
+                        if queued_jobs_per_user_per_qos[user].has_key(qos) :
+                            if queued_jobs_per_user_per_qos[user][qos] >= \
+                              QOS_MAXJOBQUEUEDPERUSERPERQOSPOLICY_dict[job['QOS']] :
+                                job['system_queue_time'] = None
+                                job['ineligible_reason'] = 'QOSMAXJOBQUEUEDPERUSERPERQOSPOLICY'
                                 ineligible_jobs.append(job)
                                 continue
             if sys.__dict__['modules']['Catalina'].__dict__.has_key('QOS_MAXNODESECRUNNINGPERUSERPOLICY_dict') and \
@@ -5334,6 +5371,14 @@ def get_eligible_and_running_jobs(jobs_db_handle, resources_db_handle, reservati
                     queued_jobs_per_account_per_qos[account][qos] = 1
             else :
                 queued_jobs_per_account_per_qos[account] = { qos : 1, }
+            if queued_jobs_per_user_per_qos.has_key(user) :
+                if queued_jobs_per_user_per_qos[user].has_key(job['QOS']) :
+                    queued_jobs_per_user_per_qos[user][qos] = \
+                      queued_jobs_per_user_per_qos[user][qos] + 1
+                else :
+                    queued_jobs_per_user_per_qos[user][qos] = 1
+            else :
+                queued_jobs_per_user_per_qos[user] = { qos : 1, }
             if queued_node_sec_per_account_per_qos.has_key(account) :
                 if queued_node_sec_per_account_per_qos[account].has_key(job['QOS']) :
                     queued_node_sec_per_account_per_qos[account][qos] = \
@@ -6406,6 +6451,7 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
     jobs_dict = jobs_db_handle[0]
     running_jobs_per_user = {}
     running_jobs_per_account_per_qos = {}
+    running_jobs_per_user_per_qos = {}
     running_node_sec_per_account_per_qos = {}
     running_node_sec_per_user_per_qos = {}
     for job_name in jobs_dict.keys() :
@@ -6425,6 +6471,13 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
                     running_jobs_per_account_per_qos[account][qos] = 1
             else :
                 running_jobs_per_account_per_qos[account] = { qos : 1, }
+            if running_jobs_per_user_per_qos.has_key(user) :
+                if running_jobs_per_user_per_qos[user].has_key(qos) :
+                    running_jobs_per_user_per_qos[user][qos] = running_jobs_per_user_per_qos[user][qos] + 1
+                else :
+                    running_jobs_per_user_per_qos[user][qos] = 1
+            else :
+                running_jobs_per_user_per_qos[user] = { qos : 1, }
             if running_node_sec_per_user_per_qos.has_key(user) :
                 if running_node_sec_per_user_per_qos[user].has_key(qos) :
                     running_node_sec_per_user_per_qos[user][qos] = running_node_sec_per_user_per_qos[user][qos] + jobs_dict[job_name]['resource_amount_int'] * jobs_dict[job_name]['wall_clock_limit']
@@ -6447,6 +6500,7 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
     # that user...
     active_reservations_per_user = {}
     active_reservations_per_account_per_qos = {}
+    active_reservations_per_user_per_qos = {}
     active_reserved_node_sec_per_account_per_qos = {}
     active_reserved_node_sec_per_user_per_qos = {}
     existing_reservations = get_object_list(reservations_db_handle)
@@ -6496,6 +6550,13 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
                         active_reservations_per_account_per_qos[active_res_account][jobs_dict[reservation['job_runID']]['QOS']] = [reservation['job_runID'],]
                 else :
                     active_reservations_per_account_per_qos[active_res_account] = { jobs_dict[reservation['job_runID']]['QOS'] : [reservation['job_runID'],] , }
+                if active_reservations_per_user_per_qos.has_key(active_res_owner) :
+                    if active_reservations_per_user_per_qos[active_res_owner].has_key(jobs_dict[reservation['job_runID']]['QOS']) :
+                        active_reservations_per_user_per_qos[active_res_owner][jobs_dict[reservation['job_runID']]['QOS']].append(reservation['job_runID'])
+                    else :
+                        active_reservations_per_user_per_qos[active_res_owner][jobs_dict[reservation['job_runID']]['QOS']] = [reservation['job_runID'],]
+                else :
+                    active_reservations_per_user_per_qos[active_res_owner] = { jobs_dict[reservation['job_runID']]['QOS'] : [reservation['job_runID'],] , }
                 if active_reserved_node_sec_per_user_per_qos.has_key(active_res_owner) :
                     if active_reserved_node_sec_per_user_per_qos[active_res_owner].has_key(jobs_dict[reservation['job_runID']]['QOS']) :
                         active_reserved_node_sec_per_user_per_qos[active_res_owner][jobs_dict[reservation['job_runID']]['QOS']] = active_reserved_node_sec_per_user_per_qos[active_res_owner][jobs_dict[reservation['job_runID']]['QOS']] + jobs_dict[reservation['job_runID']]['resource_amount_int'] * jobs_dict[reservation['job_runID']]['wall_clock_limit']
@@ -6569,6 +6630,30 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
             update_object_attribute(
               'ineligible_reason',
               'MAXJOBPERACCOUNTPOLICY',
+              job_step,
+              jobs_db_handle
+              )
+            update_object_attribute(
+              'system_queue_time',
+              None,
+              job_step,
+              jobs_db_handle
+              )
+            continue
+        if sys.__dict__['modules']['Catalina'].__dict__.has_key('QOS_MAXJOBPERUSERPERQOSPOLICY_dict') and \
+           QOS_MAXJOBPERUSERPERQOSPOLICY_dict.has_key(job_step['QOS']) and \
+           QOS_MAXJOBPERUSERPERQOSPOLICY_dict[job_step['QOS']] != None and \
+          ( running_jobs_per_user_per_qos.has_key(job_step['user']) and \
+          running_jobs_per_user_per_qos[job_step['user']].has_key(job_step['QOS']) and \
+          running_jobs_per_user_per_qos[job_step['user']][job_step['QOS']] >= \
+          QOS_MAXJOBPERUSERPERQOSPOLICY_dict[job_step['QOS']] or \
+          active_reservations_per_user_per_qos.has_key(job_step['user']) and \
+          active_reservations_per_user_per_qos[job_step['user']].has_key(job_step['QOS']) and \
+          len(active_reservations_per_user_per_qos[job_step['user']][job_step['QOS']]) >= \
+          QOS_MAXJOBPERUSERPERQOSPOLICY_dict[job_step['QOS']] ) :
+            update_object_attribute(
+              'ineligible_reason',
+              'QOS_MAXJOBPERUSERPERQOSPOLICY',
               job_step,
               jobs_db_handle
               )
