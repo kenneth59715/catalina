@@ -1634,18 +1634,24 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                         #if not resources_dict.has_key(allocated_dict['nodename']) :
                         #    print "resources_dict does not have (%s)" % (allocated_dict['nodename'],)
                         #    sys.exit(1)
-                        if resources_dict.has_key(allocated_dict['nodename']) :
-                            for rkey in resources_dict[allocated_dict['nodename']]['consumable_dict'].keys():
-                                allocated_dict[rkey] = resources_dict[allocated_dict['nodename']]['consumable_dict'][rkey]
-                                # should allocated_dict['node'] = 1 here?
+                        #if resources_dict.has_key(allocated_dict['nodename']) :
+                        if resources_dict.has_key(allocated_dict['nodename']):
+                            if resources_dict[allocated_dict['nodename']].has_key('consumable_dict'):
+                                #print "resources_dict[allocated_dict['nodename']] (%s)" % (resources_dict[allocated_dict['nodename']],)
+                                for rkey in resources_dict[allocated_dict['nodename']]['consumable_dict'].keys():
+                                    allocated_dict[rkey] = resources_dict[allocated_dict['nodename']]['consumable_dict'][rkey]
+                                    # should allocated_dict['node'] = 1 here?
 
-                            #if resources_dict[allocated_dict['nodename']].has_key('ConsumableCpus'):
-                            #    allocated_dict['cpu'] = resources_dict[allocated_dict['nodename']]['ConsumableCpus']
-                            #if resources_dict[allocated_dict['nodename']].has_key('ConsumableMemory'):
-                            #    allocated_dict['memory'] = resources_dict[allocated_dict['nodename']]['ConsumableMemory']
+                                #if resources_dict[allocated_dict['nodename']].has_key('ConsumableCpus'):
+                                #    allocated_dict['cpu'] = resources_dict[allocated_dict['nodename']]['ConsumableCpus']
+                                #if resources_dict[allocated_dict['nodename']].has_key('ConsumableMemory'):
+                                #    allocated_dict['memory'] = resources_dict[allocated_dict['nodename']]['ConsumableMemory']
+                            else:
+                                allocated_dict = {}
                         else :
-                            for rkey in resources_dict[allocated_dict['nodename']]['consumable_dict'].keys():
-                                allocated_dict[rkey] = 0
+                            #for rkey in resources_dict[allocated_dict['nodename']]['consumable_dict'].keys():
+                            #    allocated_dict[rkey] = 0
+                            allocated_dict = {}
                             #allocated_dict['cpu'] = 0
                             #allocated_dict['memory'] = 0
                 #end of patch
@@ -6932,8 +6938,10 @@ The following nodes are no longer in Idle or Running state:
             new_resource['consumable_dict'][licensepackage] = int(LICENSEDICT[licensepackage])
             new_resource['properties_list'].append(licensepackage)
         if not resource_shelf.has_key(new_resource['Machine']) :
+            #print " inserting (%s)" % (new_resource,)
             insert_new_object(new_resource, resources_db_handle)
         else:
+            #print " updating (%s)" % (new_resource,)
             update_object_attributes(new_resource, new_resource, resources_db_handle)
         #print "fresh insert (%s)" % (resources_db_handle[0][new_resource['name']],)
     #else:

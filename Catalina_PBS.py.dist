@@ -33,6 +33,7 @@ JOB_UPDATE_ATTRIBUTE_list = [
   'preempting',
   'wall_clock_used',
   'requested_resource_list',
+  'consumable_dict',
   'initiatormap',
   'wall_clock_limit',
   'node_spec_string',
