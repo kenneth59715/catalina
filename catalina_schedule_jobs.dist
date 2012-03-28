@@ -441,3 +441,4 @@ while ( (state == 'running' or state == 'suspended') and
         Catalina.close_db(cfg_resources_db_handle)
     if events_db_handle != None :
         Catalina.close_db(events_db_handle)
+    time.sleep(1)
