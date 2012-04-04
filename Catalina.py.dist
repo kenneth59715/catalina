@@ -4153,7 +4153,7 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                 #print "resources_db_handle[0][nodename] (%s)" % (resources_db_handle[0][nodename],)
                 #print "allocated_dict (%s)" % (allocated_dict,)
                 #if requested_node == None or requested_cpu == None or requested_memory == None :
-                if requested_dict['node'] == None or request_resource_none == 1:
+                if requested_dict['node'] == None or requested_dict['node'] == 0 or request_resource_none == 1:
     #                if requested_dict['node'] == None :
     #                    if consumed_resource_dict.has_key(nodename) :
     #                        #allocated_node = 1 - consumed_resource_dict[nodename]['node']
@@ -4251,7 +4251,8 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                     sufficient_res = 1
                     for rkey in resources_dict[nodename]['consumable_dict'].keys():
                       #print "checking rkey (%s)" % (rkey,)
-                      if sorted_res_dict[nodename][rkey] - window_resource_dict[rkey] < allocated_dict[rkey] :
+                      #if sorted_res_dict[nodename][rkey] - window_resource_dict[rkey] < allocated_dict[rkey] :
+                      if sorted_res_dict[nodename][rkey] - window_resource_dict[rkey] < resources_dict[nodename]['consumable_dict'][rkey] :
                           if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                               print "%s setting sufficient_res to 0 for (%s), sorted_res_dict[nodename] (%s) window_resource_dict (%s) allocated_dict (%s)" % (rkey, nodename, sorted_res_dict[nodename], window_resource_dict, allocated_dict)
                           sufficient_res = 0
