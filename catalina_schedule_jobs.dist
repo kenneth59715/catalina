@@ -436,9 +436,9 @@ while ( (state == 'running' or state == 'suspended') and
         Catalina.close_db(old_jobs_db_handle)
     if jobs_db_handle != None :
         Catalina.close_db(jobs_db_handle)
+    if events_db_handle != None :
+        Catalina.close_db(events_db_handle)
     if cfg_resources_db_handle != None :
         #print "closing cfg_resources_db_handle (%s)" % (cfg_resources_db_handle[1],)
         Catalina.close_db(cfg_resources_db_handle)
-    if events_db_handle != None :
-        Catalina.close_db(events_db_handle)
     time.sleep(1)

@@ -1,3 +1,9 @@
+time_sim.dist
+qj_PBS_sim.dist
+qm_PBS_sim.dist
+time.sim
+qj_PBS.input.sim
+qm_PBS.input.sim
 bind_job_to_res.dist
 cancel_res.dist
 cancel_standing_res.dist

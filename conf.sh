@@ -335,6 +335,12 @@ TORQUE)
 	TESTJOB=testjob.PBS ;
 	TESTJOB_RUN_AT_RISK=testjob.run_at_risk.PBS ;
 	TESTJOB_LICENSE=testjob.license.PBS ;
+#	TIME_SIM=time_sim ;
+#	TIME_SIM_INPUT=time.sim ;
+#	QJ_SIM=qj_PBS_sim ;
+#	QJ_SIM_INPUT=qj_PBS.input.sim ;
+#	QM_SIM=qm_PBS_sim ;
+#	QM_SIM_INPUT=qm_PBS.input.sim ;
 	LOADL_ADMIN_FILE= ;
 	RM_TO_CAT_RESOURCE_DICT_STRING="{\\
   \"free\" : \"Idle\",\\
@@ -475,6 +481,13 @@ case $? in
 *)	${ECHO} ERROR ksh hello failed! ; exit 1 ;;
 esac
 ${ECHO} "KSHPATH=${KSH}" >> Makefile #/usr/bin/ksh
+BOURNESH=`get_first_exe sh` || bailout 'Could not find sh' 1
+${BOURNESH} -c 'echo hello'
+case $? in
+0)	${ECHO} sh hello works... ;;
+*)	${ECHO} ERROR sh hello failed! ; exit 1 ;;
+esac
+${ECHO} "BOURNESHPATH=${BOURNESH}" >> Makefile #/bin/sh
 if [ ${CC} ]
 then
 	${ECHO} Using ${CC}
@@ -632,6 +645,11 @@ case $? in
 esac
 LOGGER_FACILITY=daemon
 
+if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
+	SERVERMODE=SIM
+else
+	SERVERMODE=TEST
+fi
 ${ECHO} "s@___NODERESTCODE_STRING_PLACEHOLDER___@${NODERESTCODE_STRING}@g" > sedscr
 ${ECHO} "s@___RESLIST_CMD_PLACEHOLDER___@${CATALINA_RESLIST-${HOMEDIR}/reslist}@g" >> sedscr
 ${ECHO} "s#___MAIL_RECIPIENT_PLACEHOLDER___#${CATALINA_MAIL_RECIPIENT-${CATOWNER}}#g" >> sedscr
@@ -645,6 +663,8 @@ ${ECHO} "s#___TEST_MAIL_RECIPIENT_PLACEHOLDER___#${CATALINA_TEST_MAIL_RECIPIENT-
 ${ECHO} "s@___TESTACCOUNT_PLACEHOLDER___@${CATALINA_TESTACCOUNT-${TESTACCOUNT}}@g" >> sedscr
 ${ECHO} "s@___ECHO_PLACEHOLDER___@${ECHO}@g" >> sedscr
 ${ECHO} "s@___FORCETZ_PLACEHOLDER___@${FORCETZ}@g" >> sedscr
+${ECHO} "s@___SERVERMODE_PLACEHOLDER___@${SERVERMODE}@g"  >>sedscr
+${ECHO} "s@___RESOURCEMANAGER_PLACEHOLDER___@${RESOURCEMANAGER}@g"  >>sedscr
 ${ECHO} "s@___CAT_LOCK_OWNER_PLACEHOLDER___@${CATOWNER}@g" >> sedscr
 ${ECHO} "s@___CAT_LOCK_GROUP_PLACEHOLDER___@${CATGROUP}@g" >> sedscr
 ${ECHO} "s@___INSTALLDIR_PLACEHOLDER___@${HOMEDIR}@g" >> sedscr
@@ -718,10 +738,14 @@ ${ECHO} "MOVEOLD=move_old_stuff" >> Makefile
 ${ECHO} "NODEREST=node_restriction_file.\$(RESOURCEMANAGER)" >> Makefile
 ${ECHO} "NONCONFLICTING=nonconflicting" >> Makefile
 if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
+	${ECHO} "TIME_SIM=time_sim" >> Makefile
+	${ECHO} "TIME_SIM_INPUT=time.sim" >> Makefile
 	${ECHO} "QJ=qj_\$(RESOURCEMANAGER)_sim" >> Makefile
 	QJ=qj_${RESOURCEMANAGER}_sim
+	${ECHO} "QJ_INPUT=qj_\$(RESOURCEMANAGER).input.sim" >> Makefile
 	${ECHO} "QM=qm_\$(RESOURCEMANAGER)_sim" >> Makefile
 	QM=qm_${RESOURCEMANAGER}_sim
+	${ECHO} "QM_INPUT=qm_\$(RESOURCEMANAGER).input.sim" >> Makefile
 	${ECHO} "RUNJOB=rj_\$(RESOURCEMANAGER)_sim" >> Makefile
 	RUNJOB=rj_${RESOURCEMANAGER}_sim
 	${ECHO} "PREEMPTJOB=pj_\$(RESOURCEMANAGER)_sim" >> Makefile
@@ -746,6 +770,7 @@ ${ECHO} "s@___HOMEDIR_PLACEHOLDER___@${HOMEDIR}@g"  >>sedscrb
 ${ECHO} "s@___DBDIR_PLACEHOLDER___@${DBDIR}@g"  >>sedscrb
 ${ECHO} "s@___ARCHIVEDIR_PLACEHOLDER___@${ARCHIVEDIR}@g"  >>sedscrb
 ${ECHO} "s@___RESOURCEMANAGER_PLACEHOLDER___@${RESOURCEMANAGER}@g"  >>sedscrb
+${ECHO} "s@___SERVERMODE_PLACEHOLDER___@${SERVERMODE}@g"  >>sedscrb
 ${ECHO} "s@___RMSERVER_DEFAULT_PLACEHOLDER___@${RMSERVER_DEFAULT}@g"  >>sedscrb
 ${ECHO} "s@___QJ_PLACEHOLDER___@${QJ}@g"  >>sedscrb
 ${ECHO} "s@___QM_PLACEHOLDER___@${QM}@g"  >>sedscrb
@@ -829,7 +854,11 @@ else
 	fi
 fi
 ${ECHO} "" >> Makefile
-${ECHO} "KSH_EXECUTABLE_FILES = \$(START)" >> Makefile
+if [ "${CATALINA_BUILDMODE}" = "SIM" ]; then
+	${ECHO} "KSH_EXECUTABLE_FILES = \$(START) \$(QJ) \$(QM) \$(TIME_SIM)" >> Makefile
+else
+	${ECHO} "KSH_EXECUTABLE_FILES = \$(START)" >> Makefile
+fi
 ${ECHO} "" >> Makefile
 ${ECHO} "PY_EXECUTABLE_FILES = \$(BINDJOB) \\" >> Makefile
 ${ECHO} "	\$(CANCELRES) \$(CANCELSTANDING) \$(CHECKPY) \$(CREATERES) \\" >> Makefile
@@ -857,7 +886,8 @@ ${ECHO} "EXECUTABLE_FILES = \$(C_EXECUTABLE_FILES) \$(PY_EXECUTABLE_FILES) \$(KS
 ${ECHO} "" >> Makefile
 ${ECHO} "POLICY_FILES = \$(NODEREST) \$(NONCONFLICTING) \$(RUNNINGFIRST) \\" >> Makefile
 ${ECHO} "	\$(FIRSTAVAILABLE) \$(LASTAVAIL) \$(CHANGELOG) \$(COPYRIGHT) \\" >> Makefile
-${ECHO} "	\$(DATESTAMP) \$(VERSIONHASH)" >> Makefile
+${ECHO} "	\$(QM_INPUT) \\" >> Makefile
+${ECHO} "	\$(DATESTAMP) \$(VERSIONHASH) \$(TIME_SIM_INPUT) \$(QJ_INPUT)" >> Makefile
 ${ECHO} "" >> Makefile
 ${ECHO} "PRODUCTION_FILES = \$(CATALINA) \$(CATALINA_RM) \$(TOPOLOGY) \$(TESTJOB_FILES) \\" >> Makefile
 ${ECHO} "	\$(EXECUTABLE_FILES) \$(POLICY_FILES)" >> Makefile
@@ -1016,6 +1046,8 @@ ${ECHO} "KSHSUB:" >> Makefile
 ${ECHO} "	for i in \$(KSH_EXECUTABLE_FILES) ; do \\" >> Makefile
 ${ECHO} "		\$(CAT) \$\$i.dist  \\" >> Makefile
 ${ECHO} "		| \$(SED) 's@___KSH_PATH_PLACEHOLDER___@\$(KSHPATH)@g' \\">> Makefile
+${ECHO} "		| \$(SED) 's@___CAT_PLACEHOLDER___@${CAT}@g' \\">> Makefile
+${ECHO} "		| \$(SED) 's@___SH_PATH_PLACEHOLDER___@\$(BOURNESHPATH)@g' \\">> Makefile
 ${ECHO} "		| \$(SED) 's@___PS_PLACEHOLDER___@\$(PS)@g' \\">> Makefile
 ${ECHO} "		| \$(SED) 's@___PSOPTIONS_PLACEHOLDER___@\$(PSOPTIONS)@g' \\">> Makefile
 ${ECHO} "		| \$(SED) 's@___GREP_PLACEHOLDER___@\$(GREP)@g' \\">> Makefile

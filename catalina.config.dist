@@ -29,7 +29,7 @@ CAT_LOCK_GROUP=___CAT_LOCK_GROUP_PLACEHOLDER___
 # jobs, otherwise, just log.
 # 'SIM' means get job and resource info from sim commands instead
 # of from a real resource manager.
-SERVERMODE=TEST
+SERVERMODE=___SERVERMODE_PLACEHOLDER___
 
 # Cancel jobs in NORMAL mode?
 NORMALMODECANCELJOB=yes
@@ -47,11 +47,11 @@ MACHINE_REFRESH_INTERVAL=1
 LOCKTIMEOUT = 300.0
 
 # For simulation mode, query job command and query machine command
-QJ_SIM=___INSTALLDIR_PLACEHOLDER___/qj_sim
-QM_SIM=___INSTALLDIR_PLACEHOLDER___/qm_sim
+QJ_SIM=___INSTALLDIR_PLACEHOLDER___/qj____RESOURCEMANAGER_PLACEHOLDER____sim
+QM_SIM=___INSTALLDIR_PLACEHOLDER___/qm____RESOURCEMANAGER_PLACEHOLDER____sim
 TIME_SIM=___INSTALLDIR_PLACEHOLDER___/time_sim
-RJ_SIM=___INSTALLDIR_PLACEHOLDER___/rj_sim
-CJ_SIM=___INSTALLDIR_PLACEHOLDER___/cj_sim
+RJ_SIM=___INSTALLDIR_PLACEHOLDER___/rj____RESOURCEMANAGER_PLACEHOLDER____sim
+CJ_SIM=___INSTALLDIR_PLACEHOLDER___/cj____RESOURCEMANAGER_PLACEHOLDER____sim
 
 DEBUG=None
 # Catalina install directory
