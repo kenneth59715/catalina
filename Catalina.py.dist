@@ -4687,11 +4687,14 @@ def update_job_priorities (jobs_db_handle) :
         else:
             # no wall_clock_used, assume still Idle
             # Calculate expansion factor
-            expansion_factor = \
-              ( Now_float -
-                  float(temp_job['speculative_system_queue_time']) + \
-                float(temp_job['wall_clock_limit']) ) / \
-              float(temp_job['wall_clock_limit'])
+            if float(temp_job['wall_clock_limit']) <= 0.0:
+                expansion_factor = 1.0
+            else:
+                expansion_factor = \
+                  ( Now_float -
+                      float(temp_job['speculative_system_queue_time']) + \
+                    float(temp_job['wall_clock_limit']) ) / \
+                  float(temp_job['wall_clock_limit'])
     
             # Calculate queue wait time
             queue_wait_time = Now_float - float(temp_job['speculative_system_queue_time'])
