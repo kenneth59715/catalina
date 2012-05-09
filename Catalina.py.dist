@@ -7998,7 +7998,7 @@ def log_event(event, events_db_handle) :
     insert_new_object_with_key(event_name, event, events_db_handle)
 
 def warn(message, subject, recipient) :
-    if SERVERMODE not in ['NORMAL','TEST'] :
+    if SERVERMODE not in ['NORMAL','TEST','SIM'] :
         print "warning in testmode"
         print "%s" % recipient
         print "%s" % subject

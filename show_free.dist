@@ -251,7 +251,7 @@ for index, window in enumerate(now_windows) :
         agg_dict[window[2]['nodename']] = agg_dict[window[2]['nodename']] + window[2]['cpu']
     else:
         agg_dict[window[2]['nodename']] = window[2]['cpu']
-    if not window[2]['nodename'] in used_windows:
+    if window[2]['cpu'] < resources_db_handle[0][window[2]['nodename']]['consumable_dict']['cpu'] and not window[2]['nodename'] in used_windows:
         used_windows.append(window[2]['nodename'])
     #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
@@ -293,7 +293,7 @@ for index, window in enumerate(now_windows) :
         agg_dict[window[2]['nodename']] = agg_dict[window[2]['nodename']] + window[2]['memory']
     else:
         agg_dict[window[2]['nodename']] = window[2]['memory']
-    if not window[2]['nodename'] in used_windows:
+    if window[2]['memory'] < resources_db_handle[0][window[2]['nodename']]['consumable_dict']['memory'] and not window[2]['nodename'] in used_windows:
         used_windows.append(window[2]['nodename'])
     #print "    node: %s" % window[2]
     #if Catalina.DEBUG != None :
@@ -314,22 +314,51 @@ if len(agg_dict.keys()) > 0:
 
 old_end_time = 0
 window_count = 0
+counted_windows_list = []
 print "Node Backfill window:"
 #for window in now_windows :
+freenode_dict = {}
 for index, window in enumerate(now_windows) :
-    if not window[2].has_key('node') :
-        continue
+    #print window
+    #if not window[2].has_key('node') :
+    #    continue
     #if window[2].has_key('nodename') and window[2]['nodename'] in used_windows:
     #    continue
+    if window[2].has_key('nodename'):
+        if window[2]['nodename'] in counted_windows_list:
+            continue
+        if not freenode_dict.has_key(window[2]['nodename']):
+            freenode_dict[window[2]['nodename']] = {}
+    for key in window[2].keys():
+        if key == 'nodename':
+            continue
+        if freenode_dict[window[2]['nodename']].has_key(key):
+            freenode_dict[window[2]['nodename']][key] = freenode_dict[window[2]['nodename']][key] + window[2][key]
+        else:
+            freenode_dict[window[2]['nodename']][key] = window[2][key]
+    #if freenode_dict[window[2]].has_key(
+    unfree = 0
+    for ckey in resources_db_handle[0][window[2]['nodename']]['consumable_dict'].keys():
+        if not freenode_dict[window[2]['nodename']].has_key(ckey) or freenode_dict[window[2]['nodename']][ckey] < resources_db_handle[0][window[2]['nodename']]['consumable_dict'][ckey]:
+            #print "unfree (%s) (%s)" % (freenode_dict[window[2]['nodename']],resources_db_handle[0][window[2]['nodename']]['consumable_dict'][ckey])
+            unfree = 1
+            break
     if window[1] != old_end_time :
         if old_end_time != 0 :
             duration = old_end_time - Catalina.Now_float - Catalina.FUDGE_FACTOR
             print "%s nodes available for approximately %.0f minutes" % ( window_count, duration/60 )
-        window_count = 1
+        if unfree == 1:
+            window_count = 0
+        else:
+            window_count = 1
+        counted_windows_list = []
         old_end_time = window[1]
     else :
-        window_count = window_count + 1
-    print "    node: %s properties: %s" % (window[2]['nodename'], resources_db_handle[0][window[2]['nodename']]['properties_list'])
+        if unfree == 0:
+            window_count = window_count + 1
+    if unfree == 0:
+        print "    node: %s properties: %s" % (window[2]['nodename'], resources_db_handle[0][window[2]['nodename']]['properties_list'])
+        counted_windows_list.append(window[2]['nodename'])
     #if Catalina.DEBUG != None :
     #    print "(%s) (%s) (%s)" % ( window[0] - Catalina.Now_float, window[1] - Catalina.Now_float, window[2] )
 #if window_count > 0 :
