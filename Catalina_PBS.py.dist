@@ -33,6 +33,7 @@ JOB_UPDATE_ATTRIBUTE_list = [
   'preempting',
   'wall_clock_used',
   'requested_resource_list',
+  'resource_hosts',
   'consumable_dict',
   'initiatormap',
   'wall_clock_limit',
@@ -91,6 +92,7 @@ def initialize_resource(resource_name) :
     new_resource['Cpus'] = None
     new_resource['State'] = None
     new_resource['speculative_state'] = None
+    new_resource['warnings_sent'] = []
     new_resource['State_Change_Time'] = Catalina.Now_float
     return new_resource
 
@@ -116,6 +118,7 @@ def initialize_job_step(job_step_name) :
     new_job_step['system_priority_mark_string'] = None
     new_job_step['ineligible_reason'] = None
     new_job_step['reservation_binding'] = []
+    new_job_step['resource_hosts'] = []
     new_job_step['job_start_warns_int'] = 0
     new_job_step['resource_amount_int'] = 0
     new_job_step['preemptible'] = 0

@@ -1745,6 +1745,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                         node_reservations[node].append( (end_time_float, 'add', node_resource_list[index]) )
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "appending node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+                        print "node_resource_list[index] (%s)" % (node_resource_list[index],)
         #potential_start_time_float = new_res['earliest_start_float']
         #if potential_start_time_float == None :
         #    potential_start_time_float = Now_float
@@ -2077,6 +2078,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     #foundcpus = 0
                     #foundmemory = 0
                     found_dict = {'node' : 0}
+                    #print "node (%s)" % (resources_dict[node],)
                     for rkey in resources_dict[node]['consumable_dict'].keys():
                         found_dict[rkey] = 0
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -2711,6 +2713,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     counting_dict_list = []
     ns_sized_windows_list = []
     need_more = 1
+    want_more = 0
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
         print "open_windows_list (%s)" % (open_windows_list,)
         print "len(open_windows_list) (%s)" % (len(open_windows_list),)
@@ -3011,7 +3014,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                         # for TOPOLOGY_MODULE, only consider nodes in current
                         # node_set
                         if not nodename in node_set:
-                            print "nodename (%s) not in node_set, skipping" % (nodename,)
+                            #print "nodename (%s) not in node_set, skipping" % (nodename,)
                             continue
     
                         sufficient_resource = 1
@@ -3404,7 +3407,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "setting need_more = 1, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                     need_more = 1
-                want_more = 0
+                #want_more = 0
                 for dict in counting_dict_list :
                     #print "dict (%s)" % (dict,)
                     #print "topotune: dict (%s) counting_dict_list" % (dict,)
@@ -4490,6 +4493,11 @@ def update_job_info(jobs_db_handle) :
                 # license_request should have format
                 # <package name>_<license count>
                 # abaqus_16
+                if new_job_step.has_key('resource_hosts'):
+                    new_job_step['resource_hosts'].append(LICENSENODE)
+                else:
+                    new_job_step['resource_hosts'] = [LICENSENODE,]
+                print "new_job_step['resource_hosts'] (%s)" % (new_job_step['resource_hosts'],)
                 license_request_list = string.split(new_job_step['license_request_list'], '+')
                 requested_license_list = []
                 for license_request in license_request_list:
@@ -6128,8 +6136,15 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
         # for every task_host, should reserve a req_list.
         # are the sequences of task_hosts, initmap and requested_resource_list
         # matched for both PBS and LoadL?  For now, assume that they are.
-        task_hosts = job['task_hosts']
+        #task_hosts = job['task_hosts']
         allocated_hosts = job['allocated_hosts']
+        if job.has_key('resource_hosts'):
+            task_hosts = job['task_hosts'] + job['resource_hosts']
+            allocated_hosts = allocated_hosts + job['resource_hosts']
+        else:
+            task_hosts = job['task_hosts']
+        #print "task_hosts (%s)" % (task_hosts,)
+        #allocated_hosts = job['allocated_hosts']
         # If an allocated_host does not exist in the resource_dict,
         # I don't know how to make the reservation.
         unknown_hosts = 0
@@ -6153,6 +6168,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
         task_host_index = 0
         if job.has_key('requested_resource_list') :
             node_requested_list = filter(lambda x : x['type'] in ('node_shared', 'node_exclusive'), job['requested_resource_list'])
+            #print "node_requested_list (%s)" % (node_requested_list,)
             #if len(node_list) != len(node_requested_list) :
             #    print "%s: node_list (%s) != requested_resource_list (%s)!" % \
             #      (job['name'], node_list, requested_resource_list)
@@ -6162,6 +6178,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
             # licenses, storage, etc. need to add these in as types.
             #for index in range(min(len(node_requested_list), len(node_list))) :
             for index in range(len(node_requested_list)) :
+                #print "node_requested_list[index] (%s)" % (node_requested_list[index],)
                 # allocated_dict_list
                 # This is a little tricky.  In create_reservation, need to
                 # make sure that the node_list syncs up with
@@ -6176,12 +6193,14 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                     this_consumable_dict = {}
                     if node_requested_list[index].has_key('req_list') :
                         nodename = task_hosts[task_host_index]
+                        #print "task_hosts[task_host_index] (%s) (%s) (%s)" % (task_hosts, task_hosts[task_host_index], task_host_index)
                         if nodename == '' :
                             # for serial jobs, taskinstancemachinemap is
                             # apparently left empty.  So, take the first
                             # allocated host, assuming this is a one node
                             # serial job
                             nodename = allocated_hosts[0]
+                        #print "nodename (%s)" % (nodename,)
                         for req in node_requested_list[index]['req_list'] :
                             #if req.has_key('cpu') :
                             #    cpus = cpus + req['cpu']
@@ -6196,8 +6215,9 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                     else :
                         #cpus = resources_dict[node_list[index]]['ConsumableCpus']
                         #memory = resources_dict[node_list[index]]['ConsumableMemory']
-                        cpus = 0
-                        memory = 0
+                        #cpus = 0
+                        #memory = 0
+                        this_consumable_dict = {}
                     #if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     #    print "node_shared cpus(%s) memory (%s)" % (cpus, memory)
                 else :
@@ -6207,7 +6227,14 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                     #cpus = resources_dict[node_list[index]]['ConsumableCpus']
                     #memory = resources_dict[node_list[index]]['ConsumableMemory']
                     this_consumable_dict = resources_dict[node_list[index]]['consumable_dict']
-                    nodename = node_list[index]
+                    if node_requested_list[index].has_key('req_list') :
+                        nodename = task_hosts[task_host_index]
+                        if nodename == '' :
+                            nodename = allocated_hosts[0]
+                        for req in node_requested_list[index]['req_list'] :
+                            task_host_index = task_host_index + 1
+
+                    #nodename = node_list[index]
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "node_exclusive cpus (%s) memory (%s)" % (cpus, memory)
                 #allocated_dict = { 'nodename' : nodename,
@@ -6258,6 +6285,7 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
                 #                   'memory' : memory
                 #                 }
                 allocated_dict_list.append(allocated_dict)
+        #print "running allocated_dict_list (%s)" % (allocated_dict_list,)
         new_res['allocated_dict_list'] = allocated_dict_list
         insert_new_object(new_res, reservations_db_handle)
     for preempted_job in preempted_jobs_list :
@@ -6888,12 +6916,18 @@ def update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle
             continue
         if not resource['name'] in found_resource_names :
             lost_resource_names_list.append(resource['name'])
-        elif not found_resource_dict[resource['name']]['State'] in ['Idle', 'Running'] :
+        #elif not found_resource_dict[resource['name']]['State'] in ['Idle', 'Running'] :
+        elif not found_resource_dict[resource['name']]['State'] in ['Idle', 'Running'] and resource_shelf[resource['name']]['State'] not in ['Idle','Running']:
             # put delay in here, too
             #if Now_float - resource_shelf[resource['name']]['State_Change_Time'] > RESOURCE_DOWN_TIME_LIMIT :
             #    down_resource_names_dict[resource['name']] = found_resource_dict[resource['name']]['State']
             # actually, the delay is in updating found_resource_dict state above
             # no delay here, else non-Down state changes will be missed.
+            #if Now_float - resource_shelf[resource['name']]['State_Change_Time'] > RESOURCE_DOWN_TIME_LIMIT :
+            #    if resource['speculative_state'] != resource_shelf[resource['name']]['speculative_state'] :
+            #if Now_float - resource_shelf[resource['name']]['State_Change_Time'] > RESOURCE_DOWN_TIME_LIMIT :
+            #    down_resource_names_dict[resource['name']] = found_resource_dict[resource['name']]['State']
+            #print "adding down_resource (%s)" % resource['name']
             down_resource_names_dict[resource['name']] = found_resource_dict[resource['name']]['State']
     down_resource_names_list = map(lambda x, down_resource_names_dict=down_resource_names_dict : "%s - %s" % (x, down_resource_names_dict[x]), down_resource_names_dict.keys())
 
@@ -8125,6 +8159,12 @@ def get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle):
     # sort, smallest first
     node_sets_list_sort = []
     for node_set in node_sets_list:
+        # if new_res has a resource amount, should exclude small node_sets here
+        if len(node_set) < len(new_res['requested_resource_list']):
+            continue
+        # should also add a license node to all node sets.
+        #if LICENSENODE != None:
+        node_set.append(LICENSENODE)
         node_sets_list_sort.append((len(node_set), node_set))
     node_sets_list_sort.sort()
     sorted_node_sets_list = map(lambda x: x[1], node_sets_list_sort)
