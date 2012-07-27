@@ -6177,7 +6177,8 @@ def update_running_reservations(runningstarting_jobs, reservations_db_handle, re
             # This only supports node cpu/memory.  To support floating
             # licenses, storage, etc. need to add these in as types.
             #for index in range(min(len(node_requested_list), len(node_list))) :
-            for index in range(len(node_requested_list)) :
+            #for index in range(len(node_requested_list)) :
+            for index in range(min(len(node_requested_list), len(node_list))) :
                 #print "node_requested_list[index] (%s)" % (node_requested_list[index],)
                 # allocated_dict_list
                 # This is a little tricky.  In create_reservation, need to
