@@ -4067,6 +4067,8 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                 # skip nodes we have already chosen
                 if nodename in chosen_nodes_list:
                     continue
+                if not nodename in node_set:
+                    continue
     
                 requested_dict = {}
                 for rkey in absrequested_dict.keys():
