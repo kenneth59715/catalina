@@ -3904,20 +3904,28 @@ def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, so
             else:
                 topo = 0
             #print "topo (%s)" % (topo,)
+            if window[0] >= Now_float:
+                lastavail = window[0]
+            else:
+                lastavail = 0
 
             if affinity == 0 :
                 #sort_tuple = ( 0, -(pushback_affinity), -(window[0]), long(resource_sort_int), -node_pack_dict[window_tuple[0][2]['nodename']]['fraction'], window)
                 #sort_tuple = ( 0, -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
                 #sort_tuple = (0, -(pushback_affinity), -(window[0]), -(topo), -(nodepack), long(resource_sort_int), window)
                 #sort_tuple = (0, -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
-                sort_tuple = (0, -(pushback_affinity), -(window[0]), -(topo), -(nodepack), long(resource_sort_int), window)
+                #sort_tuple = (0, -(pushback_affinity), -(window[0]), -(topo), -(nodepack), long(resource_sort_int), window)
+                #sort_tuple = (0, -(pushback_affinity), -(lastavail), -(topo), -(nodepack), long(resource_sort_int), window)
+                sort_tuple = (0, -(pushback_affinity), -(lastavail), long(resource_sort_int), -(topo), -(nodepack), window)
             else :
                 #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), long(resource_sort_int), -node_pack_dict[window_tuple[0][2]['nodename']]['fraction'], window)
                 #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
                 #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
                 #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), -(topo), -(nodepack), long(resource_sort_int), window)
                 #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), long(resource_sort_int), window)
-                sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), -(topo), -(nodepack), long(resource_sort_int), window)
+                #sort_tuple = (-(affinity), -(pushback_affinity), -(window[0]), -(topo), -(nodepack), long(resource_sort_int), window)
+                #sort_tuple = (-(affinity), -(pushback_affinity), -(lastavail), -(topo), -(nodepack), long(resource_sort_int), window)
+                sort_tuple = (-(affinity), -(pushback_affinity), -(lastavail), long(resource_sort_int), -(topo), -(nodepack), window)
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "sort_tuple (%s)" % (sort_tuple,)
             temp_windows.append(sort_tuple)
