@@ -2861,10 +2861,13 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             #oldway#    node_bin_dict[nodename]['viable_request_count'] = 0
 
             node_bin_dict = {}
+            switch_node_list = []
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "populating node_bin_dict with sized_windows_list (%s)" % (sized_windows_list,)
             for sized_window in sized_windows_list :
                 #print "topotune: sized_window (%s) sized_windows_list" % (sized_window,)
+                if not sized_window[2]['nodename'] in switch_node_list:
+                    switch_node_list.append(sized_window[2]['nodename'])
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "processing sized_window (%s)" % (sized_window,)
                 if node_bin_dict.has_key(sized_window[2]['nodename']) :
@@ -2920,7 +2923,8 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
 #                            node_bin_dict[sized_window[2]['nodename']][rkey] = sized_window[2][rkey]
     
 
-            sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
+            #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
+            sorted_node_sets_list = get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle)
            
             #print "topotune: len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
             for node_set in sorted_node_sets_list:
@@ -4010,7 +4014,12 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     allocated_dict_list = []
     need_more = 1
 
-    sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
+    #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
+    switch_node_list = []
+    for sorted_window in sorted_windows_list:
+        if not sorted_window[2]['nodename'] in switch_node_list:
+            switch_node_list.append(sorted_window[2]['nodename'])
+    sorted_node_sets_list = get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle)
     for node_set in sorted_node_sets_list:
 
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -8156,13 +8165,17 @@ def filter_out_down_nodes(broken_node_list,jobs_db_handle):
                 except :
                     continue
     
-def get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle):
+def get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle):
     # insert TOPOLOGY check here
     if TOPOLOGY_MODULE != None:
         # generate a list of switch_tuples and max_hop
         if new_res.has_key('maxhops') and new_res['maxhops'] != None:
             maxhops = int(new_res['maxhops'])
-            switch_node_list = node_bin_dict.keys()
+            #switch_node_list = node_bin_dict.keys()
+            #for window in sorted_windows_list :
+            #    if  DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
+            #        print "processing sorted window (%s)" % (window,)
+            #    nodename = window[2]['nodename']
             jobs_dict = jobs_db_handle[0]
             resources_dict = resources_db_handle[0]
             #node_sets_list = Topology.get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
@@ -8171,12 +8184,13 @@ def get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle):
             maxhops = None
             #node_sets_list = [node_bin_dict.keys(),]
             # profile this.
-            switch_node_list = node_bin_dict.keys()
+            #switch_node_list = node_bin_dict.keys()
             jobs_dict = jobs_db_handle[0]
             resources_dict = resources_db_handle[0]
             node_sets_list = get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
     else:
-        node_sets_list = [node_bin_dict.keys(),]
+        #node_sets_list = [node_bin_dict.keys(),]
+        node_sets_list = [switch_node_list,]
     # sort, smallest first
     node_sets_list_sort = []
     for node_set in node_sets_list:
@@ -8187,7 +8201,8 @@ def get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle):
         #if LICENSENODE != None:
         node_set.append(LICENSENODE)
         node_sets_list_sort.append((len(node_set), node_set))
-    node_sets_list_sort.sort()
+    # do not sort, as this will mess up the sorted node list
+    #node_sets_list_sort.sort()
     sorted_node_sets_list = map(lambda x: x[1], node_sets_list_sort)
     #print sorted_node_sets_list
     return sorted_node_sets_list
