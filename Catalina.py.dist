@@ -376,6 +376,7 @@ else:
     def get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict):
     
         #print "switch_node_list (%s)" % (switch_node_list,)
+        #print "start of get_switch_sets"
         nodenames_list = resources_dict.keys()
         node_switch_dict = get_node_switch_dict(nodenames_list)
         candidate_switch_list = []
@@ -390,40 +391,184 @@ else:
                 candidate_switch_list.append(node_switch_dict[switch_node])
         #print "candidate_switch_list (%s)" % (candidate_switch_list,)
         switch_sets_list = [[],]
+        #print "len(candidate_switch_list) (%s)" % (len(candidate_switch_list),)
         for candidate_switch in candidate_switch_list:
             #print "candidate_switch (%s)" % (candidate_switch,)
             newsets_list = []
+            del_list = []
+            #print "before constructing newset"
             for switch_set_index in range(len(switch_sets_list)):
                 test_set = copy.deepcopy(switch_sets_list[switch_set_index])
                 #test_set = switch_sets_list[switch_set_index]
                 test_set.append(candidate_switch)
+                replace_old = 0
                 if test_maxhops(test_set, maxhops):
-                    switch_sets_list[switch_set_index] = test_set
+                    replace_old = 1
+                    #print "passed test_maxhops (%s)" % (test_set,)
+                    #switch_sets_list[switch_set_index] = test_set
+                    # need to replace old switch_set
+                    newset = test_set
                 else:
+                    replace_old = 0
+                    #print "failed test_maxhops (%s)" % (test_set,)
+                    #print "before get_maxset"
                     newset = get_maxset(candidate_switch, test_set, maxhops)
+                    #print "after get_maxset"
                     #print "newsets_list.append (%s)" % (newset,)
-                    newsets_list.append(newset)
-            keepsets_list = []
-            for newset_index in range(len(newsets_list)):
-                newsets_tuple = tuple(newsets_list[newset_index])
-                #print "newsets_tuple (%s)" % (newsets_tuple,)
+                    #print "test_set (%s) newset (%s)" % (test_set, newset)
                 redundant = 0
-                for switch_set_index in range(len(switch_sets_list)):
-                    switch_sets_tuple = tuple(switch_sets_list[switch_set_index])
-                    #print "switch_sets check: newsets_tuple (%s) switch_sets_tuple (%s)" % (newsets_tuple,switch_sets_tuple)
-                    if set(newsets_tuple).issubset(switch_sets_tuple):
-                        #print "redundant"
+                #for node_set in newsets_list:
+                #print "newsets_list + switch_sets_list (%s)" % (newsets_list + switch_sets_list,)
+                #print "newsets_list (%s) switch_sets_list (%s)" % (newsets_list, switch_sets_list)
+                # delete old subsets in newsets_list
+                nonred_newsets_list = []
+                for node_set_index, node_set in enumerate(newsets_list):
+                    if set(node_set).issubset(newset):
+                        continue
+                    else:
+                        nonred_newsets_list.append(node_set)
+                newsets_list = nonred_newsets_list
+                    
+                for node_set in newsets_list + switch_sets_list:
+                    #print "checking redundance for node_set (%s)" % (node_set,)
+                    if set(newset).issubset(node_set):
                         redundant = 1
-                for switch_set_index in range(len(keepsets_list)):
-                    keepsets_tuple = tuple(keepsets_list[switch_set_index])
-                    #print "keep_sets check: newsets_tuple (%s) keepsets_tuple (%s)" % (newsets_tuple,keepsets_tuple)
-                    if set(newsets_tuple).issubset(keepsets_tuple):
-                        #print "redundant"
-                        redundant = 1
+                        break
+                    #else:
+                        #print "newset (%s) is not subset of (%s)" % (newset, node_set)
+                    #if set(node_set).issubset(newset):
+                    #    print "old node_set (%s) is subset of (%s)" % (node_set, newset)
+                    #    redundant = 1
+                    #    break
+                    #else:
+                    #    print "node_set (%s) is not subset of (%s)" % (node_set, newset)
+                    
                 if redundant == 0:
-                    #keepsets_list.append(copy.deepcopy(newsets_list[newset_index]))
-                    keepsets_list.append(newsets_list[newset_index])
-            switch_sets_list = switch_sets_list + keepsets_list
+                    if replace_old == 1:
+                        #print "replacing old switch_sets_list (%s)" % (newset,)
+                        switch_sets_list[switch_set_index] = newset
+                        # delete any old switch_sets that are subsets of
+                        # the newset, skipping self
+                        for switch1index, switch1 in enumerate(switch_sets_list):
+                            if switch1index == switch_set_index:
+                                continue
+                            if set(switch1).issubset(newset):
+                                del_list.append(switch1index)
+                            #else:
+                            #    print "1. not_subset (%s) (%s)" % (switch1,newset)
+                    else:
+                        #print "appending to newsets_list (%s)" % (newset,)
+                        newsets_list.append(newset)
+                        # delete any old switch_sets that are subsets of
+                        # the newset
+                        for switch1index, switch1 in enumerate(switch_sets_list):
+                            if set(switch1).issubset(newset):
+                                del_list.append(switch1index)
+                            #else:
+                            #    print "2. not_subset (%s) (%s)" % (switch1,newset)
+                #else:
+                #    print "not appending to newsets_list (%s)" % (newset,)
+            # is there redundancy amongst newsets_list members?
+            #print "before filtering out redundant newsets_list"
+
+            #for switch1index, switch1 in enumerate(newsets_list):
+            #    for switch2index, switch2 in enumerate(newsets_list):
+            #        if switch1index == switch2index:
+            #            continue
+            #        if set(switch1).issubset(switch2):
+            #            print "found redundant newset (%s) in (%s)" % (switch1,switch2)
+            #print "after constructing newset"
+            #print "del_list (%s)" % (del_list,)
+            nonred_switch_sets_list = []
+            for oldset_index, oldset in enumerate(switch_sets_list):
+                if not oldset_index in del_list:
+                    nonred_switch_sets_list.append(oldset)
+            switch_sets_list = nonred_switch_sets_list
+            switch_sets_list = switch_sets_list + newsets_list
+            #print "switch_sets_list (%s)" % (switch_sets_list,)
+            #print "newsets_list (%s)" % (newsets_list,)
+            #new_switch_sets_list = []
+            #print "before filtering out redundant switch_sets"
+            # should have no redundant sets at this point
+            #for switch1index, switch1 in enumerate(switch_sets_list):
+            #    subsetstatus = 0
+            #    for switch2index, switch2 in enumerate(switch_sets_list):
+            #        if switch1index == switch2index:
+            #            continue
+            #        #if set(switch1).issubset(switch2) or set(switch2).issubset(switch1):
+            #        if set(switch1).issubset(switch2):
+            #            print "found redundant set (%s) in (%s)" % (switch1,switch2)
+            #            subsetstatus = 1
+            #            break
+            #    if subsetstatus == 0:
+            #        #print "not subset (%s) (%s)" % (switch1, new_switch_sets_list)
+            #        new_switch_sets_list.append(switch1)
+            #    #else:
+            #    #    print "not appending redundant set (%s)" % (switch1,)
+           # print "after filtering out redundant switch_sets"
+            #switch_sets_list = new_switch_sets_list
+            #print "len(switch_sets_list) (%s)" % (len(switch_sets_list),)
+
+#            keepsets_list = []
+#            print "before checking newsets_list"
+#            for newset_index in range(len(newsets_list)):
+#                newsets_tuple = tuple(newsets_list[newset_index])
+#                #print "newsets_tuple (%s)" % (newsets_tuple,)
+#                redundant = 0
+#                for switch_set_index in range(len(switch_sets_list)):
+#                    switch_sets_tuple = tuple(switch_sets_list[switch_set_index])
+#                    #print "switch_sets check: newsets_tuple (%s) switch_sets_tuple (%s)" % (newsets_tuple,switch_sets_tuple)
+#                    localred = 0
+#                    if set(newsets_tuple).issubset(switch_sets_tuple):
+#                        #print "redundant"
+#                        redundant = 1
+#                        localred = 1
+#                    nonredundant = 0
+#                    for newset in newsets_tuple:
+#                        if not newset in switch_sets_tuple:
+#                            nonredundant = 1
+#                    if (localred == 0 and nonredundant == 0) or (localred == 1 and nonredundant == 1):
+#                        print "switch_sets_tuple redundancy conflict!"
+#                        print "localred (%s) nonredundant (%s)" % (localred, nonredundant)
+#                        print "newsets_tuple (%s) switch_sets_tuple (%s)" % (newsets_tuple, switch_sets_tuple)
+#                for switch_set_index in range(len(keepsets_list)):
+#                    keepsets_tuple = tuple(keepsets_list[switch_set_index])
+#                    #print "keep_sets check: newsets_tuple (%s) keepsets_tuple (%s)" % (newsets_tuple,keepsets_tuple)
+#                    localred = 0
+#                    if set(newsets_tuple).issubset(keepsets_tuple):
+#                        #print "redundant"
+#                        redundant = 1
+#                        localred = 1
+#                    nonredundant = 0
+#                    for newset in newsets_tuple:
+#                        if not newset in keepsets_tuple:
+#                            nonredundant = 1
+#                    if (localred == 0 and nonredundant == 0) or (localred == 1 and nonredundant == 1):
+#                        print "keepsets_tuple redundancy conflict!"
+#                        print "localred (%s) nonredundant (%s)" % (localred, nonredundant)
+#                        print "newsets_tuple (%s) keepsets_tuple (%s)" % (newsets_tuple, keepsets_tuple)
+#                if redundant == 0:
+#                #if nonredundant == 1:
+#                    #keepsets_list.append(copy.deepcopy(newsets_list[newset_index]))
+#                    #print "appending (%s)" % (newsets_list[newset_index],)
+#                    keepsets_list.append(newsets_list[newset_index])
+#            for keepset in keepsets_list:
+#                for switch_set in switch_sets_list:
+#                    if set(keepset).issubset(switch_set):
+#                        print "found subset (%s) in switch_set (%s)" % (keepset, switch_set)
+#            switch_sets_list = switch_sets_list + keepsets_list
+#            print "keepsets_list (%s)" % (keepsets_list,)
+            #print "len(switch_sets_list) (%s)" % (len(switch_sets_list),)
+            #print "switch_sets_list (%s)" % (switch_sets_list,)
+            #print "before final redundancy check"
+            #for switch1index, switch1 in enumerate(switch_sets_list):
+            #    for switch2index, switch2 in enumerate(switch_sets_list):
+            #        if switch1index == switch2index:
+            #            continue
+            #        if set(switch1).issubset(switch2) or set(switch2).issubset(switch1):
+            #            print "switch1 (%s) switch2 (%s) redundancy found!" % (switch1, switch2)
+            #            #raise "SwitchSetRedundancy"
+            #print "after final redundancy check"
         
         #print "switch_sets_list (%s)" % (switch_sets_list,)
         node_sets_list = []
@@ -2924,11 +3069,17 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     
 
             #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
+            print "getting node_sets"
             sorted_node_sets_list = get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle)
            
-            #print "topotune: len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
+            print "topotune: len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
+            # instead of a for loop, should maintain a dictionary of
+            # node_set_counting_dict[node_set] = counting_dict
+            # That way, won't have to loop over all nodes sets for
+            # every sized_window
             for node_set in sorted_node_sets_list:
                 #print "topotune: node_set (%s) sorted_node_sets_list" % (node_set,)
+                #print "len(node_set) (%s)" % len(node_set)
 
                 ns_sized_windows_list = []
                 #print "node_set (%s)" % (node_set,)
@@ -3405,11 +3556,14 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "setting need_more = 0, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                         print "counting_dict_list (%s)" % (counting_dict_list,)
+                    print "setting need_more = 0, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
+                    #print "counting_dict_list (%s)" % (counting_dict_list,)
                     need_more = 0
                     #ns_sized_windows_list = filter(lambda x, node_set=node_set: x[2]['nodename'] in node_set, sized_windows_list)
                 else:
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "setting need_more = 1, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
+                    print "setting need_more = 1, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                     need_more = 1
                 #want_more = 0
                 for dict in counting_dict_list :
@@ -3417,7 +3571,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     #print "topotune: dict (%s) counting_dict_list" % (dict,)
                     if dict['amount_int'] == None :
                         want_more = 1
-                #print "want_more from amount_int check is (%s)" % (want_more,)
+                print "want_more from amount_int check is (%s)" % (want_more,)
     
                 #SKIP# check for any under-populated counting_dict_list entries
                 #SKIPif DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -3514,6 +3668,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 if need_more == 0 :
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "need_more == 0"
+                    print "need_more == 0"
                     if len(saved_sorting_list) > 0 :
                         if getlongest == 1 :
                             #candidate_windows_list = [current_start_time_float, sized_windows_list, sized_dict_list]
@@ -3532,20 +3687,32 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
                             print "want_more == 0"
+                        print "breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
                         # with TOPOLOGY_MODULE, this breaks out of the node_set
                         # loop, but it should also break out of the outer window
                         # loop...
                         #FIXME should not break here, since we want all sized
                         # windows for all nodes sets until get_chosen selects.
+                        # actually, we should break, since we have all sized_windows
+                        # for this current_start_float.  If at least one node_set
+                        # is sufficient here, we'll pass all sized_windows on
+                        # to get_chosen
                         #break
                     else :
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
+                        print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
+            # break out of node_set, if need_more and want_more satisfied
+                if want_more == 0 and need_more == 0:
+                    print "breaking out of node_set loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
+                    break
+
     #for new_window_index in range(len(open_windows_list)) :
             if want_more == 0 and need_more == 0:
                 # break out of new_window_index loop
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "breaking out of new_window_index loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
+                print "breaking out of new_window_index loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
                 break
             # if this is not the last window, set current start time
             # and filter out all windows too short with the new current
@@ -7395,6 +7562,7 @@ def create_reservation(
         # A reservation can request just nodes, or nodes with cpus/memory
         # A job bound to the reservation should be bound to either just
         # the node or to the node and the requested cpus/memory...
+        #print "bound_debug job_step (%s)" % (job_step,)
         if job_step['reservation_binding'] != None \
           and job_step['reservation_binding'] != [] :
             bound_nodes_list = []
@@ -7411,6 +7579,7 @@ def create_reservation(
                 bound_res_node_list = reservation['node_list']
                 if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
                     print "for reservation (%s) bound_res_node_list (%s)" % (reservation['name'], bound_res_node_list)
+                #print "bound_debug for reservation (%s) bound_res_node_list (%s)" % (reservation['name'], bound_res_node_list)
                 # what if reservation has no allocated_dict_list?
                 # FIXME get rid of cpu and memory, use consumable_dict instead
                 if reservation.has_key('allocated_dict_list') :
@@ -7749,7 +7918,7 @@ def create_reservation(
             resource_dict_list = job_step['resource_dict_list']
         else :
             raise NoResourceDictList
-        #print "len(opwn_windows_list) (%s)" % (len(open_windows_list),)
+        print "len(open_windows_list) (%s)" % (len(open_windows_list),)
         if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
             print "checking open_windows_list before passing off to get_sized_windows"
             for new_window in open_windows_list :
@@ -7813,12 +7982,12 @@ def create_reservation(
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "len(open_windows_list) (%s)" % len(open_windows_list)
     big_windows_list = get_big_windows_list(open_windows_list, new_res)
-    #print "len(big_windows_list) (%s)" % len(big_windows_list)
+    print "len(big_windows_list) (%s)" % len(big_windows_list)
     (sized_windows_list, current_start_time_float, counting_dict_list, node_bin_dict) = get_sized_windows_list(
       new_res, big_windows_list, resources_db_handle, jobs_db_handle, resource_dict_list=resource_dict_list, requested_resource_list = requested_resource_list)
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "final len(sized_windows_list) (%s)" % len(sized_windows_list)
-    #print "final len(sized_windows_list) (%s)" % len(sized_windows_list)
+    print "final len(sized_windows_list) (%s)" % len(sized_windows_list)
     new_res['start_time_float'] = current_start_time_float
     relevant_nodes_list = []
     for window in sized_windows_list :
@@ -7865,7 +8034,7 @@ def create_reservation(
       accepted_nodes_list, node_sort_policy, resources_db_handle, reservations_db_handle, jobs_db_handle, windows_and_reservations_list )
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
-    #print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
+    print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
     chosen_nodes_list, allocated_dict_list = get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node_bin_dict, resources_db_handle, jobs_db_handle )
     #print "allocated_dict_list (%s)" % (allocated_dict_list,)
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
@@ -8006,6 +8175,7 @@ def create_reservation(
             print "allocated_dict_list (%s)" % (allocated_dict_list,)
             print "node_list (%s)" % (node_list,)
             print "chosen_nodes_list (%s)" % (chosen_nodes_list,)
+        print "allocated_dict_list (%s)" % (allocated_dict_list,)
         if mode != 'lookahead' :
             insert_new_object(new_res, reservations_db_handle)
         if old_res_id != None and mode == 'real' :
@@ -8166,6 +8336,7 @@ def filter_out_down_nodes(broken_node_list,jobs_db_handle):
                     continue
     
 def get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle):
+    #print "start of get_node_sets"
     # insert TOPOLOGY check here
     if TOPOLOGY_MODULE != None:
         # generate a list of switch_tuples and max_hop
@@ -8179,7 +8350,9 @@ def get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle
             jobs_dict = jobs_db_handle[0]
             resources_dict = resources_db_handle[0]
             #node_sets_list = Topology.get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
+            #print "before get_switch_sets"
             node_sets_list = get_switch_sets(maxhops, switch_node_list, resources_dict, jobs_dict)
+            #print "after get_switch_sets"
         else:
             maxhops = None
             #node_sets_list = [node_bin_dict.keys(),]
@@ -8205,6 +8378,7 @@ def get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle
     #node_sets_list_sort.sort()
     sorted_node_sets_list = map(lambda x: x[1], node_sets_list_sort)
     #print sorted_node_sets_list
+    #print "len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
     return sorted_node_sets_list
     
 #end of file
