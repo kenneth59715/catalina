@@ -3077,6 +3077,9 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             # node_set_counting_dict[node_set] = counting_dict
             # That way, won't have to loop over all nodes sets for
             # every sized_window
+            found_one_set = 0
+            last_good_counting_dict_list = None
+            last_good_node_bin_dict = None
             for node_set in sorted_node_sets_list:
                 #print "topotune: node_set (%s) sorted_node_sets_list" % (node_set,)
                 #print "len(node_set) (%s)" % len(node_set)
@@ -3559,6 +3562,9 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     print "setting need_more = 0, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                     #print "counting_dict_list (%s)" % (counting_dict_list,)
                     need_more = 0
+                    found_one_set = 1
+                    last_good_counting_dict_list = copy.deepcopy(counting_dict_list)
+                    last_good_node_bin_dict = copy.deepcopy(node_bin_dict)
                     #ns_sized_windows_list = filter(lambda x, node_set=node_set: x[2]['nodename'] in node_set, sized_windows_list)
                 else:
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -3708,7 +3714,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     break
 
     #for new_window_index in range(len(open_windows_list)) :
-            if want_more == 0 and need_more == 0:
+            if want_more == 0 and found_one_set == 1:
                 # break out of new_window_index loop
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "breaking out of new_window_index loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
@@ -3843,7 +3849,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
         # FIXME should actually return all sized windows for all node sets
         #sized_windows_list = ns_sized_windows_list
         pass
-    if need_more == 1 :
+    if found_one_set == 0:
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "need_more == 1, setting sized_windows_list to []"
         sized_windows_list = []
@@ -4177,8 +4183,8 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
         sorting_resource_dict_list.append((len(counting_dict['resource_dict'].keys()), counting_dict))
     sorting_resource_dict_list.sort()
     counting_dict_list = map(getfirstindex, sorting_resource_dict_list)
-    consumed_resource_dict = {}
-    allocated_dict_list = []
+    #consumed_resource_dict = {}
+    #allocated_dict_list = []
     need_more = 1
 
     #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
@@ -4188,6 +4194,8 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
             switch_node_list.append(sorted_window[2]['nodename'])
     sorted_node_sets_list = get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle)
     for node_set in sorted_node_sets_list:
+        consumed_resource_dict = {}
+        allocated_dict_list = []
 
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "counting_dict_list (%s)" % (counting_dict_list,)

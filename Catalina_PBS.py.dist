@@ -372,6 +372,9 @@ def get_job_steps_dict() :
     job_steps = {}
     new_job_step_id = None
     for job_step_id in runjob_dict.keys() :
+        if not runjob_dict[job_step_id].has_key('Job_Owner'):
+            print "no Job_Owner for (%s) (%s)" % (job_step_id, runjob_dict[job_step_id)
+            continue
         new_job_step = initialize_job_step(job_step_id)
         if Catalina.USERNAMESUFFIX == '@IGNORE' :
             new_job_step['user'] = string.split(runjob_dict[job_step_id]['Job_Owner'][1],'@')[0]
