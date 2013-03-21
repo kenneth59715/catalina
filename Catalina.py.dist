@@ -2859,6 +2859,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     #ns_sized_windows_list = []
     need_more = 1
     want_more = 0
+    found_one_set = 0
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
         print "open_windows_list (%s)" % (open_windows_list,)
         print "len(open_windows_list) (%s)" % (len(open_windows_list),)
@@ -4184,7 +4185,7 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     sorting_resource_dict_list.sort()
     counting_dict_list = map(getfirstindex, sorting_resource_dict_list)
     #consumed_resource_dict = {}
-    #allocated_dict_list = []
+    allocated_dict_list = []
     need_more = 1
 
     #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
