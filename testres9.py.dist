@@ -1382,7 +1382,7 @@ if res_time_found == 0:
     print output
     print returnstring
     print bind_res_start_time
-    print so.group('res_time')
+    #print so.group('res_time')
     print cmd_string
     continue_var = raw_input('continue? ')
 else :

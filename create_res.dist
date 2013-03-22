@@ -131,6 +131,7 @@ options = [
   'affinity_calculation_file=',
   'ignore_list=',
   'mode=',
+  'maxhops=',
   'comment='
   ]
 usage_string = \

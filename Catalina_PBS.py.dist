@@ -952,6 +952,14 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
             for nodename in node_list:
                 if resources_dict[nodename]['consumable_dict'].has_key('cpu') and resources_dict[nodename]['consumable_dict'] != None:
                     fnode_list.append(nodename)
+            # check that filtered node list matches resource_amount_int
+            if len(fnode_list) != jobs_dict[job_stepid]['resource_amount_int']:
+                subject = 'Inconsistency in job node list detected!'
+                message = "run_jobs: %s has inconsistent fnode_list %s (originally %s) from node_spec_string %s" % \
+                  (job_stepid, fnode_list, node_list, jobs_dict[job_stepid]['node_spec_string'])
+                recipient = Catalina.MAIL_RECIPIENT
+                Catalina.warn(message, subject, recipient)
+                continue
             node_list = fnode_list
             node_spec_string = jobs_dict[job_stepid]['node_spec_string']
             node_spec_global_tuple = string.split(node_spec_string, '#')

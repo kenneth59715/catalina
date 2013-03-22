@@ -2920,6 +2920,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
  
         if new_window_index == last_window_index or open_windows_list[new_window_index + 1][0] > current_start_time_float :
 
+            #print "get_sized: doing a check with current_start_time_float (%s) for new_window (%s) and len(sized_windows_list) (%s)" % (time.asctime(time.localtime(current_start_time_float)), new_window, len(sized_windows_list))
             #  MOVE THIS check only if the window under consideration is later
             #  than the current_start
             # - check to see if the sized_dict is fully populated
@@ -2928,6 +2929,10 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                   ( time.asctime(time.localtime(current_start_time_float)), len(sized_windows_list), new_window[2] )
                 print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
                   (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+            #print "current_start_time_float (%s) len(sized_windows_list) (%s) new_window[2] (%s)" % \
+              #( time.asctime(time.localtime(current_start_time_float)), len(sized_windows_list), new_window[2] )
+            #print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+              #(time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
 
             # If the new window start time is greater than the current_start_time_float
             # reset the current_start_time_float.  Delete any of the sized_windows_list
@@ -3070,10 +3075,10 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     
 
             #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
-            print "getting node_sets"
+            #print "getting node_sets"
             sorted_node_sets_list = get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle)
            
-            print "topotune: len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
+            #print "topotune: len(sorted_node_sets_list) (%s)" % (len(sorted_node_sets_list),)
             # instead of a for loop, should maintain a dictionary of
             # node_set_counting_dict[node_set] = counting_dict
             # That way, won't have to loop over all nodes sets for
@@ -3528,8 +3533,8 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                             print "found_dict_count (%s) == required_dict_count (%s),  breaking" % (found_dict_count, required_dict_count)
                             if dict.has_key('saved_windows_list'):
                                 print "dict['saved_windows_list'] (%s)" % (dict['saved_windows_list'],)
-                            print "assigned_nodes_list (%s)" % (assigned_nodes_list,)
-                            print "counting_dict_list (%s)" % (counting_dict_list,)
+                           # print "assigned_nodes_list (%s)" % (assigned_nodes_list,)
+                           # print "counting_dict_list (%s)" % (counting_dict_list,)
                             #assigned_nodes_list.append(window[1])
                             #dict['saved_windows_list'].append(window)
                         break
@@ -3560,7 +3565,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "setting need_more = 0, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                         print "counting_dict_list (%s)" % (counting_dict_list,)
-                    print "setting need_more = 0, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
+                    #print "setting need_more = 0, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                     #print "counting_dict_list (%s)" % (counting_dict_list,)
                     need_more = 0
                     found_one_set = 1
@@ -3570,7 +3575,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 else:
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "setting need_more = 1, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
-                    print "setting need_more = 1, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
+                    #print "setting need_more = 1, found_dict_count (%s) required_dict_count (%s)" % (found_dict_count, required_dict_count)
                     need_more = 1
                 #want_more = 0
                 for dict in counting_dict_list :
@@ -3578,7 +3583,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     #print "topotune: dict (%s) counting_dict_list" % (dict,)
                     if dict['amount_int'] == None :
                         want_more = 1
-                print "want_more from amount_int check is (%s)" % (want_more,)
+                #print "want_more from amount_int check is (%s)" % (want_more,)
     
                 #SKIP# check for any under-populated counting_dict_list entries
                 #SKIPif DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -3675,7 +3680,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 if need_more == 0 :
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "need_more == 0"
-                    print "need_more == 0"
+                    #print "need_more == 0"
                     if len(saved_sorting_list) > 0 :
                         if getlongest == 1 :
                             #candidate_windows_list = [current_start_time_float, sized_windows_list, sized_dict_list]
@@ -3694,7 +3699,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
                             print "want_more == 0"
-                        print "breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
+                        #print "breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
                         # with TOPOLOGY_MODULE, this breaks out of the node_set
                         # loop, but it should also break out of the outer window
                         # loop...
@@ -3711,7 +3716,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                         print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
             # break out of node_set, if need_more and want_more satisfied
                 if want_more == 0 and need_more == 0:
-                    print "breaking out of node_set loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
+                    #print "breaking out of node_set loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
                     break
 
     #for new_window_index in range(len(open_windows_list)) :
@@ -3719,7 +3724,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 # break out of new_window_index loop
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "breaking out of new_window_index loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
-                print "breaking out of new_window_index loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
+                #print "breaking out of new_window_index loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
                 break
             # if this is not the last window, set current start time
             # and filter out all windows too short with the new current
@@ -3853,6 +3858,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     if found_one_set == 0:
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "need_more == 1, setting sized_windows_list to []"
+        #print "need_more == 1, setting sized_windows_list to []"
         sized_windows_list = []
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
         print "-------------------------------"
@@ -6610,6 +6616,7 @@ def create_job_reservation(
     # Create a job reservation by calling create_reservation and
     # passing in runID, resource_amount_int, duration_float, purpose_type_string='job'
     job_runID = job_step['name']
+    print "create_job_reservation (%s)" % (job_runID,)
     preempted_ignore_list = []
     if job_step.has_key('run_at_risk_int') and job_step['run_at_risk_int'] >= 1 :
         duration_float = RUN_AT_RISK_MIN_RUNTIME + FUDGE_FACTOR
@@ -7991,12 +7998,12 @@ def create_reservation(
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "len(open_windows_list) (%s)" % len(open_windows_list)
     big_windows_list = get_big_windows_list(open_windows_list, new_res)
-    print "len(big_windows_list) (%s)" % len(big_windows_list)
+    #print "len(big_windows_list) (%s)" % len(big_windows_list)
     (sized_windows_list, current_start_time_float, counting_dict_list, node_bin_dict) = get_sized_windows_list(
       new_res, big_windows_list, resources_db_handle, jobs_db_handle, resource_dict_list=resource_dict_list, requested_resource_list = requested_resource_list)
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "final len(sized_windows_list) (%s)" % len(sized_windows_list)
-    print "final len(sized_windows_list) (%s)" % len(sized_windows_list)
+    #print "final len(sized_windows_list) (%s)" % len(sized_windows_list)
     new_res['start_time_float'] = current_start_time_float
     relevant_nodes_list = []
     for window in sized_windows_list :
@@ -8043,7 +8050,7 @@ def create_reservation(
       accepted_nodes_list, node_sort_policy, resources_db_handle, reservations_db_handle, jobs_db_handle, windows_and_reservations_list )
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
-    print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
+    #print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
     chosen_nodes_list, allocated_dict_list = get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node_bin_dict, resources_db_handle, jobs_db_handle )
     #print "allocated_dict_list (%s)" % (allocated_dict_list,)
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
@@ -8184,7 +8191,7 @@ def create_reservation(
             print "allocated_dict_list (%s)" % (allocated_dict_list,)
             print "node_list (%s)" % (node_list,)
             print "chosen_nodes_list (%s)" % (chosen_nodes_list,)
-        print "allocated_dict_list (%s)" % (allocated_dict_list,)
+        #print "allocated_dict_list (%s)" % (allocated_dict_list,)
         if mode != 'lookahead' :
             insert_new_object(new_res, reservations_db_handle)
         if old_res_id != None and mode == 'real' :
