@@ -127,6 +127,7 @@ options = [
   'affinity_calculation=',
   'affinity_calculation_file=',
   'mode=',
+  'maxhops=',
   'debug',
   'comment=',
   'overlap_running='
@@ -170,6 +171,9 @@ ve>[#cpu:<cpus>+memory:<memory>#...]
            None and 'normal' in input_tuple[0]['ConfiguredClasses_list'] and \
            input_tuple[0]['Max_STarters'] != 0 : result = 0"
            will cause only nodes with normal class to be used.
+
+        [--maxhops=<maximum number of switch hops>]
+
         Options not described here:
         [--affinity_calculation]
         [--node_sort_policy]
@@ -224,6 +228,10 @@ if argdict.has_key('--latency') :
     latency = string.atof(argdict['--latency'])
 else :
     latency = None
+if argdict.has_key('--maxhops') and argdict['--maxhops'] != 'None':
+    maxhops = int(argdict['--maxhops'])
+else :
+    maxhops = None
 if argdict.has_key('--resource_amount') :
     resource_amount = string.atoi(argdict['--resource_amount'])
 else :
@@ -306,6 +314,7 @@ try :
       latency_float=latency,
       job_restriction=job_restriction,
       node_restriction=node_restriction,
+      maxhops=maxhops,
       overlap_running_int=overlap_running_int
     )
 except 'InsufficientNodes', new_res :

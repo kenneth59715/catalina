@@ -959,6 +959,8 @@ def run_jobs(events_db_handle, jobs_db_handle, resources_db_handle, reservations
                   (job_stepid, fnode_list, node_list, jobs_dict[job_stepid]['node_spec_string'])
                 recipient = Catalina.MAIL_RECIPIENT
                 Catalina.warn(message, subject, recipient)
+                print message
+                print reservation
                 continue
             node_list = fnode_list
             node_spec_string = jobs_dict[job_stepid]['node_spec_string']

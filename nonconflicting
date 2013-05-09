@@ -479,6 +479,8 @@ for node in node_reservations.keys() :
             found_dict = {'node' : 0}
             for rkey in resources_dict[node]['consumable_dict'].keys():
                 found_dict[rkey] = 0
+                if not rkey in need_dict.keys():
+                    need_dict[rkey] = 0
             if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "negative_dict['node'] (%s) negative_dict['cpu'] (%s) negative_dict['memory'] (%s)" % (negative_dict['node'], negative_dict['cpu'], negative_dict['memory'])
                 print "started_windows_list (%s)" % (started_windows_list,)

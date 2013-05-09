@@ -1775,7 +1775,9 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                 allocated_dict_list = reservation['allocated_dict_list']
                 #Kenneth patch leaking reservation. 7/24/06
                 for allocated_dict in allocated_dict_list:
+                    #print "considering allocated_dict (%s)" % (allocated_dict,)
                     if allocated_dict.has_key('type') and allocated_dict['type'] == 'node_exclusive' and allocated_dict.has_key('nodename'):
+                        #print "handling allocated_dict (%s)" % (allocated_dict,)
                         #if not resources_dict.has_key(allocated_dict['nodename']) :
                         #    print "resources_dict does not have (%s)" % (allocated_dict['nodename'],)
                         #    sys.exit(1)
@@ -1800,6 +1802,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                             #allocated_dict['cpu'] = 0
                             #allocated_dict['memory'] = 0
                 #end of patch
+                    #else:
+                    #    print "not doing anything for (%s)" % (allocated_dict,)
 
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "existing allocated_dict_list (%s)" % (allocated_dict_list,)
@@ -1891,6 +1895,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "appending node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
                         print "node_resource_list[index] (%s)" % (node_resource_list[index],)
+                    #print "appending node_reservation (%s, %s, %s)" % (start_time_float, end_time_float, node)
+                    #print "node_resource_list[index] (%s)" % (node_resource_list[index],)
         #potential_start_time_float = new_res['earliest_start_float']
         #if potential_start_time_float == None :
         #    potential_start_time_float = Now_float
@@ -1926,6 +1932,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "appending open window (%s, %s, %s)" % (potential_start_time_float, end_limit, accepted_node)
                     print "end_limit is (%s)" % time.asctime(time.localtime(end_limit))
+                #print "appending open window (%s, %s, %s)" % (potential_start_time_float, end_limit, accepted_node)
+                #print "end_limit is (%s)" % time.asctime(time.localtime(end_limit))
         # sort the reservations for each node, in ascending start_time_float order
         # keep a potential start time for the reservation window.
         # for each reservation, if the start_time_float - the potential start_time_float
@@ -1936,6 +1944,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
             node_reservations[node].sort()
             if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "node_reservations[node] (%s)" % (node_reservations[node],)
+            #if node == LICENSENODE:
+            #    print "node_reservations[node] (%s)" % (node_reservations[node],)
             #potential_start_time_float = new_res['earliest_start_float']
             #if potential_start_time_float == None :
             #    potential_start_time_float = Now_float
@@ -1957,8 +1967,14 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                 if event[1] == 'add' :
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "add event (%s)" % (event,)
+                    if node == LICENSENODE:
+                        event_usage = 'node_shared'
+                        #print "add event (%s)" % (event,)
+                    else:
+                        event_usage = new_res['node_usage']
                     #if event[2]['type'] == 'node_exclusive' :
-                    if new_res['node_usage'] == 'node_exclusive' :
+                    #if new_res['node_usage'] == 'node_exclusive' :
+                    if event_usage == 'node_exclusive' :
                         node_amount = 1
                     else :
                         if event[2].has_key('node') :
@@ -2030,6 +2046,9 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     # sort started_windows_list LASTAVAILABLE
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "decrement event(%s)" % (event,)
+                    #if node == LICENSENODE:
+                    #    print "decrement event(%s)" % (event,)
+                    #sys.stderr.write("decrement event(%s)\n" % (event,))
                     #if negative_cpu > 0 :
                     #    # choose early cpu starts first, to get
                     #    # rid of cpu debt
@@ -2059,7 +2078,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     #else :
                     #    neednode = 0
                     need_dict = {}
-                    if new_res['node_usage'] == 'node_exclusive' :
+                    #if new_res['node_usage'] == 'node_exclusive' :
+                    if event_usage == 'node_exclusive' :
                         #neednodes = 1
                         need_dict['node'] = 1
                     else :
@@ -2075,6 +2095,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     #needmemory = event[2]['memory']
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "adding event[2] (%s) to need_dict" % (event[2],)
+                    #sys.stderr.write("adding event[2] (%s) to need_dict\n" % (event[2],))
                     for ekey in event[2].keys():
                         if ekey == 'nodename':
                             continue
@@ -2226,6 +2247,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     #print "node (%s)" % (resources_dict[node],)
                     for rkey in resources_dict[node]['consumable_dict'].keys():
                         found_dict[rkey] = 0
+                        if not rkey in need_dict.keys():
+                            need_dict[rkey] = 0
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         #print "negative_dict['node'] (%s) negative_dict['cpu'] (%s) negative_dict['memory'] (%s)" % (negative_dict['node'], negative_dict['cpu'], negative_dict['memory'])
                         print "started_windows_list (%s)" % (started_windows_list,)
@@ -2233,6 +2256,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                         started_window = started_windows_list[index]
                         if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "started_window (%s)" % (started_window,)
+                        #print "%s started_window (%s)" % (new_res['job_runID'],started_window,)
+                        #sys.stderr.write("started_window (%s)\n" % (started_window,))
                         if started_window[1]['state'] == 'inactive' :
                             continue
 
@@ -2242,6 +2267,11 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                 print "rkey (%s)" % rkey
                                 print "found_dict[rkey] (%s) need_dict[rkey] (%s)" % (found_dict[rkey], need_dict[rkey])
                                 print "started_window[1] (%s)" % (started_window[1],)
+                            #sys.stderr.write("rkey (%s)\n" % rkey)
+                            #sys.stderr.write("found_dict[rkey] (%s) need_dict[rkey] (%s)\n" % (found_dict[rkey], need_dict[rkey]))
+                            #sys.stderr.write("need_dict (%s)\n" % (need_dict,))
+                            #sys.stderr.write("found_dict (%s)\n" % (found_dict,))
+                            #sys.stderr.write("started_window[1] (%s)\n" % (started_window[1],))
                             if started_window[1]['type'] == rkey :
                                 if found_dict[rkey] >= need_dict[rkey] :
                                     continue
@@ -2270,6 +2300,12 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                               ),
                                               )
                                             print "start (%s) end (%s)" % (time.asctime(time.localtime(started_window[1]['start'])), time.asctime(time.localtime(event[0])))
+                                        #print "%s 1. appending reservation_window (%s)" % (                                    new_res['job_runID'], (started_window[1]['start'], event[0],
+                                        #  {'nodename' : node,
+                                        #   rkey : started_window[1]['amount'] - extra_dict[rkey]}
+                                        #  ),
+                                        #  )
+                                        #print "start (%s) end (%s)" % (time.asctime(time.localtime(started_window[1]['start'])), time.asctime(time.localtime(event[0])))
                                         reservation_windows.append(
                                           (started_window[1]['start'], event[0],
                                            {'nodename' : node,
@@ -2288,6 +2324,11 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                                                    rkey : started_window[1]['amount']}
                                                   ),
                                                   )
+                                            #print "%s 2. appending reservation_window (%s)" % (                                     new_res['job_runID'],(started_window[1]['start'], event[0],
+                                            #  {'nodename' : node,
+                                            #   rkey : started_window[1]['amount']}
+                                            #  ),
+                                            #  )
                                             reservation_windows.append(
                                               (started_window[1]['start'], event[0],
                                                {'nodename' : node,
@@ -2546,6 +2587,10 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
             for new_window in reservation_windows :
                 print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
                   (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+        #print "checking reservation_windows before returning"
+        #for new_window in reservation_windows :
+        #    print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+        #      (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
         result = reservation_windows
         return result
         # End of get_nonconflicting function
@@ -2660,6 +2705,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             return first_list
         else :
             return second_list
+    #print "requested_resource_list (%s)" % (requested_resource_list,)
     #print "topotune: start of get_sized_windows_list"
     resources_dict = resources_db_handle[0]
     # Assume that if any resource_dict has 'amount_int' == None,
@@ -2718,10 +2764,26 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     #   ...
     # ]
     #print "1. resource_dict_list (%s)" % (resource_dict_list,)
+    #print "1. requested_resource_list (%s)" % (requested_resource_list,)
+    #print "len(resource_dict_list) (%s) len(requested_resource_list) (%s)" % (len(resource_dict_list), len(requested_resource_list))
     for index in range(len(resource_dict_list)) :
+        # 20130507
+        # need to set node = 0, usage = node_shared for LICENSENODE,
+        # regardless of new_res['node_usage']
         #print "topotune: index (%s) range(len(resource_dict_list))" % (index,)
         # need to add 'req_list' to each dict...
+        #print "resource_dict_list[%s] (%s)" % (index, resource_dict_list[index])
         dict = resource_dict_list[index]
+        #if dict['resource_dict'].has_key(LICENSENODE):
+        #    dict_usage = 'node_shared'
+        #else:
+        #    dict_usage = new_res['node_usage']
+        #if index <= len(requested_resource_list) - 1:
+        #    dict_usage = requested_resource_list[index]['type']
+        #else:
+        #    #FIXME what happens if we are out of range, and we don't
+        #    # want to use new_res['node_usage'] for each dict?
+        #    dict_usage = new_res['node_usage']
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "processing dict (%s)" % (dict,)
         if dict['amount_int'] == None :
@@ -2735,12 +2797,16 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
               }
             if nodeindex < len(requested_resource_list) :
                 sized_dict['req_list'] = requested_resource_list[nodeindex]['req_list']
+                dict_usage = requested_resource_list[nodeindex]['type']
             else :
                 print "ran out of requested_resource_list, setting req_list to []"
                 if len(requested_resource_list) >= 1 :
                     sized_dict['req_list'] = requested_resource_list[-1]['req_list']
+                    dict_usage = requested_resource_list[-1]['type']
                 else :
                     sized_dict['req_list'] = []
+                    print "no requested_resource_list, defaulting to node_exclusive"
+                    dict_usage = 'node_exclusive'
 
             # insert requested_dict here
             # for each term (representing a single node) in the
@@ -2757,13 +2823,15 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             # consider a node reservation as including all
             # resources associated with the node, or explicitly
             # create requested_dict entries for all resources...
-            if new_res['node_usage'] == 'node_exclusive' :
+            #if new_res['node_usage'] == 'node_exclusive' :
+            if dict_usage == 'node_exclusive' :
                 #requested_node = 1
                 requested_dict['node'] = 1
             else :
                 #requested_node = 0
                 requested_dict['node'] = 0
-            sized_dict['node_usage'] = new_res['node_usage']
+            #sized_dict['node_usage'] = new_res['node_usage']
+            sized_dict['node_usage'] = dict_usage
             for indexb in range(len(sized_dict['req_list'])) :
                 requested_resource = sized_dict['req_list'][indexb]
                 #if requested_resource.has_key('cpu') :
@@ -2782,6 +2850,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             #print "inserting requested_dict (%s)" % (requested_dict,)
 
             sized_dict_list.append(sized_dict)
+            nodeindex = nodeindex + 1
         else :
             # FIXTHIS
             # need to correctly map requested_resource_list elements to
@@ -2802,12 +2871,16 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 if nodeindex < len(requested_resource_list) :
                     #print "requested_resource_list[nodeindex]['req_list'] (%s)" % (requested_resource_list[nodeindex]['req_list'],)
                     sized_dict['req_list'] = requested_resource_list[nodeindex]['req_list']
+                    dict_usage = requested_resource_list[nodeindex]['type']
                 else :
                     #print "ran out of requested_resource_list, setting req_list to %s" % requested_resource_list[-1]['req_list']
                     if len(requested_resource_list) >= 1 :
                         sized_dict['req_list'] = requested_resource_list[-1]['req_list']
+                        dict_usage = requested_resource_list[-1]['type']
                     else :
                         sized_dict['req_list'] = []
+                        print "no requested_resource_list, defaulting to node_exclusive"
+                        dict_usage = 'node_exclusive'
                 # insert requested_dict here
                 # for each term (representing a single node) in the
                 # initiatormap, sum requested cpu and memory for all
@@ -2823,13 +2896,16 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 # consider a node reservation as including all
                 # resources associated with the node, or explicitly
                 # create requested_dict entries for all resources...
-                if new_res['node_usage'] == 'node_exclusive' :
+                #if new_res['node_usage'] == 'node_exclusive' :
+                if dict_usage == 'node_exclusive' :
                     #requested_node = 1
                     requested_dict['node'] = 1
                 else :
                     #requested_node = 0
                     requested_dict['node'] = 0
-                sized_dict['node_usage'] = new_res['node_usage']
+                #print "dict_usage (%s) requested_dict (%s)" % (dict_usage, requested_dict)
+                #sized_dict['node_usage'] = new_res['node_usage']
+                sized_dict['node_usage'] = dict_usage
                 for indexb in range(len(sized_dict['req_list'])) :
                     #print "topotune: indexb (%s) range(len(sized_dict['req_list']))" % (indexb,)
                     requested_resource = sized_dict['req_list'][indexb]
@@ -2838,11 +2914,13 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     #if requested_resource.has_key('memory') :
                     #    requested_memory = requested_memory + requested_resource['memory']
                     for rkey in requested_resource.keys():
-                        #print "topotune: rkey (%s) requested_resource.keys()" % (rkey,)
+                        #print "topotune: rkey (%s) requested_resource.keys() (%s)" % (rkey,requested_resource.keys())
+                        #print "topotune: rkey %s requested_dict (%s)" % (rkey,requested_dict)
                         if requested_dict.has_key(rkey):
                             requested_dict[rkey] = requested_dict[rkey] + requested_resource[rkey]
                         else:
                             requested_dict[rkey] = requested_resource[rkey]
+                        #print "topotune: rkey %s requested_dict (%s)" % (rkey,requested_dict)
                 #dict['requested_node'] = requested_node
                 #dict['requested_cpu'] = requested_cpu
                 #dict['requested_memory'] = requested_memory
@@ -2853,7 +2931,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 #print "1. sized_dict (%s) has no requested_dict" % ( sized_dict,)
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
         print "len(sized_dict_list) (%s)" % len(sized_dict_list)
-        #print "sized_dict_list (%s)" % (sized_dict_list,)
+        print "sized_dict_list (%s)" % (sized_dict_list,)
     candidate_sized_list = []
     counting_dict_list = []
     #ns_sized_windows_list = []
@@ -3125,6 +3203,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     #print "len(counting_dict_list) (%s) indexa (%s) dict (%s)" % (len(counting_dict_list), indexa, dict)
                     dict = counting_dict_list[indexa]
                     requested_dict = dict['requested_dict']
+                    #print "indexa requested_dict (%s)" % (requested_dict,)
 
 #                    # for each term (representing a single node) in the
 #                    # initiatormap, sum requested cpu and memory for all
@@ -3713,7 +3792,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                     else :
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
-                        print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
+                        #print "not breaking : new_window[0] (%s) > current_start_time_fload (%s)" % (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(current_start_time_float)))
             # break out of node_set, if need_more and want_more satisfied
                 if want_more == 0 and need_more == 0:
                     #print "breaking out of node_set loop with current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
@@ -3867,6 +3946,8 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
         print "-------------------------------"
         print "final current_start_time (%s)" % time.asctime(time.localtime(current_start_time_float))
     #print "counting_dict_list (%s)" % (counting_dict_list,)
+    #for counting_dict in counting_dict_list :
+    #    print "countind_dict['requested_dict'] (%s)" % (counting_dict['requested_dict'],)
     return ( sized_windows_list, current_start_time_float, counting_dict_list, node_bin_dict )
 
 def get_sorted_windows_list(sized_windows_list, new_res, accepted_nodes_list, sort_policy_code, resources_db_handle, reservations_db_handle, jobs_db_handle, windows_and_reservations_list=None) :
@@ -4157,6 +4238,8 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     # node, then go on to the next initiator set.  Windows should be
     # sorted already...Need to sort the initiator sets...Maybe should
     # save the sorted list from get_sized?
+    #for counting_dict in counting_dict_list :
+    #    print "countind_dict['requested_dict'] (%s)" % (counting_dict['requested_dict'],)
     resources_dict = resources_db_handle[0]
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
         print "get_chosen_nodes_list: counting_dict_list (%s)" % (counting_dict_list,)
@@ -4203,10 +4286,19 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     for node_set in sorted_node_sets_list:
         consumed_resource_dict = {}
         allocated_dict_list = []
+        chosen_nodes_list = []
 
+        #print "check node_set (%s)" % (node_set,)
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "counting_dict_list (%s)" % (counting_dict_list,)
+        #print "counting_dict_list (%s) len(counting_dict_list) (%s)" % (counting_dict_list,len(counting_dict_list))
+        #if new_res['purpose_type_string'] == 'standing_reservation':
+        #    print "sdebug: checking node_set (%s)" % (node_set,)
+        #for counting_dict in counting_dict_list :
+        #    print "countind_dict['requested_dict'] (%s)" % (counting_dict['requested_dict'],)
         for counting_dict in counting_dict_list :
+            #if new_res['purpose_type_string'] == 'standing_reservation':
+            #    print "sdebug: processing counting_dict (%s)" % (counting_dict,)
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "processing counting_dict (%s)" % (counting_dict,)
                 print "consumed_resource_dict (%s)" % (consumed_resource_dict,)
@@ -4239,6 +4331,7 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
             #    print "counting_dict has no requested_dict (%s)" % (counting_dict,)
             #else:
             #    print "counting_dict (%s)" % (counting_dict,)
+            #print "counting_dict (%s)" % (counting_dict,)
             for rkey in counting_dict['requested_dict'].keys():
                 if not counting_dict['requested_dict'].has_key(rkey) or counting_dict['requested_dict'][rkey] == None :
                     absrequested_dict[rkey] = None
@@ -4247,11 +4340,14 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "absrequested_dict (%s)" % (absrequested_dict,)
+            #print "absrequested_dict (%s)" % (absrequested_dict,)
     
             #sorted_res_dict = {}
             sorted_res_dict = {}
             need_more = 1
             for window in sorted_windows_list :
+                #if new_res['purpose_type_string'] == 'standing_reservation':
+                #    print "sdebug: processing sorted_window (%s)" % (window,)
                 if  DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "processing sorted window (%s)" % (window,)
                 nodename = window[2]['nodename']
@@ -4262,8 +4358,10 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                     continue
     
                 requested_dict = {}
+                #print "absrequested_dict (%s)" % (absrequested_dict,)
                 for rkey in absrequested_dict.keys():
                     if rkey == 'node' and absrequested_dict[rkey] != None and absrequested_dict[rkey] > 0:
+                        #print "rkey is node, taking all consumables in (%s)" % (resources_dict[nodename]['consumable_dict'],)
                         for ckey in resources_dict[nodename]['consumable_dict'].keys():
                             if not absrequested_dict.has_key(ckey):
                                 requested_dict[ckey] = resources_dict[nodename]['consumable_dict'][ckey]
@@ -4320,6 +4418,9 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                     print "sorted_res_dict[nodename]['node'] (%s)" % sorted_res_dict[nodename]['node']
                     #print "sorted_res_dict[nodename]['cpu'] (%s)" % sorted_res_dict[nodename]['cpu']
                     #print "sorted_res_dict[nodename]['memory'] (%s)" % sorted_res_dict[nodename]['memory']
+                #print "nodename (%s)" % nodename
+                #print "window (%s)" % (window,)
+                #print "sorted_res_dict[nodename]['node'] (%s)" % sorted_res_dict[nodename]['node']
                 request_resource_none = 0
                 for rkey in requested_dict.keys():
                     if requested_dict[rkey] == None:
@@ -4327,7 +4428,9 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "requested_dict[%s] == None, breaking" % (rkey,)
                         break
-                if requested_dict['node'] == None :
+                #if requested_dict['node'] == None:
+                #if requested_dict['node'] == None or requested_dict['node'] == 0:
+                if requested_dict['node'] != None and requested_dict['node'] != 0:
                     if consumed_resource_dict.has_key(nodename) :
                         #allocated_node = 1 - consumed_resource_dict[nodename]['node']
                         allocated_dict['node'] = 1 - consumed_resource_dict[nodename]['node']
@@ -4335,39 +4438,69 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                             print "requested_dict['node'] is None, consumed_resource_dict.has_key(%s) allocated_dict['node'] (%s)" % (nodename, allocated_dict['node'])
                     else :
                         #allocated_node = 1
-                        allocated_dict['node'] == 1
+                        allocated_dict['node'] = 1
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "requested_dict['node'] is None, NOT consumed_resource_dict.has_key(%s) allocated_dict['node'] (%s)" % (nodename, allocated_dict['node'])
                 else :
+                    # here requested_dict['node'] != None :
+                    # so make sure everything on the node is allocated
                     #allocated_node = requested_node
                     #print "allocated_dict (%s) requested_dict (%s)" % (allocated_dict, requested_dict)
                     allocated_dict['node'] = requested_dict['node']
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "requested_node is (%s), allocated_node (%s)" % (requested_dict['node'], allocated_dict['node'])
-                rkeymismatch = 0
-                for rkey in resources_dict[nodename]['consumable_dict'].keys():
-                    if not requested_dict.has_key(rkey):
-                        #print "requested_dict[rkey] mismatch (%s) (%s) (%s)" % (rkey, requested_dict, resources_dict[nodename]['consumable_dict'])
-                        rkeymismatch = 1
-                        break
+#UNNEEDED?                print "checking for rkey mismatch"
+#UNNEEDED?                rkeymismatch = 0
+#UNNEEDED?                for rkey in resources_dict[nodename]['consumable_dict'].keys():
+#UNNEEDED?                    if not requested_dict.has_key(rkey):
+#UNNEEDED?                        print "requested_dict[rkey] mismatch (%s) (%s) (%s)" % (rkey, requested_dict, resources_dict[nodename]['consumable_dict'])
+#UNNEEDED?                        rkeymismatch = 1
+#UNNEEDED?                        break
+#UNNEEDED?
+#UNNEEDED?                    # need to handle the case where requested_dict only has 'node':
+#UNNEEDED?                    #requested_dict[rkey] mismatch (cpu) ({'node': 1}) ({'cpu': 32, 'memory': 67592482816})
+#UNNEEDED?                    if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
+#UNNEEDED?                    #if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
+#UNNEEDED?                        if consumed_resource_dict.has_key(nodename) :
+#UNNEEDED?                            allocated_dict[rkey] = resources_db_handle[0][nodename][rkey] - consumed_resource_dict[nodename]['consumable_dict'][rkey]
+#UNNEEDED?                        else :
+#UNNEEDED?                            allocated_dict[rkey] = resources_db_handle[0][nodename]['consumable_dict'][rkey]
+#UNNEEDED?                    else :
+#UNNEEDED?                        allocated_dict[rkey] = requested_dict[rkey]
+#UNNEEDED?                if rkeymismatch == 1:
+#UNNEEDED?                    continue
+#TRYTHIS allocate everything on the node, do not check for rkey mismatch
                     # need to handle the case where requested_dict only has 'node':
                     #requested_dict[rkey] mismatch (cpu) ({'node': 1}) ({'cpu': 32, 'memory': 67592482816})
-                    if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
+                #print "adding rkeys to allocated_dict (%s) requested_dict(%s)" % (allocated_dict, requested_dict)
+                for rkey in resources_dict[nodename]['consumable_dict'].keys():
+                    #print "doing rkey(%s)" % rkey
                     #if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
+                    #if (not requested_dict.has_key(rkey)) or requested_dict[rkey] == None or (requested_dict['node'] != None and requested_dict['node'] != 0):
+                    #if not requested_dict.has_key(rkey) or requested_dict[rkey] == None :
+                    if requested_dict.has_key('node') and requested_dict['node'] > 0:
+                        #print "requested_dict[node] found (%s)" % (requested_dict['node'],)
                         if consumed_resource_dict.has_key(nodename) :
                             allocated_dict[rkey] = resources_db_handle[0][nodename][rkey] - consumed_resource_dict[nodename]['consumable_dict'][rkey]
+                            #print "nodename in consumed_resource_dict, adding rmeainder to allocated_dict (%s)" % resources_db_handle[0][nodename][rkey] - consumed_resource_dict[nodename]['consumable_dict'][rkey]
                         else :
+                            #print "nodename not in cosumed_resource_dict, setting full consumable (%s)" % resources_db_handle[0][nodename]['consumable_dict'][rkey]
                             allocated_dict[rkey] = resources_db_handle[0][nodename]['consumable_dict'][rkey]
                     else :
-                        allocated_dict[rkey] = requested_dict[rkey]
-                if rkeymismatch == 1:
-                    continue
+                        if not requested_dict.has_key(rkey):
+                            #print "no %s in requested_dict (%s)" % (rkey, requested_dict)
+                            pass
+                        else:
+                            #print "requested_dict['node'] (%s) not exclusive, adding requested amount (%s) or (%s)" % (requested_dict['node'], requested_dict[rkey], rkey)
+                            allocated_dict[rkey] = requested_dict[rkey]
+#TRYTHIS
     #
                 #print "requested_dict (%s)" % (requested_dict,)
                 #print "resources_db_handle[0][nodename] (%s)" % (resources_db_handle[0][nodename],)
                 #print "allocated_dict (%s)" % (allocated_dict,)
                 #if requested_node == None or requested_cpu == None or requested_memory == None :
                 if requested_dict['node'] == None or requested_dict['node'] == 0 or request_resource_none == 1:
+                    allocated_usage = 'node_shared'
     #                if requested_dict['node'] == None :
     #                    if consumed_resource_dict.has_key(nodename) :
     #                        #allocated_node = 1 - consumed_resource_dict[nodename]['node']
@@ -4411,11 +4544,14 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     
     
                     sufficient_res = 1
+                    #print "requested_dict (%s) allocated_dict (%s) sorted_res_dict (%s) window_resource_dict (%s)" % (requested_dict, allocated_dict, sorted_res_dict, window_resource_dict)
                     for rkey in resources_dict[nodename]['consumable_dict'].keys():
-                        if sorted_res_dict[nodename][rkey] - window_resource_dict[rkey] < allocated_dict[rkey] :
+                        #if sorted_res_dict[nodename][rkey] - window_resource_dict[rkey] < allocated_dict[rkey] :
+                        if allocated_dict.has_key(rkey) and sorted_res_dict[nodename][rkey] - window_resource_dict[rkey] < allocated_dict[rkey] :
                             sufficient_res = 0
                             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                                 print "sufficient_res 0 %s sorted_res_dict[%s] (%s) window_resource_dict (%s) allocated_dict (%s)" % (rkey, nodename, sorted_res_dict[nodename], window_resource_dict, allocated_dict)
+                            #print "sufficient_res 0 %s sorted_res_dict[%s] (%s) window_resource_dict (%s) allocated_dict (%s)" % (rkey, nodename, sorted_res_dict[nodename], window_resource_dict, allocated_dict)
                             break
                     #if not consumed_resource_dict.has_key(nodename) and sorted_res_dict[nodename]['node'] - consumed_node >= allocated_node and \
                     #if not consumed_resource_dict.has_key(nodename) and sorted_res_dict[nodename]['node'] - window_resource_dict['node'] >= allocated_dict['node'] and \
@@ -4447,13 +4583,18 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                         #   'cpu' : allocated_cpu,
                         #   'memory' : allocated_memory}
                         #  )
+                        #if nodename == LICENSENODE:
+                        #    allocated_usage = 'node_shared'
+                        #else:
+                        #    allocated_usage = new_res['node_usage']
                         allocated_dict_list.append(
                           {'nodename' : window[2]['nodename'],
-                           'type' : new_res['node_usage'],
+                           'type' : allocated_usage,
                            'initiatormap_index' : counting_dict['initiatormap_index'],
                            'node' : allocated_dict['node'],})
                         for rkey in allocated_dict.keys():
                             allocated_dict_list[-1][rkey] = allocated_dict[rkey]
+                        #print "1. allocated_dict_list (%s)" % (allocated_dict_list,)
                     else :
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             # will also continue here, if consumed_resource_dict.has_key(nodename0, so this enforces one initiator per node rule
@@ -4462,6 +4603,7 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                             #print "requested_node (%s) requested_cpu (%s) requested_memory (%s)" % (requested_node, requested_cpu, requested_memory)
                         continue
                 else :
+                    allocated_usage = 'node_exclusive'
                     sufficient_res = 1
                     for rkey in resources_dict[nodename]['consumable_dict'].keys():
                       #print "checking rkey (%s)" % (rkey,)
@@ -4474,11 +4616,13 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                       else:
                           if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                               print "%s still sufficient_res 1 for (%s), sorted_res_dict[nodename] (%s) window_resource_dict (%s) allocated_dict (%s)" % (rkey, nodename, sorted_res_dict[nodename], window_resource_dict, allocated_dict)
+                          #print "%s still sufficient_res 1 for (%s), sorted_res_dict[nodename] (%s) window_resource_dict (%s) allocated_dict (%s)" % (rkey, nodename, sorted_res_dict[nodename], window_resource_dict, allocated_dict)
                     #print "sorted_res_dict[nodename] (%s) requested_dict (%s)" % (sorted_res_dict[nodename], requested_dict)
                     #if not consumed_resource_dict.has_key(nodename) and sorted_res_dict[nodename]['node'] - window_resource_dict['node'] >= requested_dict['node'] and \
                     #if counting_dict['node_usage'] == 'node_shared' or (not consumed_resource_dict.has_key(nodename) and sorted_res_dict[nodename]['node'] - window_resource_dict['node'] >= requested_dict['node'] and \
                     #  sufficient_res == 1):
                     if  sufficient_res == 1:
+                        #print "sufficient_res == 1"
                     #if not consumed_resource_dict.has_key(nodename) and sorted_res_dict[nodename]['node'] - consumed_node >= requested_node and \
                     #  sorted_res_dict[nodename]['cpu'] - consumed_cpu >= requested_cpu and \
                     #  sorted_res_dict[nodename]['memory'] - consumed_memory >= requested_memory :
@@ -4519,15 +4663,29 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                                'type' : new_res['node_usage'],
                                'initiatormap_index' : counting_dict['initiatormap_index'],
                                'node' : final_requested_node,},)
+                        #if new_res['purpose_type_string'] == 'standing_reservation':
+                        #    print "sdebug: appending (%s) to allocated_dict_list" % (
+                        #  {'nodename' : window[2]['nodename'],
+                        #   'type' : new_res['node_usage'],
+                        #   'initiatormap_index' : counting_dict['initiatormap_index'],
+                        #   'node' : final_requested_node,},)
+                        #if nodename == LICENSENODE:
+                        #    allocated_usage = 'node_shared'
+                        #else:
+                        #    allocated_usage = new_res['node_usage']
                         allocated_dict_list.append(
                           {'nodename' : window[2]['nodename'],
-                           'type' : new_res['node_usage'],
+                           'type' : allocated_usage,
                            'initiatormap_index' : counting_dict['initiatormap_index'],
                            'node' : final_requested_node,})
+                        #print "2a. allocated_dict_list (%s)" % (allocated_dict_list,)
+                        #print "2a. requested_dict (%s)" % (requested_dict,)
+                        #print "2a. resources_dict[nodename] (%s)" % (resources_dict[nodename],)
                         for rkey in resources_dict[nodename]['consumable_dict'].keys():
                             allocated_dict_list[-1][rkey] = requested_dict[rkey]
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             print "allocated_dict_list (%s)" % (allocated_dict_list,)
+                        #print "2b. allocated_dict_list (%s)" % (allocated_dict_list,)
                     else :
                         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                             #print "not enough node cpu memory (%s)" % (sorted_res_dict[nodename]['node'] - consumed_node, sorted_res_dict[nodename]['cpu'] - consumed_cpu, sorted_res_dict[nodename]['memory'] - consumed_memory)
@@ -4535,24 +4693,42 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
                             #print "sorted_res_dict (%s)" % sorted_res_dict
                             #print "requested_node (%s) requested_cpu (%s) requested_memory (%s)" % (requested_dict,)
                             print "requested_dict (%s)" % (requested_dict,)
+                        #print "not enough node cpu memory (%s) (%s)" % (requested_dict, window_resource_dict)
+                        #print "requested_dict (%s)" % (requested_dict,)
                         continue
+                #print "appending to chosen_nodes_list (%s)" % (window[2]['nodename'],)
                 chosen_nodes_list.append(window[2]['nodename'])
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "chosen_nodes_list.append(window[2]['nodename']) (%s)" % chosen_nodes_list
+                #if new_res['purpose_type_string'] == 'standing_reservation':
+                #    print "sdebug: chosen_nodes_list.append(window[2]['nodename']) (%s)" % chosen_nodes_list
                 if counting_dict['amount_int'] == None and not (max_resource_int != None and len(chosen_nodes_list) >= max_resource_int) :
                     # choose _all_ nodes that meet requested_cpu and
                     # requested_memory, under max if present
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "setting need_more chosen to 1"
+                    #if new_res['purpose_type_string'] == 'standing_reservation':
+                    #    print "sdebug: setting need_more chosen to 1"
                     need_more = 1
                 else :
                     need_more = 0
                     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "need_more == 0, breaking"
+                    #print " counting_dict['amount_int'] (%s) max_resource_int (%s) len(chosen_nodes_list) (%s)" % (counting_dict['amount_int'],max_resource_int, len(chosen_nodes_list))
+                    #print "need_more == 0, breaking"
+                    #if new_res['purpose_type_string'] == 'standing_reservation':
+                    #    print "sdebug: need_more == 0, breaking"
+                    # breaking out of for window in sorted_windows_list :
                     break
+        #for counting_dict in counting_dict_list :
+        # after going through all windows in sorted_windows_list,
+        # check to see if all counting_dicts are satisfied.
+            #print "end of counting_dict_list loop"
 
         if need_more == 0:
             # break out of node_set loop
+            #if new_res['purpose_type_string'] == 'standing_reservation':
+            #    print "sdebug: breaking out of node_set loop"
             break
 
     sorting_allocated_dict_list = []
@@ -4563,6 +4739,9 @@ def get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
         print "allocated_dict_list (%s)" % (allocated_dict_list,)
         print "chosen_nodes_list (%s)" % (chosen_nodes_list,)
+    #if new_res['purpose_type_string'] == 'standing_reservation':
+    #    print "sdebug: allocated_dict_list (%s)" % (allocated_dict_list,)
+    #    print "sdebug: chosen_nodes_list (%s)" % (chosen_nodes_list,)
     #print "end of get_chosen_node_list"
     return (chosen_nodes_list, allocated_dict_list)
 
@@ -4708,7 +4887,7 @@ def update_job_info(jobs_db_handle) :
                     new_job_step['resource_hosts'].append(LICENSENODE)
                 else:
                     new_job_step['resource_hosts'] = [LICENSENODE,]
-                print "new_job_step['resource_hosts'] (%s)" % (new_job_step['resource_hosts'],)
+                #print "new_job_step['resource_hosts'] (%s)" % (new_job_step['resource_hosts'],)
                 license_request_list = string.split(new_job_step['license_request_list'], '+')
                 requested_license_list = []
                 for license_request in license_request_list:
@@ -5930,6 +6109,7 @@ def migrate_shortpools(jobs_db_handle, resources_db_handle, reservations_db_hand
                   node_sort_policy=reservation['node_sort_policy'],
                   conflict_policy=reservation['conflict_policy'],
                   purpose_type_string=reservation['purpose_type_string'],
+                  maxhops=reservation['maxhops'],
                   ignore_reservations_list=ignore_reservations_list,
                   comment_string=reservation['comment_string'],
                   mode='lookahead'
@@ -6039,6 +6219,10 @@ def update_standing_reservations(
             standing_TZ = None
         number_found = 0
         depth = standing_reservation['depth']
+        if standing_reservation.has_key('maxhops'):
+            maxhops = standing_reservation['maxhops']
+        else:
+            maxhops = None
         resource_amount_int = standing_reservation['resource_amount_int']
         if standing_reservation.has_key('requested_resource_list') :
             requested_resource_list = standing_reservation['requested_resource_list']
@@ -6118,6 +6302,7 @@ def update_standing_reservations(
                   purpose_type_string=purpose_type_string,
                   creator_string=creator_string,
                   comment_string=comment_string,
+                  maxhops=maxhops,
                   ignore_reservations_list=ignore_reservations_list,
                   accepted_nodes_list=accepted_nodes_list,
                   mode='real'
@@ -6165,6 +6350,7 @@ def update_standing_reservations(
                       purpose_type_string=purpose_type_string,
                       creator_string=creator_string,
                       comment_string=comment_string,
+                      maxhops=maxhops,
                       accepted_nodes_list=accepted_nodes_list,
                       ignore_reservations_list=ignore_reservations_list,
                       mode='real'
@@ -6216,6 +6402,7 @@ def update_standing_reservations(
                           purpose_type_string=purpose_type_string,
                           creator_string=creator_string,
                           comment_string=comment_string,
+                          maxhops=maxhops,
                           accepted_nodes_list=accepted_nodes_list,
                           ignore_reservations_list=ignore_reservations_list,
                           mode='real'
@@ -6565,6 +6752,7 @@ def create_standing_reservation(
   conflict_policy=None,
   creator_string=username_string,
   latency_float=None,
+  maxhops=None,
   job_restriction='result = 1',
   node_restriction='result = 1',
   overlap_running_int = 0
@@ -6599,6 +6787,7 @@ def create_standing_reservation(
     new_standing_reservation['affinity_calculation'] = affinity_calculation
     new_standing_reservation['depth'] = string.atoi(depth)
     new_standing_reservation['comment_string'] = comment
+    new_standing_reservation['maxhops'] = maxhops
     new_standing_reservation['overlap_running_int'] = overlap_running_int
     insert_new_object(
       new_object=new_standing_reservation,
@@ -6756,12 +6945,16 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
     active_reserved_node_sec_per_user_per_qos = {}
     existing_reservations = get_object_list(reservations_db_handle)
     for reservation in existing_reservations :
+        #if reservation.has_key('job_runID'):
+        #    print "checking reservation for job (%s)" % reservation['job_runID']
+        #    print "reservation['purpose_type_string'] (%s) reservation['start_count_int'] (%s)" % (reservation['purpose_type_string'],reservation['start_count_int'])
         if reservation['purpose_type_string'] == 'job' and \
           ( not reservation.has_key('start_count_int') or \
           not reservation['start_count_int'] >= 1 or \
           Now_float > reservation['start_time_float'] + JOB_START_TIME_LIMIT or \
           ( jobs_dict.has_key(reservation['job_runID']) and \
           jobs_dict[reservation['job_runID']]['state'] in ['Running', 'Removed', 'Canceled', 'Completed']) ):
+            #print "deleting reservation for job (%s)" % reservation['job_runID']
             delete_object(reservation['name'], reservations_db_handle)
             if ( (jobs_dict.has_key(reservation['job_runID']) and \
                 not jobs_dict[reservation['job_runID']]['state'] in ['Unknown']) \
@@ -8052,7 +8245,7 @@ def create_reservation(
         print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
     #print "len(sorted_windows_list) (%s)" % len(sorted_windows_list)
     chosen_nodes_list, allocated_dict_list = get_chosen_nodes_list(new_res, sorted_windows_list, counting_dict_list, node_bin_dict, resources_db_handle, jobs_db_handle )
-    #print "allocated_dict_list (%s)" % (allocated_dict_list,)
+    #print "after get_chosen_nodes_list, allocated_dict_list (%s)" % (allocated_dict_list,)
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "after get_chosen"
     #if purpose_type_string == 'job' :
@@ -8098,8 +8291,9 @@ def create_reservation(
         node_list = []
         # FIXME get rid of cpu and memory, use consumable_dict
         for allocated_dict in allocated_dict_list :
-            if new_res['node_usage'] == 'node_exclusive' :
-                allocated_dict['node'] = 1
+            #if new_res['node_usage'] == 'node_exclusive' :
+            if allocated_dict.has_key('node') and allocated_dict['node'] > 0:
+                #allocated_dict['node'] = 1
                 if resources_db_handle[0].has_key(allocated_dict['nodename']) :
                     #if resources_db_handle[0][allocated_dict['nodename']].has_key('Cpus') :
                     #    allocated_dict['pcpus'] = resources_db_handle[0][allocated_dict['nodename']]['Cpus']

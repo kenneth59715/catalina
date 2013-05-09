@@ -486,7 +486,9 @@ else :
             print "ok"
         else :
             print "not ok"
+            print cmd
             print returnstring
+            continue_var = raw_input('continue? ')
 
         print "user_bind_job"
         cmd = HOMEDIR + '/user_bind_job ' + bindjob_id + ' ' + bindures_id
@@ -510,6 +512,7 @@ else :
             print "ok"
         else :
             print "not ok"
+            print cmd
             print returnstring
 
         print "user_unbind_res"
@@ -522,7 +525,9 @@ else :
             print "ok"
         else :
             print "not ok"
+            print cmd
             print returnstring
+            continue_var = raw_input('continue? ')
 
         print "canceling user_set reservation"
         # cancel user_set reservation

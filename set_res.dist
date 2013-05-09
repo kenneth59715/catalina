@@ -127,7 +127,7 @@ if argdict.has_key('--affinity_calculation') :
 else :
     # By default, run in reservation
     affinity_calculation = 'result = 1'
-if argdict.has_key('--maxhops') :
+if argdict.has_key('--maxhops') and argdict['--maxhops'] != 'None':
     maxhops = argdict['--maxhops']
 else :
     maxhops = None
