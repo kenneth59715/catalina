@@ -615,7 +615,7 @@ try :
 except :
     TZSET = None
 if not vars().has_key('LOGGER') :
-    LOGGER = '/bin/logger'
+    LOGGER = '___LOGGER_PLACEHOLDER___'
 if not vars().has_key('LOGGER_FACILITY') :
     LOGGER_FACILITY = 'daemon'
 if not vars().has_key('RUN_AT_RISK_CLEANUP_TIME') :
@@ -8399,8 +8399,8 @@ def roll_logs(events_db_handle, old_jobs_db_handle, old_reservations_db_handle) 
     # open a datestamped version in ARCHIVE_DIR, dump the db to that,
     # dump an empty dictionary to the production file.
     archive_stat = os.statvfs(ARCHIVE_DIR)
-    # Check for 100,000 free blocks
-    if archive_stat[statvfs.F_BAVAIL] < 100000 :
+    # Check for 10,000 free blocks
+    if archive_stat[statvfs.F_BAVAIL] < 10000 :
         raise 'InsufficientBlocks'
     # Check for 10 free inodes
     if archive_stat[statvfs.F_FAVAIL] != -1 and archive_stat[statvfs.F_FAVAIL] < 100000 :
