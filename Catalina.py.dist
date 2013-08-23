@@ -6211,6 +6211,8 @@ def update_standing_reservations(
         accepted_nodes_list = get_accepted_nodes_list(standing_reservation['node_restriction'], resources_db_handle)
         if len(accepted_nodes_list) < standing_reservation['resource_amount_int'] :
             print "InsufficientAcceptedNodes"
+            print standing_reservation['node_restriction']
+            print accepted_nodes_list
             continue
         start_time_dict = spec_string_to_start_dict(standing_reservation)
         if standing_reservation.has_key('TZ_string') :
@@ -7796,27 +7798,50 @@ def create_reservation(
                 else :
                     allocated_dict_list = []
                     for nodename in reservation['node_list'] :
+                        #allocated_resource = {'nodename' : nodename,
+                        #                      'type' : 'node_exclusive',
+                        #                      'cpu' : resources_db_handle[0][nodename]['ConsumableCpus'],
+                        #                      'memory' : resources_db_handle[0][nodename]['ConsumableMemory']
+                        #                      }
                         allocated_resource = {'nodename' : nodename,
                                               'type' : 'node_exclusive',
-                                              'cpu' : resources_db_handle[0][nodename]['ConsumableCpus'],
-                                              'memory' : resources_db_handle[0][nodename]['ConsumableMemory']
                                               }
+                        consumable_list = resources_db_handle[0][nodename]['consumable_dict'].keys()
+                        for consumable in consumable_list:
+                            if allocated_resource.has_key(consumable):
+                                allocated_resource[consumable] = allocated_resource[consumable] + resources_db_handle[0][nodename]['consumable_dict'][consumable]
+                            else:
+                                allocated_resource[consumable] = resources_db_handle[0][nodename]['consumable_dict'][consumable]
                         allocated_dict_list.append(allocated_resource)
                 for allocated_resource in allocated_dict_list :
+                    # {'node': 1, 'nodename': 'gcn-14-74', 'initiatormap_index': 0, 'memory': 67639459840, 'type': 'node_exclusive', 'cpu': 16}
                     nodename = allocated_resource['nodename']
                     if bound_nodes_dict.has_key(nodename) :
-                        bound_nodes_dict[nodename]['cpu'] = \
-                          bound_nodes_dict[nodename]['cpu'] + \
-                            allocated_resource['cpu']
-                        bound_nodes_dict[nodename]['memory'] = \
-                          bound_nodes_dict[nodename]['memory'] + \
-                            allocated_resource['memory']
+                        #bound_nodes_dict[nodename]['cpu'] = \
+                        #  bound_nodes_dict[nodename]['cpu'] + \
+                        #    allocated_resource['cpu']
+                        #bound_nodes_dict[nodename]['memory'] = \
+                        #  bound_nodes_dict[nodename]['memory'] + \
+                        #    allocated_resource['memory']
+                        allocated_key_list = allocated_resource.keys()
+                        for allocated_key in allocated_key_list:
+                            if allocated_key in ['node','nodename','type','initiatormap_index']:
+                                continue
+                            bound_nodes_dict[nodename][allocated_key] = \
+                              bound_nodes_dict[nodename][allocated_key] + \
+                                allocated_resource[allocated_key]
                     else :
                         bound_nodes_dict[nodename] = {}
-                        bound_nodes_dict[nodename]['cpu'] = \
-                            allocated_resource['cpu']
-                        bound_nodes_dict[nodename]['memory'] = \
-                            allocated_resource['memory']
+                        #bound_nodes_dict[nodename]['cpu'] = \
+                        #    allocated_resource['cpu']
+                        #bound_nodes_dict[nodename]['memory'] = \
+                        #    allocated_resource['memory']
+                        allocated_key_list = allocated_resource.keys()
+                        for allocated_key in allocated_key_list:
+                            if allocated_key in ['node','nodename','type','initiatormap_index']:
+                                continue
+                            bound_nodes_dict[nodename][allocated_key] = \
+                                allocated_resource[allocated_key]
                 for node_name in bound_res_node_list :
                     if node_name not in bound_nodes_list :
                         bound_nodes_list.append(node_name)
