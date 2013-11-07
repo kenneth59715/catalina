@@ -103,10 +103,6 @@ while ( (state == 'running' or state == 'suspended') and
         #else :
         #    Catalina.Now_float = time.time()
         #Catalina.Now_float = Catalina.Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
-        Catalina.Now_float = Catalina.get_scheduler_time()
-        print "iteration (%s)" % count
-        print "Catalina.Now_float (%s)" % time.asctime(time.localtime(Catalina.Now_float))
-        print "%s" % time.clock()
         iteration_start_float = time.time()
         configuration_db_handle = Catalina.open_db(CONFIGURATION_DB,'write')
         configuration_dict = configuration_db_handle[0]
@@ -160,6 +156,10 @@ while ( (state == 'running' or state == 'suspended') and
         #  resources_db_handle=resources_db_handle,
         #  reservations_db_handle=reservations_db_handle,
         #  standing_reservations_db_handle=standing_reservations_db_handle)
+        Catalina.Now_float = Catalina.get_scheduler_time()
+        print "iteration (%s)" % count
+        print "Catalina.Now_float (%s)" % time.asctime(time.localtime(Catalina.Now_float))
+        print "%s" % time.clock()
         if count % 10 == 0 :
             #print "reloading job resource lists"
             #Catalina.reload_job_resource_lists(events_db_handle, jobs_db_handle, resources_db_handle)

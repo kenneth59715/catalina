@@ -19,7 +19,8 @@ def by_start(first, second) :
         return 1
 
 def by_endpriority(first, second) :
-    if first['start_time_float'] < Catalina.Now_float and second['start_time_float'] < Catalina.Now_float :
+    #print "comparing (%s) (%s) (%s) (%s) (%s)" % (first['name'], second['name'], first['start_time_float'], second['start_time_float'], Catalina.Now_float)
+    if first['start_time_float'] <= Catalina.Now_float and second['start_time_float'] <= Catalina.Now_float :
         # Both res have already started
         # sort by end time
         if first['end_time_float'] < second['end_time_float'] :
@@ -28,10 +29,10 @@ def by_endpriority(first, second) :
             return 0
         if first['end_time_float'] > second['end_time_float'] :
             return 1
-    if first['start_time_float'] < Catalina.Now_float and second['start_time_float'] > Catalina.Now_float :
+    if first['start_time_float'] <= Catalina.Now_float and second['start_time_float'] >= Catalina.Now_float :
         # first res has already started, second res has not
         return -1
-    if first['start_time_float'] > Catalina.Now_float and second['start_time_float'] < Catalina.Now_float :
+    if first['start_time_float'] > Catalina.Now_float and second['start_time_float'] <= Catalina.Now_float :
         # second res has already started, first res has not
         return 1
     if first['start_time_float'] > Catalina.Now_float and second['start_time_float'] > Catalina.Now_float :
@@ -157,6 +158,7 @@ Usage: show_res [--res=<res id>]
                 [--comment]
                 [--node_list]
                 [--endpriority]
+                [--bystart]
                 [--user_list]""" ## Eva H. wanted this feature
 args = sys.argv[1:]
 if len(args) == 0 :
@@ -213,12 +215,12 @@ if argdict.has_key('--res') :
     #res_ids = [ argdict['--res'] ]
     reservations_list = [res_dict[argdict['--res']], ]
 else :
-    if argdict.has_key('--endpriority') :
+    if argdict.has_key('--bystart') :
+        reservations_list.sort(by_start)
+    else :
         for reservation in reservations_list :
             reservation['jobs_db_handle'] = jobs_db_handle
         reservations_list.sort(by_endpriority)
-    else :
-        reservations_list.sort(by_start)
 nodegrep_dict = {}
 noderes_dict = {}
 overlap_dict = {}

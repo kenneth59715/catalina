@@ -560,13 +560,16 @@ for job_step in eligible_jobs :
         for reservation in reservations :
             if reservation['job_runID'] == job_step['name'] :
                 res_start_time = reservation['start_time_float']
-                relative_res_start_time = res_start_time - Catalina.Now_float
-                if relative_res_start_time < 0 :
-                    res_start_sign = '-'
-                    relative_res_start_time = abs(relative_res_start_time)
-                else :
-                    res_start_sign = ' '
-                res_start_string = "%s%02u:%02u:%02u" % (res_start_sign, relative_res_start_time/3600, relative_res_start_time%3600/60, relative_res_start_time%60)
+                if res_start_time == None:
+                    res_start_string = 'None'
+                else:
+                    relative_res_start_time = res_start_time - Catalina.Now_float
+                    if relative_res_start_time < 0 :
+                        res_start_sign = '-'
+                        relative_res_start_time = abs(relative_res_start_time)
+                    else :
+                        res_start_sign = ' '
+                    res_start_string = "%s%02u:%02u:%02u" % (res_start_sign, relative_res_start_time/3600, relative_res_start_time%3600/60, relative_res_start_time%60)
         print_list = []
         if argdict.has_key('--job') :
             print_list.append(job_step['name'])

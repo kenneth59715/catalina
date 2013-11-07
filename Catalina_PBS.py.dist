@@ -42,6 +42,7 @@ JOB_UPDATE_ATTRIBUTE_list = [
   'requirements_string',
   'cat_requirements_string',
   'env_dict',
+  'maxhops',
   'req_dict_list'
   ]
 

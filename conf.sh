@@ -805,6 +805,7 @@ ${ECHO} "SHOWCONFIG=show_config" >> Makefile
 ${ECHO} "SHOWEVENTS=show_events" >> Makefile
 ${ECHO} "SHOWGUESS=show_guesstimate" >> Makefile
 ${ECHO} "SHOWQ=show_q" >> Makefile
+${ECHO} "SHOWNODESETS=show_node_sets" >> Makefile
 ${ECHO} "SHOWRES=show_res" >> Makefile
 ${ECHO} "SHOWRESOURCES=show_resources" >> Makefile
 ${ECHO} "DUMP=dump" >> Makefile
@@ -871,7 +872,7 @@ ${ECHO} "	\$(SETCONFIG) \$(SETRES) \$(SHOWFREE) \$(SHOWBF) \$(SHOWBFALL) \$(SHOW
 ${ECHO} "	\$(SHOWGUESS) \$(SHOWQ) \$(SHOWRES) \$(SHOWAVAIL)\\" >> Makefile
 ${ECHO} "	\$(SHOWRESOURCES) \$(DUMP)\\" >> Makefile
 ${ECHO} "	\$(SHOWSTANDING) \$(STOP) \$(TESTRES) \$(UNBINDJOB) \$(UPDATEJOBS) \\" >> Makefile
-${ECHO} "	\$(UPDATELOCALADMIN) \$(UPDATEPREEMPTION) \\" >> Makefile
+${ECHO} "	\$(UPDATELOCALADMIN) \$(UPDATEPREEMPTION) \$(SHOWNODESETS)\\" >> Makefile
 ${ECHO} "	\$(UPDATEPRIORITIES) \$(UPDATEQOS) \$(UPDATERESOURCES) \$(UPDATERUNNING) \\" >> Makefile
 if [ "${RMAPI}" = "python" ]; then
 	${ECHO} "	\$(QJ) \$(QM) \$(RUNJOB) \$(PREEMPTJOB) \$(RESUMEJOB) \\" >> Makefile

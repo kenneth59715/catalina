@@ -7165,6 +7165,7 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
         except FoundJob:
             continue
         try :
+            start_job_time = time.time()
             new_res = create_job_reservation(
               resources_db_handle=resources_db_handle,
               reservations_db_handle=reservations_db_handle,
@@ -7172,6 +7173,12 @@ def create_job_reservations(eligible_jobs, resources_db_handle, reservations_db_
               job_step=job_step,
               events_db_handle=events_db_handle
             )
+            if job_step.has_key('license_request_list'):
+                license_request_list = job_step['license_request_list']
+            else:
+                license_request_list = None
+            print "job_step['maxhops'] (%s) job_step['license_request_list'] (%s) job_step['req_dict_list'] (%s)" % (job_step['maxhops'], license_request_list, job_step['req_dict_list'])
+            print "job elapsed (%s)" % (time.time() - start_job_time,)
             if new_res == None:
                 raise ResIsNone()
             if new_res['start_time_float'] == None:
