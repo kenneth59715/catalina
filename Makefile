@@ -1,5 +1,5 @@
 #SVN=/usr/local/apps/subversion-1.4.3/bin/svn
-SVN=/usr/bin/svn
+#SVN=/usr/bin/svn
 CHMOD=/bin/chmod
 TAR=/bin/tar
 ECHO=/bin/echo
@@ -21,7 +21,7 @@ DISTFILE=dist.tar
 #TEMP_DIR_OUT=build-`$(DATE) +%Y%m%d`
 TEMP_DIR_OUT=build-catalina
 TEMP_DIR=$(TEMP_DIR_OUT)
-REPO_LOCATION=file:///projects/sysint/admin/sdsc/dev/sched/svn/repository/catalina
+#REPO_LOCATION=file:///projects/sysint/admin/sdsc/dev/sched/svn/repository/catalina
 
 all:
 
@@ -35,9 +35,9 @@ dist: clean
 		mkdir $(TEMP_DIR); \
 	fi
 	
-	@ $(ECHO) "Downloading files from SVN .."  
+	@ $(ECHO) "Using working directory files .."  
 	@ mkdir -p $(TEMP_DIR)/$(CATALINA); cd $(TEMP_DIR)/$(CATALINA); \
-	$(SVN) cat $(REPO_LOCATION)/MANIFEST > MANIFEST; for i in `$(CAT) MANIFEST`; do $(SVN) cat $(REPO_LOCATION)/$$i > $$i; done; $(CHMOD) ugo+x conf.sh configure.sh
+	$(CP) ../../MANIFEST .; for i in `$(CAT) MANIFEST`; do $(CP) ../../$$i .; done; $(CHMOD) ugo+x conf.sh configure.sh
 	@ $(ECHO) "done"
 
 	@ $(ECHO) "Creating DATESTAMP file .."	
