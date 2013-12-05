@@ -398,9 +398,10 @@ else:
             del_list = []
             #print "before constructing newset"
             for switch_set_index in range(len(switch_sets_list)):
-                test_set = copy.deepcopy(switch_sets_list[switch_set_index])
-                #test_set = switch_sets_list[switch_set_index]
-                test_set.append(candidate_switch)
+                #test_set = copy.deepcopy(switch_sets_list[switch_set_index])
+                #test_set.append(candidate_switch)
+                test_set = switch_sets_list[switch_set_index] + [candidate_switch,]
+                #print "test_set (%s)" % (test_set,)
                 replace_old = 0
                 if test_maxhops(test_set, maxhops):
                     replace_old = 1
@@ -1832,6 +1833,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     for rkey in resources_dict[node]['consumable_dict'].keys():
                         allocated_dict[rkey] = resources_dict[node]['consumable_dict'][rkey]
                     allocated_dict_list.append(copy.deepcopy(allocated_dict))
+                    #allocated_dict_list.append(allocated_dict)
+                    #print "allocated_dict_list (%s)" % (allocated_dict_list,)
 
                 if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "generated allocated_dict_list (%s)" % (allocated_dict_list,)
@@ -1846,6 +1849,10 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
             #print "getting open windows for node_resource_list (%s)" % (node_resource_list,)
             for index in range(len(node_resource_list)) :
                 node = node_resource_list[index]['nodename']
+                if node_resource_list[index].has_key('type'):
+                    type = node_resource_list[index]['type']
+                else:
+                    type = 'node_exclusive'
                 if not resources_dict.has_key(node) or not node in accepted_nodes :
                     #print "not in accepted_nodes_list, continuing. node_resource_list[index] (%s)" % (node_resource_list[index],)
                     continue
@@ -1853,7 +1860,8 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     node_reservations[node] = []
                     nr_dict = {}
                     nr_dict['nodename'] = node
-                    nr_dict['type'] = 'node_exclusive'
+                    #nr_dict['type'] = 'node_exclusive'
+                    nr_dict['type'] = type
                     nr_dict['node'] = 1
                     for rkey in resources_dict[node]['consumable_dict'].keys():
                         nr_dict[rkey] = resources_dict[node]['consumable_dict'][rkey]
@@ -1868,6 +1876,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                       #),
                       #)
                         print "node_reservations[node].append (%s)" % (nr_dict,)
+                    #print "node_reservations[node].append (%s)" % (nr_dict,)
                     #node_reservations[node].append( (0.0, 'add', 
                     #  { 'nodename' : node, 'type' : 'node_exclusive',
                     #    'node' : 1,
@@ -1944,6 +1953,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
             node_reservations[node].sort()
             if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "node_reservations[node] (%s)" % (node_reservations[node],)
+            #print "node_reservations[node] (%s)" % (node_reservations[node],)
             #if node == LICENSENODE:
             #    print "node_reservations[node] (%s)" % (node_reservations[node],)
             #potential_start_time_float = new_res['earliest_start_float']
@@ -1967,6 +1977,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                 if event[1] == 'add' :
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "add event (%s)" % (event,)
+                    #print "add event (%s)" % (event,)
                     if node == LICENSENODE:
                         event_usage = 'node_shared'
                         #print "add event (%s)" % (event,)
@@ -2046,6 +2057,7 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                     # sort started_windows_list LASTAVAILABLE
                     if DEBUGJOB != None  and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                         print "decrement event(%s)" % (event,)
+                    #print "decrement event(%s)" % (event,)
                     #if node == LICENSENODE:
                     #    print "decrement event(%s)" % (event,)
                     #sys.stderr.write("decrement event(%s)\n" % (event,))
@@ -2588,9 +2600,9 @@ def get_open_windows_list(accepted_nodes_list, new_res, temp_reservations_list, 
                 print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
                   (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
         #print "checking reservation_windows before returning"
-        #for new_window in reservation_windows :
-        #    print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
-        #      (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
+        for new_window in reservation_windows :
+            #print "new_window[0] (%s), new_window[1] (%s), new_window[2] (%s)" % \
+              (time.asctime(time.localtime(new_window[0])), time.asctime(time.localtime(new_window[1])), new_window[2])
         result = reservation_windows
         return result
         # End of get_nonconflicting function
@@ -2720,10 +2732,12 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
         current_start_time_float = earliest_start_float
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "current_start_time_float from earliest_start_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
+        #print "current_start_time_float from earliest_start_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
     else :
         current_start_time_float = Now_float
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "current_start_time_float from Now_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
+        #print "current_start_time_float from Now_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
     # resource_dict_list for PBS supports multireq.  Each dict
     # represents one type of node, the nodes that can fit the req,
     # and how many of those needs were requested.  To support multiple
@@ -2924,9 +2938,16 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 #dict['requested_node'] = requested_node
                 #dict['requested_cpu'] = requested_cpu
                 #dict['requested_memory'] = requested_memory
+
                 sized_dict['requested_dict'] = copy.deepcopy(requested_dict)
-                #print "inserting requested_dict (%s)" % (requested_dict,)
                 sized_dict_list.append(copy.deepcopy(sized_dict))
+
+                #sized_dict['requested_dict'] = requested_dict
+                #sized_dict_list.append(sized_dict)
+
+
+                #print "sized_dict_list (%s)" % (sized_dict_list,)
+
                 nodeindex = nodeindex + 1
                 #print "1. sized_dict (%s) has no requested_dict" % ( sized_dict,)
     if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
@@ -2945,12 +2966,16 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
     last_window_index = len(open_windows_list) - 1
     for new_window_index in range(len(open_windows_list)) :
         #print "topotune: new_window_index (%s) range(len(open_windows_list))" % (new_window_index,)
+        #print "current_start_time_float (%s)" % \
+        #  ( time.asctime(time.localtime(current_start_time_float)), )
+        #print "checking window (%s)" % (open_windows_list[new_window_index],)
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             print "new_window_index current_start_time_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(current_start_time_float)),)
         new_window = open_windows_list[new_window_index]
         if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
             #print "new_window (%s)" % (new_window,)
             print "new_window (%s) (%s) (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y",time.localtime(new_window[0])),time.strftime("%H:%M:%S_%m/%d/%Y",time.localtime(new_window[1])), new_window[2])
+        #print "new_window (%s) (%s) (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y",time.localtime(new_window[0])),time.strftime("%H:%M:%S_%m/%d/%Y",time.localtime(new_window[1])), new_window[2])
             #print "considering this window (%s) - (%s) < (%s)" % \
             #  (time.asctime(time.localtime(new_window[1])), time.asctime(time.localtime(current_start_time_float)), new_res['duration_float'])
         # Break if we have reached our target resource_amount_int and the next window
@@ -2983,6 +3008,8 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "skipping this window due to lack of time (%s) - (%s) < (%s)" % \
                   (time.asctime(time.localtime(new_window[1])), time.asctime(time.localtime(current_start_time_float)), new_res['duration_float'])
+            #print "skipping this window due to lack of time (%s) - (%s) < (%s)" % \
+            #  (time.asctime(time.localtime(new_window[1])), time.asctime(time.localtime(current_start_time_float)), new_res['duration_float'])
             #if new_window[0] > current_start_time_float :
             #    current_start_time_float = new_window[0]
             #continue
@@ -2994,6 +3021,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             # Add the new window to the list of sized_windows_list
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "sized_windows_list.append(%s)" % (new_window,)
+            #print "sized_windows_list.append(%s)" % (new_window,)
             sized_windows_list.append(new_window)
  
         if new_window_index == last_window_index or open_windows_list[new_window_index + 1][0] > current_start_time_float :
@@ -3031,6 +3059,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
                 current_start_time_float = new_window[0]
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "current_start_time reset to (%s)" % time.asctime(time.localtime(current_start_time_float))
+                #print "current_start_time reset to (%s)" % time.asctime(time.localtime(current_start_time_float))
             #if new_window_index != last_window_index and open_windows_list[new_window_index + 1][0] > current_start_time_float :
             #    current_start_time_float = open_windows_list[new_window_index + 1][0]
             # Do I need to filter out short windows at this point?
@@ -6181,6 +6210,7 @@ def update_standing_reservations(
     srl_sort_list.sort()
     standing_reservations_list = map(lambda x: x[1], srl_sort_list)
     for standing_reservation in standing_reservations_list :
+        #print "updating standing reservation (%s)" % (standing_reservation,)
         # Starting from Now_float - duration_float,
         # find each of the next instances
         # Convert the potential starting time to a time tuple
@@ -6281,6 +6311,7 @@ def update_standing_reservations(
               get_new_candidate_time( start_time_dict, candidate_epoch, standing_TZ=standing_TZ )
 
             earliest_start_float = candidate_epoch
+            #print "pre create_res earliest_start_float (%s)" % (time.strftime("%H:%M:%S_%m/%d/%Y", time.localtime(earliest_start_float)),)
             latest_end_float = candidate_epoch + duration_float
             if earliest_start_float >= END_OF_SCHEDULING :
                 break
@@ -6310,6 +6341,7 @@ def update_standing_reservations(
                   mode='real'
                 )
             except InsufficientNodes:
+                print "InsufficientNodes"
                 # full size, full duration failed
                 # grab as many nodes as possible (since it failed
                 # due to insufficient nodes, we should not get more
@@ -6332,7 +6364,7 @@ def update_standing_reservations(
                 #    max_duration_float = duration_float
                 #latest_end_float = candidate_epoch + max_duration_float
                 try :
-                    #print "trying a partial..."
+                    print "trying a partial..."
                     new_res = create_reservation(
                       resources_db_handle=resources_db_handle,
                       reservations_db_handle=reservations_db_handle,
@@ -7253,7 +7285,7 @@ def set_resource_usability(resources_db_handle, jobs_db_handle) :
             print "%s resource_usability (%s)" % (resource_name, node_seconds_int)
 
 def update_resources(resources_db_handle, cfg_resources_db_handle,jobs_db_handle) :
-    print "start update_resources"
+    #print "start update_resources"
     resource_shelf = resources_db_handle[0]
     old_resources = get_object_list(resources_db_handle)
     old_resources_names = get_object_names_list(old_resources)
@@ -8159,7 +8191,7 @@ def create_reservation(
             resource_dict_list = job_step['resource_dict_list']
         else :
             raise NoResourceDictList
-        print "len(open_windows_list) (%s)" % (len(open_windows_list),)
+        #print "len(open_windows_list) (%s)" % (len(open_windows_list),)
         if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
             print "checking open_windows_list before passing off to get_sized_windows"
             for new_window in open_windows_list :
@@ -8219,6 +8251,7 @@ def create_reservation(
         #        print "existing_reservation (%s)" % (existing_reservation['name'],)
         open_windows_list = get_open_windows_list(
           accepted_nodes_list, new_res, existing_reservations, resources_db_handle)
+        #print "len(open_windows_list) (%s)" % len(open_windows_list)
         resource_dict_list = None
     if DEBUGJOB !=None and job_runID != None and job_runID == DEBUGJOB :
         print "len(open_windows_list) (%s)" % len(open_windows_list)
