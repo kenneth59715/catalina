@@ -3224,7 +3224,7 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
             #else:
             #    print "LICENSENODE (%s) not in switch_node_list (%s)!" % (LICENSENODE, switch_node_list)
             insufficient_licenses = False
-            if new_res.has_key('job_step') and new_res['job_step'].has_key('license_request_list'):
+            if new_res.has_key('job_step') and new_res['job_step'] !=None and new_res['job_step'].has_key('license_request_list'):
                 # before looking for node_sets, check to see if we have
                 # enough licenses at this time.
                 needed_licenses_dict = {}
