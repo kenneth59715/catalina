@@ -3120,12 +3120,22 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
 
             node_bin_dict = {}
             switch_node_list = []
+            available_licenses_dict = {}
             if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                 print "populating node_bin_dict with sized_windows_list (%s)" % (sized_windows_list,)
             for sized_window in sized_windows_list :
                 #print "topotune: sized_window (%s) sized_windows_list" % (sized_window,)
                 if not sized_window[2]['nodename'] in switch_node_list:
                     switch_node_list.append(sized_window[2]['nodename'])
+                if sized_window[2]['nodename'] == LICENSENODE:
+                    for licensename in sized_window[2].keys():
+                        if licensename in ('nodename','node'):
+                            continue
+                        if available_licenses_dict.has_key(licensename):
+                            available_licenses_dict[licensename] = available_licenses_dict[licensename] + sized_window[2][licensename]
+                        else:
+                            available_licenses_dict[licensename] = sized_window[2][licensename]
+                #print "available_licenses_dict (%s)" % available_licenses_dict
                 if DEBUGJOB != None and new_res['job_runID'] != None and new_res['job_runID'] == DEBUGJOB :
                     print "processing sized_window (%s)" % (sized_window,)
                 if node_bin_dict.has_key(sized_window[2]['nodename']) :
@@ -3181,6 +3191,59 @@ def get_sized_windows_list(new_res, open_windows_list, resources_db_handle, jobs
 #                            node_bin_dict[sized_window[2]['nodename']][rkey] = sized_window[2][rkey]
     
 
+            # check to see if we have enough nodes for each sized_dict
+            #insufficient_nodes = 0
+            #for sized_dict in sized_dict_list:
+            #    amount_needed = sized_dict['amount_int']
+            #    print "amount_needed (%s)" % amount_needed
+            #    suitable_nodes = sized_dict['resource_dict'].keys()
+            #    amount_now = 0
+            #    for amount_index in range(amount_needed):
+            #        for suitable_node in suitable_nodes:
+            #            if suitable_node == LICENSENODE:
+            #                print "looking for (%s)" % LICENSENODE
+            #            if suitable_node in switch_node_list:
+            #                amount_now = amount_now + 1
+            #                if suitable_node == LICENSENODE:
+            #                    print "found (%s)" % LICENSENODE
+            #    if amount_now < amount_needed:
+            #        insufficient_nodes = 1
+            #        break
+            #if insufficient_nodes == 1:
+            #    print "should bail out here"
+            #else:
+            #    print "insufficient_nodes (%s)" % insufficient_nodes
+            #if not new_res.has_key('job_step'):
+            #    print "no job_step"
+            #if new_res.has_key('job_step') and new_res['job_step'].has_key('license_request_list'):
+            #    print "license requested"
+            #else:
+            #    print "no license requested"
+            #if LICENSENODE in switch_node_list:
+            #    print "LICENSENODE (%s) in switch_node_list (%s)" % (LICENSENODE, switch_node_list)
+            #else:
+            #    print "LICENSENODE (%s) not in switch_node_list (%s)!" % (LICENSENODE, switch_node_list)
+            insufficient_licenses = False
+            if new_res.has_key('job_step') and new_res['job_step'].has_key('license_request_list'):
+                # before looking for node_sets, check to see if we have
+                # enough licenses at this time.
+                needed_licenses_dict = {}
+                license_request_split = string.split(new_res['job_step']['license_request_list'], '+')
+                for license_request in license_request_split:
+                    #print "license_request (%s)" % (license_request,)
+                    license_name, license_value = string.split(license_request,'_')
+                    needed_licenses_dict[license_name] = int(license_value)
+                #print "needed_licenses_dict (%s)" % needed_licenses_dict
+                for needed_license in needed_licenses_dict.keys():
+                    if not available_licenses_dict.has_key(needed_license) or needed_licenses_dict[needed_license] > available_licenses_dict[needed_license]:
+                        #print "insufficient license (%s) (%s) avail (%s)" % (needed_license, needed_licenses_dict[needed_license], available_licenses_dict[needed_license])
+                        insufficient_licenses = True
+                        break
+            else:
+                insufficient_licenses = False
+            if insufficient_licenses == True:
+                #print "should bail out here"
+                continue
             #sorted_node_sets_list = get_node_sets(new_res, node_bin_dict, resources_db_handle, jobs_db_handle)
             #print "getting node_sets"
             sorted_node_sets_list = get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle)
@@ -7743,6 +7806,7 @@ def create_reservation(
     new_res['affinity_calculation'] = affinity_calculation
     new_res['job_restriction'] = job_restriction
     new_res['job_runID'] = job_runID
+    new_res['job_step'] = job_step
     new_res['notify_string'] = notify_string
     new_res['maxhops'] = maxhops
     new_res['start_count_int'] = 0
@@ -8647,6 +8711,9 @@ def get_node_sets(new_res, switch_node_list, resources_db_handle, jobs_db_handle
             continue
         # should also add a license node to all node sets.
         #if LICENSENODE != None:
+        #if LICENSENODE != None and LICENSENODE in switch_node_list:
+        #    node_set.append(LICENSENODE)
+        #    node_sets_list_sort.append((len(node_set), node_set))
         node_set.append(LICENSENODE)
         node_sets_list_sort.append((len(node_set), node_set))
     # do not sort, as this will mess up the sorted node list
