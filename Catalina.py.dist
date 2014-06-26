@@ -171,6 +171,10 @@ if len(mandatory_keys_left) > 0 :
     sys.exit(1)
 
 print "SERVERMODE (%s)" % SERVERMODE
+if not vars().has_key('SCHEDULING_WINDOW') :
+    SCHEDULING_WINDOW = 7776000.0
+else:
+    SCHEDULING_WINDOW = float(SCHEDULING_WINDOW)
 if not vars().has_key('LOCKTIMEOUT'):
     LOCKTIMEOUT = 60.0
 if not vars().has_key('LICENSENODE'):
@@ -799,7 +803,7 @@ def get_scheduler_time() :
 
 #Now_float = Catalina____RESOURCEMANAGER_PLACEHOLDER___.get_scheduler_time()
 Now_float = get_scheduler_time()
-END_OF_SCHEDULING = Now_float + 7776000
+END_OF_SCHEDULING = Now_float + float(SCHEDULING_WINDOW)
 FIRST_AVAILABLE = """
 import string
 def sortfunc (first, second) :

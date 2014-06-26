@@ -112,6 +112,7 @@ def checkargs(argdict) :
 options = [
   '?',
   'help',
+  'scheduling_window=',
   'del_res_id=',
   'copy_res_id=',
   'earliest_start=',
@@ -155,6 +156,9 @@ usage_string = \
                   reservation can end no later than this time, otherwise
                   use the default scheduler limit
                   (catalina.config:SCHEDULING_WINDOW)
+
+                  [--scheduling_window=<float seconds from now>]
+                  replace the catalina.config:SCHEDULING_WINDOW
 
                   [--del_res_id=<res id>]
                   replace the old reservation with the newly created one.
@@ -253,6 +257,9 @@ argdict = tempdict
 if argdict.has_key('--?') or argdict.has_key('--help') :
     print usage_string
     sys.exit(0)
+
+if argdict.has_key('--scheduling_window'):
+    Catalina.END_OF_SCHEDULING = Catalina.Now_float + float(argdict['--scheduling_window'])
 
 events_db_handle = Catalina.open_db(Catalina.EVENTS_DB,'write');
 jobs_db_handle = Catalina.open_db(JOBS_DB,'read');
