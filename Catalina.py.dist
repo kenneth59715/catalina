@@ -1490,21 +1490,31 @@ def close_db (db_handle) :
     db_name = db_tuple[1]
     db_mode = db_tuple[2]
     db_tuple = db_handle[1]
+    myserver = socket.gethostname()
+    mypid = os.getpid()
+    #LOCK = DBDIR + '/' + db_name + LOCK_SUFFIX
+    #MYLOCK = DBDIR + '/' + db_name + LOCK_SUFFIX + '.' + myserver + '.' + "%s" % mypid
+    TEMPDBFILE = DBDIR + '/' + db_name + '.' + myserver + '.' + "%s" % mypid
+    TEMPRODBFILE = DBDIR + '/' + db_name + '_readonly' + '.' + myserver + '.' + "%s" % mypid
     if db_mode == 'write':
         # if another process has broken the lock for db_name,
         # we skip writing out our version.  There is still a
         # window where the other process has broken the lock,
         # but we miss it, so we inadvertantly write our stuff out
-        still_locked = check_lock(db_name)
+        # move this after the move from temp to real ro file
+        #still_locked = check_lock(db_name)
         # get a write lock
-        if still_locked == False:
-            raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
+        #if still_locked == False:
+        #    raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
         #writing_db_tuple = lock_db_files(db_name+'-writing', db_mode, timeout=0, breakable=False)
 
         ROFILE = DBDIR + '/' + db_name + '_readonly'
         #shutil.copyfile(REMOTEFILE, ROFILE)
         #FD = os.open(ROFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
-        FD = os.open(ROFILE, os.O_SYNC|os.O_WRONLY)
+        # open and write to temp db file, the do a move, instead
+        # of write directly.
+        #FD = os.open(ROFILE, os.O_SYNC|os.O_WRONLY)
+        FD = os.open(TEMPDBFILE, os.O_CREAT|os.O_SYNC|os.O_WRONLY)
         #print "ROFILE (%s)" % (ROFILE,)
         #print "type(FD) (%s)" % (type(FD),)
         #FO = os.fdopen(FD,'w',0)
@@ -1521,32 +1531,62 @@ def close_db (db_handle) :
         FO.flush()
         os.fsync(FO.fileno())
         FO.close()
+        still_locked = check_lock(db_name)
+        # get a write lock
+        if still_locked == False:
+            if os.path.exists(TEMPDBFILE):
+                os.remove(TEMPDBFILE)
+            raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
         #os.close(FD)
+        try:
+            shutil.copy(TEMPDBFILE,TEMPRODBFILE)
+            os.rename(TEMPRODBFILE,ROFILE)
+        except:
+            if os.path.exists(TEMPDBFILE):
+                os.remove(TEMPDBFILE)
+            if os.path.exists(TEMPRODBFILE):
+                os.remove(TEMPRODBFILE)
+            raise 'CatalinaDBError', "failed to copy and rename (%s_readonly) from (%s) (%s)" % (db_name, TEMPDBFILE, TEMPRODBFILE)
 
         # if other broke my lock, bail out before
         # the primary database is corrupted.
         # if I still have the lock, the backup
         # database should be good.
-        still_locked = check_lock(db_name)
-        if still_locked == False:
-            raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
+        #still_locked = check_lock(db_name)
+        #if still_locked == False:
+        #    raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
+#
+#        REMOTEFILE = DBDIR + '/' + db_name
+#        #FO = open(REMOTEFILE, 'wb')
+#        #FD = os.open(REMOTEFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
+#        FD = os.open(REMOTEFILE, os.O_SYNC|os.O_WRONLY)
+#        #FO = os.fdopen(FD,'w',0)
+#        FO = os.fdopen(FD,'wb')
+#        #pickle = cPickle.Pickler(FO,1)
+#        pickle = cPickle.Pickler(FO,cPickle.HIGHEST_PROTOCOL)
+#        #pickle.fast = 1
+#        if DEBUG == 'cd' :
+#            print "writing out (%s)" % db_name
+#        pickle.dump(dict)
+#        FO.flush()
+#        os.fsync(FO.fileno())
+#        FO.close()
+        #os.close(FD)
 
         REMOTEFILE = DBDIR + '/' + db_name
-        #FO = open(REMOTEFILE, 'wb')
-        #FD = os.open(REMOTEFILE, os.O_DIRECT|os.O_SYNC|os.O_WRONLY)
-        FD = os.open(REMOTEFILE, os.O_SYNC|os.O_WRONLY)
-        #FO = os.fdopen(FD,'w',0)
-        FO = os.fdopen(FD,'wb')
-        #pickle = cPickle.Pickler(FO,1)
-        pickle = cPickle.Pickler(FO,cPickle.HIGHEST_PROTOCOL)
-        #pickle.fast = 1
-        if DEBUG == 'cd' :
-            print "writing out (%s)" % db_name
-        pickle.dump(dict)
-        FO.flush()
-        os.fsync(FO.fileno())
-        FO.close()
-        #os.close(FD)
+        still_locked = check_lock(db_name)
+        if still_locked == False:
+            if os.path.exists(TEMPDBFILE):
+                os.remove(TEMPDBFILE)
+            raise 'CatalinaDBError', "lost lock for db (%s)" % (db_name,)
+        try:
+            os.rename(TEMPDBFILE,REMOTEFILE)
+        except:
+            if os.path.exists(TEMPDBFILE):
+                os.remove(TEMPDBFILE)
+            if os.path.exists(TEMPRODBFILE):
+                os.remove(TEMPRODBFILE)
+            raise 'CatalinaDBError', "failed to copy and rename (%s) from (%s) (%s)" % (db_name, TEMPDBFILE, TEMPRODBFILE)
 
         uid_int = pwd.getpwnam(CAT_LOCK_OWNER)[2]
         gid_int = grp.getgrnam(CAT_LOCK_GROUP)[2]
